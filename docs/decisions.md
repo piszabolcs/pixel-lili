@@ -6,3 +6,4 @@
 | D-03 | Lili **saját jobb** füle konyul le, a bal áll (szemből nézve a néző bal oldalán a lekonyuló) | 2026-10-18 | a gazdi megerősítette a fotók alapján |
 | panel | A 2.16"-os panel (CO5300, 480x480, akkus) érkezett meg | 2026-10-18 | a gazdi megerősítette |
 | repó | GitHub nem enged privát forkot publikus repóból, ezért új privát repó `pixel-lili`, a pocket-tank `upstream` remote-ként | 2026-10-18 | |
+| repó-2 | GitHub elhagyva, a repó csak helyben él a `Desktop\Lili_project\pixel-lili` mappában (a gazdi döntése a gh-bejelentkezési körök után) | 2026-10-18 | a WSL csak fordít |
