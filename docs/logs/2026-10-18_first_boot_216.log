@@ -1,0 +1,145 @@
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x15 (USB_UART_CHIP_RESET),boot:0x2b (SPI_FAST_FLASH_BOOT)
+Saved PC:0x4037d96a
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x170c
+load:0x403c8700,len:0x4
+load:0x403c8704,len:0xec4
+load:0x403cb700,len:0x3200
+entry 0x403c8950
+I (26) boot: ESP-IDF v5.4.1 2nd stage bootloader
+I (27) boot: compile time Oct 18 2026 17:08:17
+I (27) boot: Multicore bootloader
+I (27) boot: chip revision: v0.2
+I (30) boot: efuse block revision: v1.4
+I (33) qio_mode: Enabling default flash chip QIO
+I (38) boot.esp32s3: Boot SPI Speed : 80MHz
+I (42) boot.esp32s3: SPI Mode       : QIO
+I (45) boot.esp32s3: SPI Flash Size : 16MB
+I (49) boot: Enabling RNG early entropy source...
+I (54) boot: Partition Table:
+I (56) boot: ## Label            Usage          Type ST Offset   Length
+I (63) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (69) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (76) boot:  2 ota_0            OTA app          00 10 00010000 00280000
+I (82) boot:  3 model            Unknown data     01 40 00290000 00800000
+I (89) boot:  4 otadata          OTA data         01 00 00a90000 00002000
+I (95) boot:  5 ota_1            OTA app          00 11 00aa0000 00280000
+I (102) boot:  6 storage          Unknown data     01 82 00d20000 002e0000
+I (108) boot: End of partition table
+I (112) esp_image: segment 0: paddr=00010020 vaddr=3c100020 size=d4e88h (872072) map
+I (248) esp_image: segment 1: paddr=000e4eb0 vaddr=3fc9af00 size=054d4h ( 21716) load
+I (253) esp_image: segment 2: paddr=000ea38c vaddr=40374000 size=05c8ch ( 23692) load
+I (258) esp_image: segment 3: paddr=000f0020 vaddr=42000020 size=fc6a0h (1033888) map
+I (413) esp_image: segment 4: paddr=001ec6c8 vaddr=40379c8c size=11244h ( 70212) load
+I (427) esp_image: segment 5: paddr=001fd914 vaddr=50000000 size=00064h (   100) load
+I (428) esp_image: segment 6: paddr=001fd980 vaddr=600fe000 size=00120h (   288) load
+I (431) esp_image: segment 7: paddr=001fdaa8 vaddr=00000000 size=02528h (  9512) 
+I (449) boot: Loaded app from partition at offset 0x10000
+I (449) boot: Disabling RNG early entropy source...
+I (460) octal_psram: vendor id    : 0x0d (AP)
+I (460) octal_psram: dev id       : 0x02 (generation 3)
+I (460) octal_psram: density      : 0x03 (64 Mbit)
+I (462) octal_psram: good-die     : 0x01 (Pass)
+I (466) octal_psram: Latency      : 0x01 (Fixed)
+I (471) octal_psram: VCC          : 0x01 (3V)
+I (475) octal_psram: SRF          : 0x01 (Fast Refresh)
+I (480) octal_psram: BurstType    : 0x01 (Hybrid Wrap)
+I (484) octal_psram: BurstLen     : 0x01 (32 Byte)
+I (489) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)
+I (494) octal_psram: DriveStrength: 0x00 (1/1)
+I (499) MSPI Timing: PSRAM timing tuning index: 5
+I (503) esp_psram: Found 8MB PSRAM device
+I (506) esp_psram: Speed: 80MHz
+I (509) cpu_start: Multicore app
+I (524) cpu_start: Pro cpu start user code
+I (524) cpu_start: cpu freq: 240000000 Hz
+I (524) app_init: Application information:
+I (524) app_init: Project name:     pocket_tank
+I (528) app_init: App version:      dafd23e
+I (532) app_init: Compile time:     Oct 18 2026 17:08:11
+I (537) app_init: ELF file SHA256:  38f8ffe8b...
+I (542) app_init: ESP-IDF:          v5.4.1
+I (545) efuse_init: Min chip rev:     v0.0
+I (549) efuse_init: Max chip rev:     v0.99 
+I (553) efuse_init: Chip rev:         v0.2
+I (557) heap_init: Initializing. RAM available for dynamic allocation:
+I (563) heap_init: At 3FCAC7D8 len 0003CF38 (243 KiB): RAM
+I (569) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+I (574) heap_init: At 600FE120 len 00001EC8 (7 KiB): RTCRAM
+I (579) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator
+I (586) spi_flash: detected chip: generic
+I (589) spi_flash: flash io: qio
+I (593) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (599) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (605) main_task: Started on CPU0
+I (608) esp_psram: Reserving pool of 64K of internal memory for DMA/internal allocations
+I (616) main_task: Calling app_main()
+I (619) pocket-tank: pocket-tank v0.3.8 alpha (build dafd23e) for square216 boot
+I (626) gpio: GPIO[0]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+I (640) director: console ready (type help)
+
+IMPROVâ
+I (642) pocket-tank: battery history: on the cable since 1792343310, screen on 0 min, drain (default) 44.0 %/h, charge (default) 80.0 %/h
+I (650) pocket-tank: PSRAM total 8192 KB free 8189 KB | internal free 233 KB
+I (657) pocket-tank: PSRAM plan OK (need 4484 KB)
+I (663) gpio: GPIO[40]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+I (740) sh8601: board: the SQUARE, 2.16 (CO5300 480x480 / CST92xx at 0x5a) - no expander, an ES7210 at 0x40, an RTC at 0x51
+I (741) gpio: GPIO[39]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+I (748) sh8601: LCD panel create success, version: 2.0.1
+W (1033) sh8601: The 3Ah command has been used and will be overwritten by external initialization sequence
+W (1033) sh8601: The 36h command has been used and will be overwritten by external initialization sequence
+I (1061) sh8601: panel up: 480x480 square, the tank px for px (MADCTL a0)
+I (1061) gpio: GPIO[16]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+I (1065) gpio: GPIO[40]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+I (1133) touch: CST9220 (the square) ready
+I (1134) battery: AXP2101 fuel gauge up; charge current code 11 -> 11 (500 mA); VBUS input limit code 4
+I (1135) battery: precharge current 100 -> 100 mA
+I (1139) battery: end-of-charge current 100 -> 100 mA
+I (1144) battery: rail aldo1 pinned on
+I (1149) codec: ES7210 @0x40 suspended (POWER_DOWN 07)
+I (1154) battery: rails trimmed: 12 of 12 unused outputs off (dcdc1 = VCC3V3 and the RTC LDO stay)
+I (1162) battery: PMIC at boot: power-on source 04, power-off source 01, common cfg 34 | IRQ status 10 00 00 (49: bit3 short press, bit2 long, bit1 release, bit0 press)
+I (1177) battery: PWR key: REG 27 was 1c (power-on hold 128 ms, long press 1.5 s) -> power-on hold 128 ms; short press = sleep, 1.5 s = power-off, 10 s = the PMIC's own cut
+I (1191) update: provisioning: a reset over USB and no network saved - the glass stays dark while the installer page may ask (8 s)
+I (9250) update: provisioning over: the page never asked
+I (9250) rtc: system clock set from RTC: 2026-10-18 17:10
+I (9251) model: trailer: model v3m, 7557640 bytes - good
+I (9261) advisor: bench: dot100k 13001 us | batch44 flash 52244 us ram 51744 us | decode flash 7115 us ram 5185 us
+I (9401) advisor: model dim 384 layers 8 vocab 54 seq 64, schema v4, sampled decoding
+I (9408) pocket-tank: model partition 8192 KB mmap'd, advisor LLM
+I (9414) pocket-tank: after the advisor: internal heap 83 KB free
+I (9420) pocket-tank: dirty mask internal SRAM
+I (9423) pocket-tank: card cache PSRAM
+I (9429) codec: ES8311 @0x18 powered down (SYS0D f8 -> F8)
+I (9433) codec: ES8311 @0x18 : RESET 1f CLKMGR 00 SYS0D f8 (analog down, vref off, vmid 0) SYS0E 7f DAC 02
+I (9442) gpio: GPIO[46]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 1| Intr:0 
+I (9451) audio: 17 of 24 cues, bank 518 KB in flash, volume 2; warm while handled (touch / IMU), down 5 s after
+I (9491) imu: reset acked, ctrl readback 1=0x40 2=0x08 7=0x01 (want 40/08/01)
+I (9492) imu: QMI8658 up at 0x6b: orientation axis +Y
+I (9496) pocket-tank: cold boot: 0.0 h lived through since the save | hunger[0] 0.5 | battery 87% 4171 mV
+I (9501) pocket-tank: the save was written by v0.3.8
+I (9506) pocket-tank: population 2 (cap 5): pip + mira ...
+I (9511) pocket-tank: first-run setup: welcome, names, colours (director `setup off` drops it)
+I (9520) codec: ES8311 up (SYS0D 03 DAC 00)
+I (9644) display: stats card: redraw 14.7 ms, blit 4.7 ms per frame
+I (9645) pocket-tank: app_main done: internal heap 48 KB free (largest block 34 KB); the tank task starts once this stack is freed
+I (9651) main_task: Returned from app_main()
+I (9767) audio: up in 255 ms
+I (9851) pocket-tank: starting the tank task: internal heap 65 KB free (largest block 34 KB)
+I (9851) pocket-tank: tank task up | heap int 53 KB
+I (9853) imu: g=[-674 390 16888] inverted=0
+I (10122) imu: g=[-690 397 16893] inverted=0
+I (10400) imu: g=[-676 396 16877] inverted=0
+I (14192) advisor: zone 2 hunger 0 energy 8 stress 0 curiosity 1 bold 1 social 6 stage fry trust 5 bored 0 food mid 7 friend far 11 bubble far 11 reef none wall mid 6 last explore time day -> explore urgency 2 p=0.15  [4333 ms, 9.9 tok/s]
+I (14202) advisor: prof ms: matmul 2196 attn 668 norm/quant 134 rope 38 swiglu 353 decode 932
+I (16769) codec: ES8311 down (SYS0D f8)
+I (16770) audio: down (idle)
+I (18524) advisor: zone 5 hunger 6 energy 4 stress 0 curiosity 6 bold 6 social 2 stage fry trust 5 bored 0 food far 2 friend mid 1 bubble mid 3 reef far 9 wall clear last explore time day -> inspect_reef urgency 3 p=0.23  [4288 ms, 10.0 tok/s]
+I (18534) advisor: prof ms: matmul 2183 attn 655 norm/quant 129 rope 37 swiglu 350 decode 922
+I (19895) display: fb mid 0x0125 corner 0x0000 | scene mid 0x0125 ep 1 | night 0 prefetch 1
+I (19896) display: 20.6 fps | render 24.4 ms flush 20.5 ms | scene 0.6 shafts 0.0 veg 4.0 fd/bub 0.4 fish 4.7 vig 1.6 algae 0.1 | card 0.0 ms x0 | veg 0.36 0.35 0.34
+I (19907) display: frame 48.6 ms = polls 0.9 + tick 1.6 + prefetch wait 0.1 + render 24.4 + flush 20.5 + tail 0.0 + sleep 1.2 | flush: fill 17.9, wire wait 0.0, send calls 2.5
+I (19922) pocket-tank: t=26s 2 fish goals: explore inspect_reef | asks 2 decisions 2 last 4288 ms 10.0 tok/s | starve-ignored 0 | heap int 40 KB psram 4176 KB | battery 87% 4172 mV bright 255
