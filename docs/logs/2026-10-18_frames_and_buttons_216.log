@@ -1,0 +1,54 @@
+I (29928) display: fb mid 0x0125 corner 0x0000 | scene mid 0x012I (239435) advisor: zone 1 hunger 0 energy 7 stress 0 curiosity 0 bold 1 social 6 stage fry trust 5 bored 3 food none friend mid 12 bubble far 3 reef mid 6 wall mid 9 last follow_friend time day -> inspect_reef urgency 3 p=0.52  [4070 ms, 10.6 tok/s]
+I (239446) advisor: prof ms: matmul 2016 attn 637 norm/quant 119 rope 33 swiglu 313 decode 938
+I (241065) display: fb mid 0x0125 corner 0x0000 | scene mid 0x0125 ep 5 | night 0 prefetch 1
+I (241066) display: 24.7 fps | render 9.5 ms flush 19.1 ms | scene 0.1 shafts 0.0 veg 2.9 fd/bub 0.4 fish 3.7 vig 1.4 algae 0.1 | card 0.0 ms x0 | veg 0.36 0.19 0.14
+I (241077) display: frame 40.4 ms = polls 0.8 + tick 1.7 + prefetch wait 0.0 + render 9.5 + flush 19.1 + tail 0.2 + sleep 9.0 | flush: fill 16.4, wire wait 0.0, send calls 2.7
+I (241093) pocket-tank: t=250s 2 fish goals: inspect_reef explore | asks 41 decisions 33 last 4070 ms 10.6 tok/s | starve-ignored 0 | heap int 40 KB psram 4176 KB | battery 90% 4192 mV bright 255
+I (243542) advisor: zone 1 hunger 1 energy 7 stress 0 curiosity 0 bold 1 social 6 stage fry trust 5 bored 3 food none friend near 3 bubble far 6 reef far 8 wall near 11 last follow_friend time day -> explore urgency 4 p=0.42  [4067 ms, 10.6 tok/s]
+I (243553) advisor: prof ms: matmul 2013 attn 633 norm/quant 124 rope 32 swiglu 314 decode 939
+I (247649) advisor: zone 1 hunger 1 energy 6 stress 0 curiosity 0 bold 1 social 6 stage fry trust 5 bored 0 food none friend mid 8 bubble far 9 reef far 12 wall near 3 last inspect_reef time day -> follow_friend urgency 4 p=0.48  [4066 ms, 10.6 tok/s]
+I (247660) advisor: prof ms: matmul 2015 attn 636 norm/quant 119 rope 32 swiglu 313 decode 940
+I (251062) display: fb mid 0x0125 corner 0x0000 | scene mid 0x0125 ep 5 | night 0 prefetch 1
+I (251063) display: 24.5 fps | render 9.7 ms flush 19.9 ms | scene 0.1 shafts 0.0 veg 3.0 fd/bub 0.4 fish 3.8 vig 1.4 algae 0.1 | card 0.0 ms x0 | veg 0.36 0.19 0.14
+I (251074) display: frame 40.8 ms = polls 0.8 + tick 1.7 + prefetch wait 0.0 + render 9.7 + flush 19.9 + tail 0.2 + sleep 8.5 | flush: fill 17.2, wire wait 0.0, send calls 2.6
+I (251089) pocket-tank: t=260s 2 fish goals: follow_friend explore | asks 42 decisions 35 last 4066 ms 10.6 tok/s | starve-ignored 0 | heap int 40 KB psram 4176 KB | battery 90% 4193 mV bright 255
+I (261090) display: fb mid 0x0125 corner 0x0000 | scene mid 0x0125 ep 5 | night 0 prefetch 1
+I (261091) display: 25.6 fps | render 8.0 ms flush 16.5 ms | scene 0.1 shafts 0.0 veg 2.4 fd/bub 0.3 fish 3.1 vig 1.2 algae 0.0 | card 0.0 ms x0 | veg 0.36 0.19 0.14
+I (261102) display: frame 39.1 ms = polls 0.8 + tick 1.4 + prefetch wait 0.0 + render 8.0 + flush 16.5 + tail 0.2 + sleep 12.2 | flush: fill 13.5, wire wait 0.0, send calls 2.9
+I (261118) pocket-tank: t=270s 2 fish goals: follow_friend explore | asks 43 decisions 35 last 4066 ms 10.6 tok/s | starve-ignored 0 | heap int 40 KB psram 4176 KB | battery 90% 4194 mV bright 255
+I (262310) advisor: zone 3 hunger 6 energy 2 stress 0 curiosity 3 bold 7 social 2 stage fry trust 5 bored 8 food none friend near 5 bubble mid 4 reef none wall mid 11 last explore time day -> follow_friend urgency 4 p=0.11  [4063 ms, 10.3 tok/s]
+I (262321) advisor: prof ms: matmul 2109 attn 551 norm/quant 115 rope 35 swiglu 305 decode 936
+I (266424) advisor: zone 3 hunger 6 energy 2 stress 0 curiosity 3 bold 7 social 2 stage fry trust 5 bored 9 food none friend near 3 bubble mid 12 reef far 11 wall mid 7 last explore time day -> explore urgency 4 p=0.96  [4067 ms, 10.6 tok/s]
+I (266434) advisor: prof ms: matmul 2012 attn 629 norm/quant 129 rope 31 swiglu 314 decode 940
+I (270529) advisor: zone 3 hunger 6 energy 2 stress 0 curiosity 3 bold 7 social 2 stage fry trust 5 bored 6 food none friend near 4 bubble mid 10 reef far 10 wall mid 5 last follow_friend time day -> explore urgency 4 p=0.92  [4062 ms, 10.6 tok/s]
+I (270540) advisor: prof ms: matmul 2007 attn 625 norm/quant 134 rope 31 swiglu 315 decode 938
+I (271117) display: fb mid 0x0125 corner 0x0000 | scene mid 0x0125 ep 5 | night 0 prefetch 1
+I (271117) display: 23.9 fps | render 11.0 ms flush 22.4 ms | scene 0.1 shafts 0.0 veg 3.4 fd/bub 0.5 fish 4.4 vig 1.5 algae 0.1 | card 0.0 ms x0 | veg 0.36 0.19 0.14
+I (271129) display: frame 41.8 ms = polls 0.9 + tick 2.0 + prefetch wait 0.0 + render 11.0 + flush 22.4 + tail 0.2 + sleep 5.3 | flush: fill 20.0, wire wait 0.0, send calls 2.4
+I (271144) pocket-tank: t=280s 2 fish goals: follow_friend explore | asks 47 decisions 38 last 4062 ms 10.6 tok/s | starve-ignored 0 | heap int 40 KB psram 4176 KB | battery 90% 4194 mV bright 255
+I (274662) advisor: zone 2 hunger 6 energy 2 stress 0 curiosity 3 bold 7 social 2 stage fry trust 5 bored 6 food none friend near 6 bubble near 1 reef far 12 wall clear last explore time day -> explore urgency 4 p=0.08  [4086 ms, 10.3 tok/s]
+I (274673) advisor: prof ms: matmul 2107 attn 579 norm/quant 111 rope 34 swiglu 305 decode 937
+I (281134) display: fb mid 0x0125 corner 0x0000 | scene mid 0x0125 ep 5 | night 0 prefetch 1
+I (281135) display: 25.0 fps | render 8.5 ms flush 17.6 ms | scene 0.1 shafts 0.0 veg 2.6 fd/bub 0.4 fish 3.3 vig 1.2 algae 0.0 | card 0.0 ms x0 | veg 0.36 0.19 0.14
+I (281146) display: frame 40.0 ms = polls 0.8 + tick 1.6 + prefetch wait 0.0 + render 8.5 + flush 17.6 + tail 0.2 + sleep 11.3 | flush: fill 14.7, wire wait 0.0, send calls 2.9
+I (281162) pocket-tank: t=290s 2 fish goals: follow_friend explore | asks 47 decisions 39 last 4086 ms 10.3 tok/s | starve-ignored 0 | heap int 40 KB psram 4176 KB | battery 90% 4195 mV bright 255
+I (285872) advisor: zone 5 hunger 6 energy 1 stress 0 curiosity 4 bold 7 social 2 stage fry trust 5 bored 7 food none friend near 10 bubble mid 9 reef mid 5 wall mid 3 last explore time day -> explore urgency 4 p=0.90  [4065 ms, 10.6 tok/s]
+I (285882) advisor: prof ms: matmul 2010 attn 630 norm/quant 127 rope 31 swiglu 314 decode 941
+I (290865) advisor: zone 6 hunger 6 energy 1 stress 0 curiosity 5 bold 7 social 2 stage fry trust 5 bored 6 food none friend mid 6 bubble mid 8 reef far 5 wall mid 3 last explore time day -> visit_bubbles urgency 4 p=0.57  [4053 ms, 10.6 tok/s]
+I (290876) advisor: prof ms: matmul 2005 attn 621 norm/quant 134 rope 30 swiglu 315 decode 935
+I (291178) display: fb mid 0x0125 corner 0x0000 | scene mid 0x0125 ep 5 | night 0 prefetch 1
+I (291178) display: 24.5 fps | render 10.2 ms flush 20.7 ms | scene 0.1 shafts 0.0 veg 3.2 fd/bub 0.4 fish 4.0 vig 1.4 algae 0.1 | card 0.0 ms x0 | veg 0.36 0.19 0.14
+I (291190) display: frame 40.8 ms = polls 0.8 + tick 1.8 + prefetch wait 0.0 + render 10.2 + flush 20.7 + tail 0.2 + sleep 7.0 | flush: fill 18.2, wire wait 0.0, send calls 2.5
+I (291205) pocket-tank: t=300s 2 fish goals: follow_friend visit_bubbles | asks 51 decisions 41 last 4053 ms 10.6 tok/s | starve-ignored 0 | heap int 40 KB psram 4176 KB | battery 91% 4196 mV bright 255
+I (294982) advisor: zone 6 hunger 1 energy 6 stress 0 curiosity 0 bold 2 social 6 stage fry trust 5 bored 1 food none friend near 1 bubble mid 8 reef far 6 wall mid 3 last follow_friend time day -> follow_friend urgency 2 p=0.80  [4067 ms, 10.6 tok/s]
+I (294993) advisor: prof ms: matmul 2014 attn 639 norm/quant 116 rope 33 swiglu 313 decode 939
+I (299088) advisor: zone 6 hunger 6 energy 1 stress 0 curiosity 5 bold 7 social 2 stage fry trust 5 bored 3 food none friend near 9 bubble mid 12 reef far 10 wall mid 5 last visit_bubbles time day -> visit_bubbles urgency 4 p=0.69  [4068 ms, 10.6 tok/s]
+I (299099) advisor: prof ms: matmul 2013 attn 633 norm/quant 123 rope 32 swiglu 314 decode 940
+I (301193) display: fb mid 0x0125 corner 0x0000 | scene mid 0x0125 ep 5 | night 0 prefetch 1
+I (301194) display: 24.5 fps | render 10.7 ms flush 21.4 ms | scene 0.1 shafts 0.0 veg 3.3 fd/bub 0.5 fish 4.3 vig 1.5 algae 0.1 | card 0.0 ms x0 | veg 0.36 0.19 0.14
+I (301205) display: frame 40.9 ms = polls 0.9 + tick 1.9 + prefetch wait 0.0 + render 10.7 + flush 21.4 + tail 0.2 + sleep 5.8 | flush: fill 19.0, wire wait 0.0, send calls 2.4
+I (301221) pocket-tank: t=310s 2 fish goals: follow_friend visit_bubbles | asks 53 decisions 43 last 4068 ms 10.6 tok/s | starve-ignored 0 | heap int 40 KB psram 4176 KB | battery 91% 4196 mV bright 255
+I (303180) advisor: zone 5 hunger 6 energy 1 stress 0 curiosity 5 bold 7 social 2 stage fry trust 5 bored 4 food none friend mid 6 bubble near 11 reef far 9 wall mid 5 last visit_bubbles time day -> visit_bubbles urgency 3 p=0.73  [4050 ms, 10.6 tok/s]
+I (303191) advisor: prof ms: matmul 2018 attn 612 norm/quant 122 rope 33 swiglu 314 decode 938
+I (307299) advisor: zone 5 hunger 1 energy 5 stress 0 curiosity 0 bold 2 social 6 stage fry trust 5 bored 3 food none friend near 11 bubble near 9 reef far 8 wall mid 3 last follow_friend time day -> visit_bubbles urgency 4 p=0.31  [4067 ms, 10.6 tok/s]
+I (307311) advisor: prof ms: matmul 2015 attn 631 norm/quant 125 rope 31 swiglu 314 decode 938

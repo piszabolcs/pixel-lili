@@ -16,3 +16,4 @@ A pocket-tank saját mért adatai (upstream): `docs/pocket-tank-stats.md` és `d
 | 2026-10-18 | LLM bench a panelen | dot100k 13 001 us; batch44 flash 52,2 ms / ram 51,7 ms; decode flash 7,1 ms / ram 5,2 ms; első döntés profil: matmul 2283 + attn 726 + norm 139 + rope 38 + swiglu 360 + decode 932 ms = ~4,5 s | uo. |
 | 2026-10-18 | Akku első bootkor | 85 %, 4164 mV, kábelen | uo. |
 | 2026-10-18 | IMU nyugalomban, asztalon (kijelző felfelé) | g = [-680 417 16908], inverted=0, orientáció +Y | uo. |
+| 2026-10-18 | Képkocka-idő a panelen (pocket-tank square, 2 hal, első-indítás oldal) | 39,1-41,8 ms/képkocka (~24-25 fps): polls 0,8 + tick 1,4-2,0 + render 8,0-11,0 + flush 16,5-22,4 (fill 13,5-20,0) + sleep 5-12 ms | docs/logs/2026-10-18_frames_and_buttons_216.log |

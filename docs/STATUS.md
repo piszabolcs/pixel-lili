@@ -10,11 +10,11 @@ Frissítve: 2026-10-18 (este)
 
 ## Kész (M1, részben)
 - **M1.1** Gyári flash lementve: `C:\Users\kaposzta\Desktop\Lili_project\backup\factory_216_2026-10-18.bin` (16 777 216 B, SHA256 mellette `.sha256` fájlban). Windows-os esptool 5.6 a COM3-on (az ESP32-S3 beépített USB-soros portja), 921600 baud, 2 perc. USB-átadás a WSL-nek nem kellett.
-- **M1.2** A pocket-tank square build (`idf.py ... sdkconfig.defaults;sdkconfig.square`, WSL, 53 mp) `--full` módban a panelre flashelve Windows-os esptool-lal (NVS törlés 0x9000, modell 0x290000, trailer 0xA8F000, bootloader + tábla + app + otadata). Boot napló: `docs/logs/2026-10-18_first_boot_216.log`. Feláll: CO5300 480x480 (MADCTL a0), CST9220, AXP2101 (500 mA töltés), RTC (idő érvényes), QMI8658 (+Y), ES8311/ES7210, modell trailer "good", advisor LLM. **A gazdi vizuális megerősítése (halak a képernyőn) még hiányzik; az első indítás üdvözlő/beállító oldala jelenik meg.**
+- **M1.2** A pocket-tank square build (`idf.py ... sdkconfig.defaults;sdkconfig.square`, WSL, 53 mp) `--full` módban a panelre flashelve Windows-os esptool-lal (NVS törlés 0x9000, modell 0x290000, trailer 0xA8F000, bootloader + tábla + app + otadata). Boot napló: `docs/logs/2026-10-18_first_boot_216.log`. Feláll: CO5300 480x480 (MADCTL a0), CST9220, AXP2101 (500 mA töltés), RTC (idő érvényes), QMI8658 (+Y), ES8311/ES7210, modell trailer "good", advisor LLM. **A gazdi megerősítette: a halak úsznak, az érintés működik.**
 - Az OTA aláíró kulcs (`firmware/keys/ota_signing_key.pem`, gitignore-olva) másolata: `Lili_project\backup\ota_signing_key_2026-10-18.pem`.
 
 ## Folyamatban
-- M1.3 [G] gombok és GPIO-k (`docs/board-notes-lili.md`), M1.4 IMU INT, M1.5 fogyasztás, M1.6 mikrofon diag app, M1.7 sarok-teszt, M1.8 RTC soros parancs.
+- **M1.3 kész** (csak a PWR él a pocket-tank alatt; BOOT=GPIO 0 tiltva PMIC-es lapon, KEY3=GPIO 18 nem kezelt; részletek `docs/board-notes-lili.md`). Hátra: M1.4 IMU INT (a square-en nincs expander, a GPIO a rajzból kell), M1.5 fogyasztás, M1.6 mikrofon diag app, M1.7 sarok-teszt, M1.8 RTC soros parancs.
 
 ## Következő
 - M1.3-M1.8 a panelen (gazdi + Claude), utána M2.
