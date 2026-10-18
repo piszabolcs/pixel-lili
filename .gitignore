@@ -39,3 +39,16 @@ tools/boards.local.sh
 sim/build-square/
 sim/fishsim-square
 sim/build-arm*/
+
+# --- Pixel Lili ---
+.venv/
+assets/raw_renders/
+assets/raw_videos/
+assets/build/
+sim/build-square/
+sim/fishsim-square
+sim/fishsim-watch
+sim/build-watch/
+*.blend1
+*.ppm
+/tmp/
