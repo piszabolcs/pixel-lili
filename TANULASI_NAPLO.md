@@ -84,6 +84,16 @@ Hiba: a `make check` a /mnt/c-n percekig tartott (az LVGL ~300 függőségfájlj
 
 Fogalmak: indexelt szín és paletta, LUT, rámpa, 32 bites dupla írás
 
+## 2026-10-19 | M2, 3. lépés: kávamaszk, vignetta, sarokzóna
+
+Készült: `common/lili/mask.c/h`: a fizikai képen a 72 px-es sarkok feketék, a szélen 6 px-es elsötétedés, egy negyed táblájából (57,6 KB), csak a keret sávjához nyúlva; `M` billentyű: a tiltott sarokzónák sraffozva; selftest visszaméri az M1.7-et (y 462: x 24 takarva, x 32 látszik).
+
+Döntés: fizikai felbontáson, a flush után, előre számolt táblából, mert így a sarokív 1 px-es pontosságú és képkockánként csak kb. 22 ezer pixel kell.
+
+Hiba: a vizestál korábbi "26 px az ívtől" távolsága rossz geometria volt (a pont a sarokkör középpontján belül van, ott az egyenes szél számít, 41,5 px); a decisions.md javítva, a selftest most a valódi függvénnyel ellenőrzi.
+
+Fogalmak: előjeles távolságfüggvény (SDF), szimmetria-kihasználás
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -149,3 +159,7 @@ Fogalmak: indexelt szín és paletta, LUT, rámpa, 32 bites dupla írás
 **rámpa:** egy anyag (bunda, padló, fű) 8 árnyalata egymás után a palettában, sötéttől világosig. A toon árnyalás és a helyi fények (napfolt, este) csak eltolják az indexet a rámpán belül.
 
 **32 bites dupla írás:** a 2x vízszintes nagyításnál ugyanaz a 16 bites szín kétszer kell egymás mellé; egy 32 bites szóba kétszer betéve egyetlen írással megvan, és a következő fizikai sor egy `memcpy`.
+
+**előjeles távolságfüggvény (SDF):** egy pont távolsága egy alakzat határától, belül negatív, kívül pozitív előjellel. Egy lekerekített négyzetre egy rövid képlet; ebből jön a maszk (kívül fekete), a vignetta (a határ közelében halványít) és a biztonsági zóna (legalább 24 px-re belül) is, egyetlen függvényből.
+
+**szimmetria-kihasználás:** ha egy forma tükrös az x és y tengelyre, elég egy negyedét kiszámolni és tárolni; a másik háromba tükrözött indexszel olvasunk. Itt 4x kevesebb memória (57,6 KB 230 KB helyett).

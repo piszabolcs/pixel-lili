@@ -46,7 +46,7 @@ CFLAGS  := $(ROUNDF) -O2 -std=c11 $(ARCH) -I. -I../common -I../common/llm -DLV_C
 LDFLAGS := $(ARCH) $(SDL_LIBS) -lm
 
 ifdef LILI
-APP_SRCS  := lili_main.c ../common/lili/lili_world.c ../common/lili/render8.c ../common/lili/palette.c
+APP_SRCS  := lili_main.c ../common/lili/lili_world.c ../common/lili/render8.c ../common/lili/palette.c ../common/lili/mask.c
 CFLAGS    += -I../common/lili
 else
 APP_SRCS  := main.c advisor_llm.c persist_port_sim.c net_port_sim.c ../common/tank.c ../common/update.c ../common/advisor.c ../common/render.c ../common/icons.c ../common/progression.c ../common/setup.c ../common/audio.c ../common/notice.c ../common/sounds.c ../common/battery.c ../common/llm/q4_model.c ../common/llm/word_tok.c ../common/llm/advisor_core.c

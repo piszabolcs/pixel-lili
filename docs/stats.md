@@ -28,3 +28,4 @@ A pocket-tank saját mért adatai (upstream): `docs/pocket-tank-stats.md` és `d
 | 2026-10-19 | IMU WoM ébresztés könnyű alvásból | 338 s nyugalmi alvás után a felemelés ébresztett (ok: GPIO 17 / INT1); ébren 100 mg küszöbbel minden felemelés eseményt adott | diag womsleep, kijelző fotó |
 | 2026-10-19 | 8 bites renderelő a PC-n (lilisim --bench, 2000 képkocka) | render 0,9-1,0 us, flush (LUT + 2x, 480x480) 27 us / képkocka; vászon 57 600 B a 460 800 B-os RGB565 kép helyett | WSL2, Ryzen 5 7600 (a panel számai: M2.6) |
 | 2026-10-19 | make LILI=1 check a /mnt/c-n | kb. 5 perc -> 5,4 s (az LVGL .d fájljai kimaradnak a Lili-célnál) | sim/Makefile |
+| 2026-10-19 | Kávamaszk a PC-n (lilisim --bench) | mask 18,7 us / képkocka (flush 23,6 us, render 0,9 us); a tábla 57 840 B, képkockánként kb. 22 ezer pixel érintett | WSL2 |

@@ -1,7 +1,7 @@
 /* lili_main.c - the Pixel Lili simulator. The same common/lili code the firmware
  * runs, in an SDL window through LVGL (the pocket-tank's sim recipe).
  *
- *   ./lilisim                         the window: Tab = room <-> yard, Q = quit
+ *   ./lilisim                         the window: Tab = room <-> yard, M = corner zones, Q = quit
  *   ./lilisim --selftest              headless checks, exit 0 = green
  *   ./lilisim --bench                 headless: render + flush cost per frame (spec 6.4)
  *   ./lilisim --screenshot out.ppm    headless, one frame to a PPM
@@ -14,19 +14,25 @@
 #include "lili_world.h"
 #include "render8.h"
 #include "palette.h"
+#include "mask.h"
 #include "lvgl/lvgl.h"
 #include <SDL2/SDL.h>
 
 static world_t s_world;
 static render8_t s_r8;
 static uint16_t s_fb[LILI_PHYS_W * LILI_PHYS_H];
+static mask_t s_mask;
+static bool s_debug;                                   /* M: the corner-zone debug layer */
 
 static void canvas_init(void) {
     uint8_t pal[256][3]; pal_placeholder(pal); r8_set_palette(&s_r8, pal);
+    mask_init(&s_mask);
 }
 static void frame(void) {
     world_render(&s_world, &s_r8);
+    if (s_debug) mask_debug_draw(&s_r8, PAL_DEBUG);
     r8_flush_rows(&s_r8, s_fb, 0, LILI_PHYS_H);        /* the sim takes the whole frame; the panel takes stripes */
+    mask_apply_rows(&s_mask, s_fb, 0, LILI_PHYS_H);    /* the glass's corners and edge fade, on the same rows */
 }
 
 /* ---------- headless ---------- */
@@ -67,6 +73,25 @@ static int selftest(void) {
     r8_fill(&s_r8, -5, -5, 10, 10, PAL_WHITE); r8_fill(&s_r8, 235, 235, 20, 20, PAL_WHITE);
     CHECK(s_r8.px[0] == PAL_WHITE && s_r8.px[LILI_LOG_W * LILI_LOG_H - 1] == PAL_WHITE, "fills clip at the edges");
 
+    /* --- the glass mask (M1.7: the 72 px corner) --- */
+    CHECK(mask_att(&s_mask, 0, 0) == 0 && mask_att(&s_mask, 479, 479) == 0, "the corners are black");
+    CHECK(mask_att(&s_mask, 240, 240) == 255 && mask_att(&s_mask, 10, 240) == 255, "the middle and 10 px in from an edge are untouched");
+    CHECK(mask_att(&s_mask, 0, 240) > 0 && mask_att(&s_mask, 0, 240) < 64, "the outermost column fades, not cut (the glass shows px 0, M1.7)");
+    CHECK(mask_att(&s_mask, 24, 462) == 0 && mask_att(&s_mask, 32, 462) > 0, "y 462: x 24 is under the bezel, x 32 is not (the M1.7 footer sum)");
+    for (int y = 0; y < LILI_PHYS_H; y += 7) for (int x = 0; x < LILI_PHYS_W; x += 7)
+        CHECK(mask_att(&s_mask, x, y) == mask_att(&s_mask, 479 - x, y) && mask_att(&s_mask, x, y) == mask_att(&s_mask, x, 479 - y), "the frame is symmetric");
+    long touched = 0; for (int y = 0; y < MASK_Q; y++) touched += s_mask.span[y];
+    CHECK(touched * 4 < LILI_PHYS_W * LILI_PHYS_H / 8, "the mask touches only the frame's band");
+    for (int i = 0; i < LILI_PHYS_W * LILI_PHYS_H; i++) s_fb[i] = 0xFFFF;
+    mask_apply_rows(&s_mask, s_fb, 0, LILI_PHYS_H);
+    CHECK(s_fb[0] == 0 && s_fb[240 * LILI_PHYS_W + 240] == 0xFFFF, "apply: corner black, centre white");
+    static uint16_t full[LILI_PHYS_W * LILI_PHYS_H]; memcpy(full, s_fb, sizeof full);
+    for (int i = 0; i < LILI_PHYS_W * LILI_PHYS_H; i++) s_fb[i] = 0xFFFF;
+    for (int y0 = 0; y0 < LILI_PHYS_H; y0 += 24) mask_apply_rows(&s_mask, &s_fb[y0 * LILI_PHYS_W], y0, 24);
+    CHECK(!memcmp(full, s_fb, sizeof full), "the mask in 24-row stripes equals the full pass");
+    CHECK(!mask_point_safe(2, 2) && mask_point_safe(120, 120) && mask_point_safe(120, 3), "safe zone: a corner no, the middle yes, an edge's middle yes");
+    CHECK(mask_point_safe(198, 196) && mask_point_safe(114, 181), "spec 8.2: the water bowl and the pad centres are safe");
+
     /* --- the world --- */
     world_init(&s_world, 1234);
     for (int i = 0; i < 600; i++) world_tick(&s_world, 1.0f / 60.0f);
@@ -90,13 +115,14 @@ static int selftest(void) {
 static double now_us(void) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); return ts.tv_sec * 1e6 + ts.tv_nsec / 1e3; }
 static int bench(void) {
     canvas_init(); world_init(&s_world, 1);
-    const int N = 2000; double t_render = 0, t_flush = 0;
+    const int N = 2000; double t_render = 0, t_flush = 0, t_mask = 0;
     for (int i = 0; i < N; i++) {
         double t0 = now_us(); world_render(&s_world, &s_r8);
         double t1 = now_us(); r8_flush_rows(&s_r8, s_fb, 0, LILI_PHYS_H);
-        double t2 = now_us(); t_render += t1 - t0; t_flush += t2 - t1;
+        double t2 = now_us(); mask_apply_rows(&s_mask, s_fb, 0, LILI_PHYS_H);
+        double t3 = now_us(); t_render += t1 - t0; t_flush += t2 - t1; t_mask += t3 - t2;
     }
-    printf("bench (PC, %d frames): render %.1f us, flush %.1f us per frame - the panel's numbers come from M2.6\n", N, t_render / N, t_flush / N);
+    printf("bench (PC, %d frames): render %.1f us, flush %.1f us, mask %.1f us per frame - the panel's numbers come from M2.6\n", N, t_render / N, t_flush / N, t_mask / N);
     return 0;
 }
 
@@ -120,6 +146,7 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--selftest")) return selftest();
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
     if (argc > 2 && !strcmp(argv[1], "--screenshot")) {
+        s_debug = argc > 3 && !strcmp(argv[3], "--debug");
         canvas_init(); world_init(&s_world, 1234); frame(); write_ppm(argv[2], s_fb);
         printf("wrote %s\n", argv[2]); return 0;
     }
@@ -128,20 +155,22 @@ int main(int argc, char **argv) {
     lv_init();
     lv_tick_set_cb(tick_cb);
     lv_display_t *disp = lv_sdl_window_create(LILI_PHYS_W, LILI_PHYS_H);
-    lv_sdl_window_set_title(disp, "Pixel Lili sim 480x480  (Tab: szoba/udvar, Q: kilépés)");
+    lv_sdl_window_set_title(disp, "Pixel Lili sim 480x480  (Tab: szoba/udvar, M: sarokzóna, Q: kilépés)");
     lv_draw_buf_init(&s_draw_buf, LILI_PHYS_W, LILI_PHYS_H, LV_COLOR_FORMAT_RGB565, LILI_PHYS_W * 2, s_fb, sizeof s_fb);
     s_canvas = lv_canvas_create(lv_screen_active());
     lv_canvas_set_draw_buf(s_canvas, &s_draw_buf);
     lv_obj_center(s_canvas);
     s_last_ms = SDL_GetTicks();
     lv_timer_create(frame_cb, 16, NULL);
-    bool tab_down = false;
+    bool tab_down = false, m_down = false;
     for (;;) {
         uint32_t wait = lv_timer_handler();
         const Uint8 *k = SDL_GetKeyboardState(NULL);
         if (k[SDL_SCANCODE_Q]) break;
         if (k[SDL_SCANCODE_TAB] && !tab_down) world_switch_view(&s_world);
         tab_down = k[SDL_SCANCODE_TAB];
+        if (k[SDL_SCANCODE_M] && !m_down) s_debug = !s_debug;
+        m_down = k[SDL_SCANCODE_M];
         SDL_Delay(wait < 5 ? wait : 5);
     }
     return 0;
