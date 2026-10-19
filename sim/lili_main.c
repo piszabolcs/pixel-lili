@@ -102,21 +102,28 @@ static int selftest(void) {
         }
     }
     const map_t *room = &MAPS[VIEW_ROOM], *yard = &MAPS[VIEW_YARD];
-    CHECK(!map_walkable(room, 52, 120) && room->points[SPOT_ON_BED].z == 16, "the bed is not walked through: jumped onto (z 16)");
+    CHECK(map_walkable(room, 52, 126) && room->points[SPOT_RUG].z == 0, "the rug is walkable: she plays and sleeps on it (owner, 2026-10-19)");
+    CHECK(room->points[SPOT_PAD].x < LILI_LOG_W / 3 && room->points[SPOT_BOWL_FOOD].x >= 2 * LILI_LOG_W / 3 && room->points[SPOT_BOWL_WATER].x >= 2 * LILI_LOG_W / 3,
+          "the pad in the left third, food and water in the right third (owner, 2026-10-19)");
+    CHECK(room->points[SPOT_DECO].x >= LILI_LOG_W / 3 && room->points[SPOT_DECO].x < 2 * LILI_LOG_W / 3, "the season's decoration in the middle third");
     CHECK(map_walkable(room, 208, 150), "the nook under the bench is walkable (H10, H11)");
     CHECK(!map_walkable(yard, 50, 62) && !map_walkable(yard, 120, 10), "the yard: a tree trunk and the hedge block");
-    const int interactive[] = { SPOT_BOWL_FOOD, SPOT_BOWL_WATER, SPOT_PAD, SPOT_ROPE_START, SPOT_PLUSH_START };
+    const int interactive[] = { SPOT_BOWL_FOOD, SPOT_BOWL_WATER, SPOT_PAD, SPOT_ROPE_START, SPOT_PLUSH_START, SPOT_DECO };
     for (size_t i = 0; i < sizeof interactive / sizeof interactive[0]; i++)
         CHECK(mask_point_safe(room->points[interactive[i]].x, room->points[interactive[i]].y), "every interactive room point is in the safe zone (spec 5.2)");
-    /* the Y-sort: behind the bed Lili is covered by it, in front of it she covers it */
+    /* the Y-sort, in the yard (H13): behind a bush Lili is covered by it, in front of it she covers it */
     world_init(&s_world, 1); actor_t *l = &s_world.actors[0];
-    l->x = 52; l->y = 80; frame();                     /* just behind the bed's back edge (y 84): the raised bed hides her body */
-    uint16_t behind = px(52, 74);
-    l->y = 200; frame();
-    uint16_t front = px(44, 190), bedfront = px(52, 170);  /* (44, 190): her fur, left of the white chest */
-    l->x = 120; l->y = 140; frame();
-    CHECK(behind == s_r8.lut[pal_ramp(RAMP_ID_BLANKET, 6)], "behind the bed, the bed (its top face) covers Lili");
-    CHECK(front != bedfront && front == s_r8.lut[PAL_FUR + 5], "in front of the bed, Lili is drawn over the floor");
+    s_world.view = VIEW_YARD; l->view = VIEW_YARD;
+    l->x = 40; l->y = 112; frame();                    /* bush_1: footprint y 120-134, raised 18: its top face hides her */
+    uint16_t behind = px(40, 106);
+    l->y = 170; frame();
+    uint16_t front = px(32, 166);                      /* her fur, left of the white chest */
+    CHECK(behind == s_r8.lut[pal_ramp(RAMP_ID_HEDGE, 6)], "behind a bush, the bush covers Lili (H13)");
+    CHECK(front == s_r8.lut[PAL_FUR + 5], "in front of a bush, Lili is drawn over the grass");
+    world_init(&s_world, 1); frame();
+    uint16_t rugpx = px(30, 100);
+    int on_rug = 0; for (int sh = 0; sh < 8; sh++) on_rug |= rugpx == s_r8.lut[pal_ramp(RAMP_ID_RUG_GRAY, sh)] || rugpx == s_r8.lut[pal_ramp(RAMP_ID_RUG_GREEN, sh)];
+    CHECK(on_rug, "the rug is drawn where the bed was");
 
     /* --- the world --- */
     world_init(&s_world, 1234);

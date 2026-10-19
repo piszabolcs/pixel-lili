@@ -17,8 +17,9 @@ import json, os, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAPS = ["room", "yard"]                     # view order: VIEW_ROOM = 0, VIEW_YARD = 1
 RAMPS = ["floor", "wall", "grass", "hedge", "fur", "fur_w", "wood", "blanket", "metal",
-         "water", "pad", "house", "flower", "leaf"]
+         "water", "pad", "house", "flower", "leaf", "rug_green", "rug_gray"]
 CELL, GW, GH = 4, 60, 60
+PATTERNS = {"": 0, "rug": 1}               # how a prop is drawn: 0 a plain box, 1 the rug's triangles
 
 def inside_poly(x, y, poly):
     """even-odd ray casting"""
@@ -73,7 +74,7 @@ def main():
         for p in sorted(m["props"], key=lambda p: (not p.get("flat", False), p["rect"][1] + p["rect"][3])):
             x, y, w, hh = p["rect"]
             c.append(f'    {{ "{p["id"]}", {x}, {y}, {w}, {hh}, RAMP_ID_{p["ramp"].upper()}, {p.get("height", 0)}, '
-                     f'{1 if p.get("flat") else 0}, {y + hh} }},')
+                     f'{1 if p.get("flat") else 0}, {y + hh}, {PATTERNS[p.get("pattern", "")]} }},')
         c.append("};")
         zl = []
         for zid, z in m.get("zones", {}).items():

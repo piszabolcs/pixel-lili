@@ -8,19 +8,19 @@ enum {
     SPOT_BOWL_WATER,
     SPOT_PLUSH_START,
     SPOT_ROPE_START,
-    SPOT_BED_JUMP,
     SPOT_BUSH_1,
     SPOT_BUSH_2,
     SPOT_BUSH_3,
     SPOT_CENTER,
+    SPOT_DECO,
     SPOT_DOOR,
     SPOT_DOOR_YARD,
     SPOT_FLOWERS,
     SPOT_FRONT,
     SPOT_GRASS,
     SPOT_NOOK,
-    SPOT_ON_BED,
     SPOT_PAD,
+    SPOT_RUG,
     SPOT_TREE,
     SPOT_COUNT
 };
@@ -39,6 +39,8 @@ enum {
     RAMP_ID_HOUSE,
     RAMP_ID_FLOWER,
     RAMP_ID_LEAF,
+    RAMP_ID_RUG_GREEN,
+    RAMP_ID_RUG_GRAY,
     RAMP_ID_COUNT
 };
 extern const map_t MAPS[2];

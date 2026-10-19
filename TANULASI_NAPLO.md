@@ -104,6 +104,14 @@ Hibák: (1) `/*` a kommentben (`assets/maps/*.json`) beágyazott komment-figyelm
 
 Fogalmak: kódgenerálás (build-time), bitmaszk, Y-rendezés (painter's algorithm)
 
+## 2026-10-19 | M2, 4b. lépés: a szőnyeg az ágy helyett, új alsó sor
+
+Készült: a `room.json`-ban az ágy helyén a gazdi szőnyege (lapos, járható, háromszögminta 4 színnel és bolyhos pöttyözéssel), a pelenka a bal, a tálak a jobb harmadban, középen a dísz helye; a generátor `pattern` mezőt kapott; a mélységi tesztet egy udvari bokor váltotta.
+
+Döntés: a szőnyeg mintáját kód rajzolja (helyőrző), a pöttyözés a pixel koordinátájából számolt hash, így minden képkockán azonos; a végleges textúra az M3-ban a fotó alapján készül.
+
+Fogalmak: hash-alapú (determinisztikus) textúra
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -179,3 +187,5 @@ Fogalmak: kódgenerálás (build-time), bitmaszk, Y-rendezés (painter's algorit
 **bitmaszk:** sok igen/nem érték bitenként tárolva; a 60x60 = 3600 járhatósági cella 450 bájt. Kiolvasás: a cella sorszámából bájt (`>> 3`) és bit (`& 7`).
 
 **Y-rendezés (painter's algorithm):** hátulról előre rajzolunk, mint a festő: a kisebb Y (távolabbi) elem előbb, a nagyobb Y (közelebbi) később, így a közelebbi eltakarja a távolabbit. A kulcs a talppont Y-ja.
+
+**hash-alapú textúra:** a pixel koordinátáiból egy keverőfüggvénnyel (hash) "véletlenszerű" számot képzünk, és ebből döntjük el, sötétebb-e. Mivel csak a koordinátától függ, minden képkockán ugyanaz, nem villog, és nem kell hozzá tárolt kép vagy PRNG-állapot.

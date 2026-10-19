@@ -38,7 +38,27 @@ const map_t *world_map(const world_t *w, view_t v) { (void)w; return &MAPS[v]; }
 
 /* a prop seen from the 3/4 camera: its footprint (x, y, w, h) on the floor, raised by `height`:
    the top face is lighter, the front face darker, a 1 px outline around both (spec 7.1) */
+/* the owner's rug (photo, 2026-10-19): big triangles in four colours, cut by the two
+   diagonals and the middle line, with a shaggy speckle. The speckle comes from a hash of
+   the pixel's own position, so it is the same in every frame (no flicker, no PRNG state). */
+static void draw_rug(render8_t *r, const map_prop_t *p) {
+    const uint8_t col[8] = { pal_ramp(RAMP_ID_RUG_GREEN, 5), pal_ramp(RAMP_ID_RUG_GRAY, 7), pal_ramp(RAMP_ID_RUG_GRAY, 5), pal_ramp(RAMP_ID_RUG_GRAY, 2),
+                             pal_ramp(RAMP_ID_RUG_GRAY, 5), pal_ramp(RAMP_ID_RUG_GREEN, 5), pal_ramp(RAMP_ID_RUG_GRAY, 2), pal_ramp(RAMP_ID_RUG_GRAY, 7) };
+    r8_fill(r, p->x, p->y, p->w, p->h, pal_ramp(RAMP_ID_RUG_GRAY, 1));          /* the bound edge */
+    for (int y = 1; y < p->h - 1; y++)
+        for (int x = 1; x < p->w - 1; x++) {
+            float u = (float)x / p->w, v = (float)y / p->h;
+            int region = (u > v) | ((u + v > 1.0f) << 1) | ((v > 0.5f) << 2);
+            uint8_t c = col[region];
+            uint32_t hsh = (uint32_t)(p->x + x) * 73856093u ^ (uint32_t)(p->y + y) * 19349663u;
+            if ((hsh >> 7) % 6 == 0) c = (uint8_t)(c - 1);                            /* a darker tuft: one shade down the ramp */
+            int lx = p->x + x, ly = p->y + y;
+            if (lx >= 0 && ly >= 0 && lx < LILI_LOG_W && ly < LILI_LOG_H) r->px[ly * LILI_LOG_W + lx] = c;
+        }
+}
+
 static void draw_prop(render8_t *r, const map_prop_t *p) {
+    if (p->pattern == 1) { draw_rug(r, p); return; }
     if (p->flat) {                                          /* a door, a pad: drawn on the floor/wall */
         r8_fill(r, p->x, p->y, p->w, p->h, PAL_OUTLINE);
         r8_fill(r, p->x + 1, p->y + 1, p->w - 2, p->h - 2, pal_ramp(p->ramp, 5));

@@ -21,6 +21,7 @@ enum {
     PAL_FUR_W   = 56,       /* 56..63: her white chest and paws (L3) */
     PAL_WOOD    = 64, PAL_BLANKET = 72, PAL_METAL = 80, PAL_WATER = 88,
     PAL_PAD     = 96, PAL_HOUSE   = 104, PAL_FLOWER = 112, PAL_LEAF = 120,
+    PAL_RUG_GREEN = 128, PAL_RUG_GRAY = 136,      /* the owner's rug: green, off-white, light and dark grey triangles */
 };
 
 /* the ramps in the order of tools/gen_maps.py RAMPS (RAMP_ID_*): ramp k starts at 16 + 8 k */

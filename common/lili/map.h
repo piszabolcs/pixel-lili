@@ -13,7 +13,7 @@
 #define MAP_WALK_BYTES ((MAP_GW * MAP_GH + 7) / 8)     /* 450: one bit per cell */
 
 typedef struct { int16_t x, y, z; } map_point_t;
-typedef struct { const char *name; int16_t x, y, w, h; uint8_t ramp; uint8_t height; uint8_t flat; int16_t sort_y; } map_prop_t;
+typedef struct { const char *name; int16_t x, y, w, h; uint8_t ramp; uint8_t height; uint8_t flat; int16_t sort_y; uint8_t pattern; } map_prop_t;   /* pattern 0 box, 1 rug */
 typedef struct { const char *name; uint8_t kind; int16_t a, b, c, d; const int16_t *poly; uint8_t n; } map_zone_t;   /* kind 0 rect (a b c d = x y w h), 1 polygon */
 
 typedef struct {
