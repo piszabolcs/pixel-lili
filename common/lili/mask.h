@@ -28,5 +28,9 @@ uint8_t mask_att(const mask_t *m, int x, int y); /* any physical pixel, for test
 #define LILI_SAFE_MARGIN 24
 void mask_debug_draw(render8_t *r, uint8_t colour);
 int  mask_point_safe(int lx, int ly);            /* 1 = a logical point may hold an interactive centre */
+/* the rule in use since 2026-10-19 (docs/decisions.md): an interactive thing's whole rectangle
+   is on the glass, at least `margin` logical px inside the visible edge (the rounded box is
+   convex, so its four corners are enough to check) */
+int  mask_rect_visible(int lx, int ly, int w, int h, int margin);
 
 #endif

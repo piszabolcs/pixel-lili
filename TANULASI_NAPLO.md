@@ -112,6 +112,16 @@ Döntés: a szőnyeg mintáját kód rajzolja (helyőrző), a pöttyözés a pix
 
 Fogalmak: hash-alapú (determinisztikus) textúra
 
+## 2026-10-19 | M2, 4c. lépés: a bútorok a szélekhez, új láthatósági szabály
+
+Készült: a sarokülő, a pelenka és a tálak 70 %-kal közelebb a jobb és az alsó szélhez; `mask_rect_visible`: egy tárgy teljes téglalapja az üvegen van-e (a lekerekített négyzet konvex, ezért elég a 4 sarkát ellenőrizni).
+
+Döntés: a "középpont 24 px-re a saroktól" szabályt a mérhetőbb "a teljes tárgy látszik, 2 px margóval" váltotta, mert a 24 becsült szám volt, és a kérés (a szélekre tett tárgyak) e nélkül nem teljesíthető.
+
+Hiba: a Python-heredocban írt C-stringben a `\n` megint valódi sortöréssé vált; C-stringet ezután csak szerkesztőeszközzel írok.
+
+Fogalmak: konvex alakzat (sarokellenőrzés)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -189,3 +199,5 @@ Fogalmak: hash-alapú (determinisztikus) textúra
 **Y-rendezés (painter's algorithm):** hátulról előre rajzolunk, mint a festő: a kisebb Y (távolabbi) elem előbb, a nagyobb Y (közelebbi) később, így a közelebbi eltakarja a távolabbit. A kulcs a talppont Y-ja.
 
 **hash-alapú textúra:** a pixel koordinátáiból egy keverőfüggvénnyel (hash) "véletlenszerű" számot képzünk, és ebből döntjük el, sötétebb-e. Mivel csak a koordinátától függ, minden képkockán ugyanaz, nem villog, és nem kell hozzá tárolt kép vagy PRNG-állapot.
+
+**konvex alakzat:** bármely két belső pontját összekötő szakasz is belül marad (pl. a lekerekített négyzet). Ezért ha egy téglalap mind a 4 sarka belül van, az egész téglalap belül van: 4 ellenőrzés elég a több ezer pixel helyett.

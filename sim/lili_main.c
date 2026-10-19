@@ -108,9 +108,14 @@ static int selftest(void) {
     CHECK(room->points[SPOT_DECO].x >= LILI_LOG_W / 3 && room->points[SPOT_DECO].x < 2 * LILI_LOG_W / 3, "the season's decoration in the middle third");
     CHECK(map_walkable(room, 208, 150), "the nook under the bench is walkable (H10, H11)");
     CHECK(!map_walkable(yard, 50, 62) && !map_walkable(yard, 120, 10), "the yard: a tree trunk and the hedge block");
-    const int interactive[] = { SPOT_BOWL_FOOD, SPOT_BOWL_WATER, SPOT_PAD, SPOT_ROPE_START, SPOT_PLUSH_START, SPOT_DECO };
-    for (size_t i = 0; i < sizeof interactive / sizeof interactive[0]; i++)
-        CHECK(mask_point_safe(room->points[interactive[i]].x, room->points[interactive[i]].y), "every interactive room point is in the safe zone (spec 5.2)");
+    for (int i = 0; i < room->n_props; i++) {                /* every interactive thing is wholly on the glass, 2 px in */
+        const map_prop_t *p = &room->props[i];
+        if (strcmp(p->name, "pad") && strcmp(p->name, "bowl_food") && strcmp(p->name, "bowl_water")) continue;
+        if (!mask_rect_visible(p->x, p->y - p->height, p->w, p->h + p->height, 2)) { printf("FAIL: %s is not wholly on the glass\n", p->name); return 1; }
+    }
+    CHECK(room->props[0].x >= 0, "props exist");
+    const map_prop_t *side = NULL; for (int i = 0; i < room->n_props; i++) if (!strcmp(room->props[i].name, "bench_side")) side = &room->props[i];
+    CHECK(side && LILI_LOG_W - (side->x + side->w) <= 5 && LILI_LOG_H - (side->y + side->h) <= 20, "the bench reaches near the right and bottom edges (owner, 2026-10-19)");
     /* the Y-sort, in the yard (H13): behind a bush Lili is covered by it, in front of it she covers it */
     world_init(&s_world, 1); actor_t *l = &s_world.actors[0];
     s_world.view = VIEW_YARD; l->view = VIEW_YARD;

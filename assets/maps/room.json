@@ -1,38 +1,38 @@
 {
   "name": "room",
   "view": 0,
-  "_note": "Spec 8.2 as changed by the owner on 2026-10-19: the bed became his room's rug (Lili played and slept on it with him), the pad is in the bottom-left third, food and water side by side in the bottom-right third, the season's decoration in the middle. Logical px (240 x 240), y is depth. Edit this file, then `python3 tools/gen_maps.py` (the sim's make does it).",
+  "_note": "Spec 8.2 as changed by the owner on 2026-10-19: the bed became his room's rug (Lili played and slept on it with him), the pad is in the bottom-left third, food and water side by side in the bottom-right third, the season's decoration in the middle; later the same evening the bench, the pad and the bowls moved 70 % closer to the bottom and right edges. Logical px (240 x 240), y is depth. Edit this file, then `python3 tools/gen_maps.py` (the sim's make does it).",
   "background": { "floor_ramp": "floor", "wall_ramp": "wall", "wall_bottom": 64 },
   "floor": [[4, 66], [236, 66], [236, 236], [4, 236]],
   "blocked": [
-    { "id": "backrest",  "rect": [150, 64, 76, 10] }
+    { "id": "backrest",  "rect": [160, 64, 76, 10] }
   ],
   "points": {
     "spot_door":    [120, 70, 0],
     "spot_center":  [120, 140, 0],
     "spot_front":   [120, 210, 0],
-    "spot_nook":    [208, 150, 0],
+    "spot_nook":    [218, 160, 0],
     "spot_rug":     [52, 126, 0],
-    "bowl_food":    [176, 200, 0],
-    "bowl_water":   [200, 200, 0],
-    "spot_pad":     [52, 196, 0],
-    "spot_deco":    [120, 200, 0],
+    "bowl_food":    [176, 225, 0],
+    "bowl_water":   [200, 225, 0],
+    "spot_pad":     [52, 218, 0],
+    "spot_deco":    [120, 218, 0],
     "rope_start":   [70, 150, 0],
     "plush_start":  [150, 120, 0]
   },
   "zones": {
     "sunbeam": { "poly": [[104, 70], [136, 70], [160, 150], [84, 150]] },
-    "nook":    { "rect": [196, 96, 30, 80] },
+    "nook":    { "rect": [206, 96, 30, 125] },
     "rug":     { "rect": [14, 84, 76, 84] },
-    "deco":    { "rect": [100, 188, 40, 24] }
+    "deco":    { "rect": [100, 206, 40, 24] }
   },
   "props": [
     { "id": "door",       "rect": [104, 20, 32, 44], "ramp": "wood",    "flat": true },
     { "id": "rug",        "rect": [14, 84, 76, 84],  "ramp": "rug_gray", "flat": true, "pattern": "rug" },
-    { "id": "pad",        "rect": [30, 184, 44, 26], "ramp": "pad",     "flat": true },
-    { "id": "bench_back", "rect": [150, 64, 76, 32], "ramp": "wood",    "height": 22 },
-    { "id": "bench_side", "rect": [196, 96, 30, 80], "ramp": "wood",    "height": 22, "seat_only": true },
-    { "id": "bowl_food",  "rect": [170, 196, 12, 8], "ramp": "metal",   "height": 4 },
-    { "id": "bowl_water", "rect": [194, 196, 12, 8], "ramp": "water",   "height": 4 }
+    { "id": "pad",        "rect": [30, 205, 44, 26], "ramp": "pad",     "flat": true },
+    { "id": "bench_back", "rect": [160, 64, 76, 32], "ramp": "wood",    "height": 22 },
+    { "id": "bench_side", "rect": [206, 96, 30, 125], "ramp": "wood",    "height": 22, "seat_only": true },
+    { "id": "bowl_food",  "rect": [170, 221, 12, 8], "ramp": "metal",   "height": 4 },
+    { "id": "bowl_water", "rect": [194, 221, 12, 8], "ramp": "water",   "height": 4 }
   ]
 }

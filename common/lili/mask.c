@@ -68,3 +68,12 @@ void mask_debug_draw(render8_t *r, uint8_t colour) {
         for (int x = 0; x < LILI_LOG_W; x++)
             if (((x + y) & 3) == 0 && !mask_point_safe(x, y)) r->px[y * LILI_LOG_W + x] = colour;   /* hatched */
 }
+
+int mask_rect_visible(int lx, int ly, int w, int h, int margin) {
+    const float R = (float)LILI_CORNER_R, c = LILI_LOG_W / 2.0f;
+    const int xs[2] = { lx, lx + w }, ys[2] = { ly, ly + h };       /* the rectangle's outer corners, in pixel edges */
+    for (int i = 0; i < 2; i++)
+        for (int j = 0; j < 2; j++)
+            if (-sd_round_square((float)xs[i], (float)ys[j], c, c, c, R) < (float)margin) return 0;
+    return 1;
+}
