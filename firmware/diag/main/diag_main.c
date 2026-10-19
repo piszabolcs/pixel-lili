@@ -92,8 +92,14 @@ static void bar(int x, int y, int w, int h, float v, float lo, float hi, uint16_
     gfx_rect(x - 1, y - 1, w + 2, h + 2, C_GREY);
     gfx_fill(x, y, (int)(w * f), h, c);
 }
+/* the measured glass corner (M1.7, 2026-10-19): 72 physical px. A line of text near
+   the bottom must stay inside the corner arcs: at y = 444..462 the arc leaves
+   x >= 25 free (worst row y = 462: 72 - sqrt(72^2 - 54^2)), so a centred
+   300 px footer (x = 90..390) is safe on every page. */
+#define CORNER_R 72
 static void footer(void) {
-    gfx_textf(24, 456, 2, C_GREY, "%s  KEY3/PWR: lap  BOOT: dim  KEY3 1.5s: alvás", SCENE_NAMES[s_scene]);
+    const char *t = "KEY3/PWR: lap   BOOT: dim";
+    gfx_text(240 - gfx_text_w(2, t) / 2, 444, 2, C_GREY, t);
 }
 static void draw_mic(const whistle_state_t *ws) {
     gfx_clear(C_BLACK);
@@ -141,27 +147,27 @@ static void draw_mic(const whistle_state_t *ws) {
 }
 static void draw_corner(void) {
     gfx_clear(C_BLACK);
-    static const int R[4] = { 32, 36, 40, 44 };
-    static const uint16_t COL[4] = { C_RED, C_YELLOW, C_GREEN, C_CYAN };
-    static const char *NAME[4] = { "PIROS", "SÁRGA", "ZÖLD", "CIÁN" };
-    for (int k = 0; k < 4; k++) {
+    /* six candidate corner radii, 8 px apart: the 2.16's glass radius is not documented
+       (pocket-tank: 40 "by the maker's pictures, not measured"; a first photo said "more") */
+    enum { NR = 6 };
+    static const int R[NR] = { 32, 40, 48, 56, 64, 72 };
+    static const uint16_t COL[NR] = { C_RED, C_ORANGE, C_YELLOW, C_GREEN, C_CYAN, C_BLUE };
+    static const char *NAME[NR] = { "PIROS", "NARANCS", "SÁRGA", "ZÖLD", "CIÁN", "KÉK" };
+    for (int k = 0; k < NR; k++) {
         float r = R[k]; int b = R[k] + 2;
         gfx_ring(r, r, r, 2.0f, COL[k], 0, 0, b, b);
         gfx_ring(GFX_W - r, r, r, 2.0f, COL[k], GFX_W - b, 0, GFX_W, b);
         gfx_ring(r, GFX_H - r, r, 2.0f, COL[k], 0, GFX_H - b, b, GFX_H);
         gfx_ring(GFX_W - r, GFX_H - r, r, 2.0f, COL[k], GFX_W - b, GFX_H - b, GFX_W, GFX_H);
-        /* ticks on the edges at r from each corner */
-        gfx_vline(R[k], 0, 6, COL[k]); gfx_vline(GFX_W - 1 - R[k], 0, 6, COL[k]); gfx_vline(R[k], GFX_H - 6, 6, COL[k]); gfx_vline(GFX_W - 1 - R[k], GFX_H - 6, 6, COL[k]);
-        gfx_hline(0, R[k], 6, COL[k]); gfx_hline(GFX_W - 6, R[k], 6, COL[k]); gfx_hline(0, GFX_H - 1 - R[k], 6, COL[k]); gfx_hline(GFX_W - 6, GFX_H - 1 - R[k], 6, COL[k]);
     }
-    /* the straight edges between the corners, 1 px: where the glass ends */
-    gfx_hline(46, 0, GFX_W - 92, C_WHITE); gfx_hline(46, GFX_H - 1, GFX_W - 92, C_WHITE);
-    gfx_vline(0, 46, GFX_H - 92, C_WHITE); gfx_vline(GFX_W - 1, 46, GFX_H - 92, C_WHITE);
-    int w = gfx_text_w(3, "SAROK TESZT"); gfx_text(240 - w / 2, 120, 3, C_WHITE, "SAROK TESZT");
-    for (int k = 0; k < 4; k++) gfx_textf(150, 170 + k * 34, 3, COL[k], "%d px  %s", R[k], NAME[k]);
-    w = gfx_text_w(2, "MELYIK ÍV SIMUL A KÁVA SARKÁHOZ?"); gfx_text(240 - w / 2, 316, 2, C_WHITE, "MELYIK ÍV SIMUL A KÁVA SARKÁHOZ?");
-    w = gfx_text_w(2, "(a legkisebb, ami még teljesen látszik)"); gfx_text(240 - w / 2, 340, 2, C_GREY, "(a legkisebb, ami még teljesen látszik)");
-    if (s_corner_pick) { char b[40]; snprintf(b, sizeof b, "VÁLASZTOTT: %d px", s_corner_pick); w = gfx_text_w(3, b); gfx_text(240 - w / 2, 380, 3, C_GREEN, b); }
+    /* the straight edges, 1 px at the outermost row/column: does the glass show px 0 and 479? */
+    gfx_hline(80, 0, GFX_W - 160, C_WHITE); gfx_hline(80, GFX_H - 1, GFX_W - 160, C_WHITE);
+    gfx_vline(0, 80, GFX_H - 160, C_WHITE); gfx_vline(GFX_W - 1, 80, GFX_H - 160, C_WHITE);
+    int w = gfx_text_w(3, "SAROK TESZT"); gfx_text(240 - w / 2, 96, 3, C_WHITE, "SAROK TESZT");
+    for (int k = 0; k < NR; k++) gfx_textf(150, 140 + k * 30, 3, COL[k], "%d px  %s", R[k], NAME[k]);
+    w = gfx_text_w(2, "MELYIK ÍV SIMUL A KÁVA SARKÁHOZ?"); gfx_text(240 - w / 2, 330, 2, C_WHITE, "MELYIK ÍV SIMUL A KÁVA SARKÁHOZ?");
+    w = gfx_text_w(2, "(a legkisebb, ami még teljesen látszik)"); gfx_text(240 - w / 2, 354, 2, C_GREY, "(a legkisebb, ami még teljesen látszik)");
+    if (s_corner_pick) { char b[40]; snprintf(b, sizeof b, "VÁLASZTOTT: %d px", s_corner_pick); w = gfx_text_w(3, b); gfx_text(240 - w / 2, 384, 3, C_GREEN, b); }
     footer();
 }
 static void draw_info(const whistle_state_t *ws) {

@@ -24,6 +24,14 @@ Döntés: másodperchatárhoz igazított küldés kézi gépelés helyett, mert 
 
 Fogalmak: BCD, oszcillátor-leállás jelzőbit (OS)
 
+## 2026-10-19 | 3. lépés: M1.7 sarokteszt
+
+Készült: a sarokteszt 32..72 px közötti 6 ívvel; mérés: CORNER_R = 72 fizikai px (36 logikai); a diag lábléce ehhez igazítva rövidebb és középre zárt.
+
+Döntés: a tesztet kibővítettük 72 px-ig, mert az első fotó már mutatta, hogy a spec 40 px-es kiinduló értéke kevés; a 72-t választottuk, mert az a legkisebb, ami teljesen látszik.
+
+Fogalmak: fizikai és logikai pixel, biztonsági zóna
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -43,3 +51,7 @@ Fogalmak: BCD, oszcillátor-leállás jelzőbit (OS)
 **BCD (binárisan kódolt decimális):** minden tizedes számjegy külön 4 biten; a 0x59 bájt 59-et jelent. Az RTC-k így tárolják az időt, mert közvetlenül kijelezhető; olvasáskor/íráskor át kell váltani (`bcd2bin`, `bin2bcd`).
 
 **OS bit (oscillator stop):** a PCF85063 másodperc-regiszterének 7. bitje; 1, ha az óra oszcillátora valaha leállt (pl. teljes áramtalanítás) a legutóbbi beállítás óta. Ezért "valid" csak akkor az idő, ha ez a bit 0.
+
+**fizikai és logikai pixel:** a kijelző 480x480 fizikai pixel; a játék világa 240x240 logikai rácson él, és kirajzoláskor minden logikai pixel 2x2 fizikai pixel lesz. A sarok 72 fizikai px = 36 logikai px.
+
+**biztonsági zóna:** a képernyőnek az a része, ahol egy elem biztosan teljesen látszik és megérinthető. A lekerekített sarkoknál egy pont akkor látszik, ha a sarokkör középpontjától legfeljebb R távolságra van; a spec 5.2 szerint az érinthető elemek közepe ennél még 24 logikai px-szel beljebb legyen.

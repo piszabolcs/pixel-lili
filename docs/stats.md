@@ -20,3 +20,4 @@ A pocket-tank saját mért adatai (upstream): `docs/pocket-tank-stats.md` és `d
 | 2026-10-19 | RTC eltérés beállítás előtt | RTC - PC = -167 s (a pocket-tank boot-kori seedje óta, nem drift) | tools/rtc_sync.py --check, diag fw |
 | 2026-10-19 17:23:09 | RTC beállítás a PC órájához igazítva | utána RTC - PC = -0,61 .. +0,17 s (egész másodperces regiszter, +-1 s) | tools/rtc_sync.py |
 | 2026-10-19 17:27 | RTC megtartás PMIC-kikapcsolás után (ki 17:26:19, be 17:26:47, akkuról) | RTC - PC = -0,56 .. +0,22 s, valid (OS bit 0): az idő megmaradt | tools/rtc_sync.py --check, diag powerlog |
+| 2026-10-19 | Kijelző sarok sugara (látható üveg) | 64 px ív levágva, 72 px ív teljesen látszik -> CORNER_R 72 fizikai px; egyenes széleken nincs takarás (px 0 és 479 látszik) | diag sarokteszt, gazdi fotója |

@@ -17,8 +17,8 @@ A soros naplóban a gombnyomások alatt nem jelent meg esemény (`docs/logs/2026
 ## M1.4 IMU megszakítás (nyitott)
 A square lapon **nincs I/O expander** (a 1.75-ön a QMI_INT1 az expander P6 lábán van). A `board_pins.h` a square-hez nem ad IMU INT GPIO-t. A kapcsolási rajzból kell kinézni (Waveshare wiki, `resources/ESP32-S3-Touch-AMOLED-2.16/`), van-e közvetlen GPIO; ha nincs, marad a periodikus ébredés + lekérdezés (spec 5.7 kockázat).
 
-## M1.7 Sarok (CORNER_R)
-Még nincs mérve. A pocket-tank 40 px-szel fut (a gyártó képei alapján).
+## M1.7 Sarok (CORNER_R) (kész, 2026-10-19)
+**72 fizikai px** (36 logikai). 64 px-es ív levágva, 72 px-es teljesen látszik, az egyenes széleken a legszélső pixelsor is látható. Szöveg a sarok közelében: a szabad x a sarok alján `R - sqrt(R^2 - dy^2)`, ahol dy a sor és a sarokközéppont függőleges távolsága (pl. y = 462-n 25 px).
 
 ## Megfigyelések az első bootból
 - A boot ~8 s-ig tart a modell bench miatt (1,1 s -> 9,2 s), ez alatt a kijelző már él.
