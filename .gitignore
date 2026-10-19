@@ -52,3 +52,10 @@ sim/build-watch/
 *.blend1
 *.ppm
 /tmp/
+
+# Pixel Lili diag build (firmware/diag)
+firmware/diag/build/
+firmware/diag/sdkconfig
+firmware/diag/sdkconfig.old
+firmware/diag/dependencies.lock
+firmware/diag/managed_components/

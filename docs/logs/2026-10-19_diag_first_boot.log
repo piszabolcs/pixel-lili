@@ -1,0 +1,9 @@
+--- 17:02:23 port COM3 open
+17:02:26 I (105) esp_image: segment 1: paddr=00023ac4 vaddr=3fc98000 sizeI (6059) diag: 35.9 fps (ACTIVE) | frame 27.3 ms | mic L -55 R -56 dBFS, peak 1463 Hz ratio 11.2 dB, whistles 0 | heap 224 KB | 4137 mV USB
+17:02:31 I (11068) diag: 36.9 fps (ACTIVE) | frame 26.9 ms | mic L -55 R -55 dBFS, peak 984 Hz ratio 16.7 dB, whistles 0 | heap 224 KB | 4138 mV USB
+>>> help
+17:02:32 I (11404) diag: commands: help | scene <0-3> (mic, sarok, info, naplo) | bright <0-255> | dim on|off | time | settime YYYY-MM-DDTHH:MM:SS | bat | pmic | imu | wom on|off [thr_mg] [blank] (arm the WoM awake: INFO shows INT1) | womsleep [timeout_s] (desk sleep: a pick-up or PWR wakes) | sleep [sample_s] (sleep, PWR wakes; WoM off) | power run [active_min] [dim_min] | power stop | powerlog [clear] | mic gain <0-14> | mic regs | mic on|off | whistle [thr_db frames tol floor_db] | corner <px> | fps | restart | poweroff
+>>> time
+17:02:33 I (12415) rtc: RTC 2026-10-19 16:59:46 (valid) | system 2026-10-19 16:59:46 | Control_1 00 Control_2 00
+17:02:34 I (13477) whistle: FÜTTY #1: 1266 Hz, peak -59.0 dBFS, 17.1 dB over the band (8 frames)
+17:02:36 I (16084) diag: 35.7 fps (ACTIVE) | frame 27.6 ms | mic L -59 R -61 dBFS, peak 1989 Hz ratio 16.5 dB, whistles 1 | heap 224 KB | 4135 mV USB
