@@ -23,31 +23,35 @@ def load(path):
                          frac=float(f[4]), low_rel_db=float(f[5])))
     return rows
 
-def run(rows, ratio, frac, low, floor, frames=8, gap=1, tol=0.15, old=False):
+def run(rows, ratio, frac, low, floor, frames=6, gap=1, tol=0.15, old=False, peak_min=-99.0, rearm=6):
     """events per label. old=True: the current firmware (gaps of 2 frames allowed,
     the reference frequency drifts with the peak, no frac / low gates)."""
-    ev = {k: 0 for k in NAMES}; streak = 0; quiet = 0; ref = 0.0
+    ev = {k: 0 for k in NAMES}; streak = 0; quiet = 0; ref = 0.0; armed = True; pmax = -99.0
     for r in rows:
         if old: tone = r["ratio_db"] > 12 and r["peak_db"] > -60
         else:   tone = r["ratio_db"] > ratio and r["frac"] >= frac and r["low_rel_db"] <= low and r["peak_db"] > floor
         if tone:
             if streak > 0 and abs(r["peak_hz"] - ref) <= tol * ref:
-                streak += 1
+                streak += 1; pmax = max(pmax, r["peak_db"])
                 if old: ref = 0.8 * ref + 0.2 * r["peak_hz"]
             else:
-                streak = 1; ref = r["peak_hz"]
+                streak = 1; ref = r["peak_hz"]; pmax = r["peak_db"]
             quiet = 0
-            if streak == frames and r["label"] in ev: ev[r["label"]] += 1
+            if old and streak == frames and r["label"] in ev: ev[r["label"]] += 1
+            if not old and streak >= frames and armed and pmax >= peak_min and r["label"] in ev:
+                ev[r["label"]] += 1; armed = False        # the firmware's v3 rule (whistle.c)
         else:
             quiet += 1
             if quiet > (2 if old else gap): streak = 0
+            if quiet >= rearm: armed = True
     return ev
 
 def fmt(ev): return "  ".join(f"{NAMES[k]} {ev[k]}" for k in NAMES)
 
 def main():
     rows = load(sys.argv[1])
-    print(f"{len(rows)} frames\nold detector:      {fmt(run(rows, 0, 0, 0, 0, old=True))}\n")
+    print(f"{len(rows)} frames\nold detector:      {fmt(run(rows, 0, 0, 0, 0, frames=8, old=True))}")
+    print(f"firmware v3:       {fmt(run(rows, 16, 0.80, 10, -65, frames=6, peak_min=-42))}\n")
     best = []
     for ratio, frac, low, floor in itertools.product((15, 18, 20, 22), (0.75, 0.8, 0.85, 0.9), (-5, 0, 5, 10), (-60, -55, -50)):
         ev = run(rows, ratio, frac, low, floor)

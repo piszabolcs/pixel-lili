@@ -58,8 +58,9 @@ static int s_corner_pick;
 /* the step-5 labelled recording: `label` arms it, BOOT starts it, the screen says what to do */
 typedef struct { const char *say; int secs; } lab_phase_t;
 static const lab_phase_t LAB[] = {
-    { "CSEND", 10 }, { "FÜTTYENTS 5x", 25 }, { "BESZÉLJ / PODCAST", 25 },
-    { "TEDD LE, VEDD FEL 5x", 25 }, { "KOPOGJ AZ ASZTALON", 15 },
+    /* run 2 (2026-10-19 evening): normal-volume whistles and a long podcast stretch, the two
+       things run 1 lacked; labels stay 1 silence, 2 whistle, 3 speech/podcast */
+    { "CSEND", 5 }, { "FÜTTY NORMÁLAN 10x", 40 }, { "PODCAST SZÓLJON", 75 },
 };
 #define LAB_N ((int)(sizeof LAB / sizeof LAB[0]))
 static bool s_lab_armed; static int s_lab_phase = -1; static int64_t s_lab_t0;
@@ -134,8 +135,8 @@ static void draw_mic(const whistle_state_t *ws) {
         if (s_prun == PL_WAIT) gfx_text(24, 38, 2, C_ORANGE, "MÉRÉS: HÚZD KI AZ USB-T");
         else gfx_textf(24, 38, 2, C_ORANGE, "MÉRÉS: %s  %d:%02d hátra", plog_state_name(s_prun), left / 60, left % 60);
     } else if (!s_mic_ok) gfx_text(24, 38, 2, C_RED, "NINCS ES7210");
-    gfx_text(24, 62, 2, C_WHITE, "BAL");  bar(100, 62, 300, 14, ws->rms_db_l, -80, 0, C_GREEN); gfx_textf(410, 62, 2, C_WHITE, "%4.0f dB", ws->rms_db_l);
-    gfx_text(24, 84, 2, C_WHITE, "JOBB"); bar(100, 84, 300, 14, ws->rms_db_r, -80, 0, C_GREEN); gfx_textf(410, 84, 2, C_WHITE, "%4.0f dB", ws->rms_db_r);
+    gfx_text(24, 62, 2, C_WHITE, "BAL");  bar(100, 62, 280, 14, ws->rms_db_l, -80, 0, C_GREEN); gfx_textf(392, 62, 2, C_WHITE, "%4.0f dB", ws->rms_db_l);
+    gfx_text(24, 84, 2, C_WHITE, "JOBB"); bar(100, 84, 280, 14, ws->rms_db_r, -80, 0, C_GREEN); gfx_textf(392, 84, 2, C_WHITE, "%4.0f dB", ws->rms_db_r);
     /* the band 1000-3500 Hz: 81 bins, 5 px each */
     const int bx = 36, by = 118, bh = 150, bw = 5;
     gfx_text(bx, by - 14, 1, C_GREY, "1000-3500 Hz, -90..-10 dBFS");
@@ -148,7 +149,8 @@ static void draw_mic(const whistle_state_t *ws) {
         gfx_fill(bx + i * bw, by + bh - h, bw - 1, h, ws->tone ? C_YELLOW : C_CYAN);
     }
     for (int hz = 1000; hz <= 3500; hz += 500) { int i = hz * WH_N / WH_RATE - WH_BIN0; gfx_vline(bx + i * bw, by + bh + 2, 4, C_GREY); if (hz % 1000 == 0) gfx_textf(bx + i * bw - 8, by + bh + 8, 1, C_GREY, "%dk", hz / 1000); }
-    gfx_textf(24, 292, 2, ws->tone ? C_YELLOW : C_WHITE, "CSÚCS %4.0f Hz  %5.1f dB  ARÁNY %4.1f dB  %d/%d", ws->peak_hz, ws->peak_db, ws->ratio_db, ws->streak, whistle_params()->frames);
+    /* 12 px per character at scale 2: a line from x = 24 may hold 38 characters (24 + 456 = 480) */
+    gfx_textf(48, 292, 2, ws->tone ? C_YELLOW : C_WHITE, "%4.0f Hz  %4.0f dB  tónus %.2f  %d/%d", ws->peak_hz, ws->peak_db, ws->frac, ws->streak, whistle_params()->frames);
     /* the whole 0-8 kHz, coarse */
     const int fx = 48, fy = 322, fh = 56;
     gfx_text(fx, fy - 12, 1, C_GREY, "0-8 kHz");

@@ -35,7 +35,7 @@ def main():
     ap.add_argument("--grep", default="", help="print only lines matching this regex (the log keeps all)")
     a = ap.parse_args()
     cmds = [c.strip() for c in a.send.split(";") if c.strip()]
-    log = open(a.log, "a", encoding="utf-8") if a.log else None
+    log = open(a.log, "a", encoding="utf-8", buffering=1) if a.log else None   # line-buffered: a stopped run keeps every line
     pat = re.compile(a.grep) if a.grep else None
     t_end = time.time() + a.seconds
     t_send = time.time() + a.send_delay

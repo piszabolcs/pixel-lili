@@ -48,6 +48,14 @@ Döntés: a küszöböket nem a panelen próbálgattuk, hanem a felvett jellemz�
 
 Fogalmak: címkézett adat, tonalitás (spektrális koncentráció), robusztus küszöb (plató), újraélesítés (refrakter idő)
 
+## 2026-10-19 | 5c. lépés: füttydetektor v3, élő teszt és második mérés
+
+Készült: a v1 kapuk élőben túl szigorúak voltak (erős, hosszú füttyöt kértek), a lazított v2 a podcast mellett határon volt; egy második, normál füttyökkel és podcasttal készült felvételből egy hangerőkapu (a sorozat leghangosabb kerete >= -42 dBFS) lett a v3, ami mindkét felvételen 24/24 füttyöt és 0 téves riasztást ad.
+
+Döntés: 250 ms helyett 192 ms (eltérés a spectől, rögzítve), mert a hosszt a hangerő jobban helyettesíti; a hangerőkapu a két csoport közötti rés közepén van.
+
+Fogalmak: reprezentatív tanítóadat, redundáns kapuk, mintavételi hiba a fázishatáron
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -87,3 +95,9 @@ Fogalmak: címkézett adat, tonalitás (spektrális koncentráció), robusztus k
 **robusztus küszöb (plató):** ha egy paramétertartományban mindenhol ugyanaz a jó eredmény jön ki, a tartomány közepét választjuk, nem a szélét, mert így egy kicsit más környezetben (más szoba, más zaj) is jó marad.
 
 **újraélesítés (refrakter idő):** egy esemény után a detektor csak egy rövid csendes szakasz után jelezhet újra, így egy akadozó fütty nem számít kettőnek.
+
+**reprezentatív tanítóadat:** a hangoláshoz használt felvételnek tartalmaznia kell azokat a helyzeteket, amik élesben előfordulnak; az első felvételen nem volt normál hangerejű fütty és nem volt zenés podcast, ezért a belőle hangolt küszöbök élesben rosszul működtek.
+
+**redundáns kapuk:** több független feltétel együtt; ha bármelyik kizárja a zavart, a többi lazább lehet. Ezért lehetett egyenként sokat lazítani téves riasztás nélkül, és ezért kell a lazítást mindig együtt is ellenőrizni.
+
+**hiba a fázishatáron:** a címke idő szerint vált, a valóság nem: egy fütty átnyúlhat a következő fázisba és ott "téves riasztásnak" látszik. Elemzéskor a fázisok első 1-2 másodpercét külön kell kezelni.

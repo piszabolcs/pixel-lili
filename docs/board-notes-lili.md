@@ -30,3 +30,6 @@ A PCF85063 a PMIC-kikapcsolás alatt is jár (VCC-RTC). Beállítás: `py -3.12 
 
 ## M1.6/a Mikrofon (2026-10-19)
 ES7210 @0x40, I2S standard (Philips) 16 kHz 16 bit sztereó, MCLK 42 (4,096 MHz = 256 fs), BCLK 9, LRCK 45, adat be GPIO 10; MIC1 = bal, MIC2 = jobb csatorna. Gain kód 10 (30 dB). A frekvenciapontosság ellenőrizve (`tools/mic_tone_check.py`). Regiszter-visszaolvasás: két érték eltér a beírttól (0x40: 43 -> 42, 0x4C: FF -> F0); a működést nem befolyásolja, valószínűleg nem olvasható bitek, adatlapból ellenőrizendő.
+
+## M1.6/b Füttydetektor (kész, 2026-10-19)
+v3 kapuk a `firmware/diag/main/whistle.c`-ben (indoklás: docs/decisions.md). Újrahangolás menete: diag `label` parancs + BOOT a vezetett felvételhez, `tools/serial_log.py --log ...`, majd `tools/whistle_sim.py <log>` a PC-n. A detektor a bal mikrofont használja; a jobb (MIC2) tartalék.

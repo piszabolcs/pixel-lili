@@ -25,7 +25,19 @@ typedef struct {
     int64_t last_us;            /* esp_timer stamp of the last event */
     uint32_t frames;
 } whistle_state_t;
-typedef struct { float thr_db; int frames; float tol; float floor_db; } whistle_params_t;
+/* the gates, tuned on the 2026-10-19 labelled recording (tools/whistle_sim.py: 11/11 whistles,
+ * 0 false alarms from speech, put-downs and knocks) - each value the middle of a plateau */
+typedef struct {
+    float thr_db;      /* peak over the band's mean, dB */
+    int   frames;      /* tonal frames in a row for an event (8 x 32 ms = 256 ms, spec 5.8) */
+    float tol;         /* the peak stays within +-tol of the whistle's first frame */
+    float floor_db;    /* the peak bin's level, dBFS */
+    float frac_min;    /* tonality: the peak's +-2 bins / the band, at least */
+    float low_max_db;  /* 94-875 Hz energy relative to the peak, at most */
+    int   gap;         /* non-tonal frames a whistle may skip without ending */
+    int   rearm;       /* non-tonal frames before the next event may fire */
+    float peak_min_db; /* the streak's loudest frame must reach this (dBFS): quiet podcast tones stay out */
+} whistle_params_t;
 void whistle_init(void);
 void whistle_frame(const int16_t *left, const int16_t *right);   /* WH_N frames; from the audio task */
 void whistle_get(whistle_state_t *out);                           /* a consistent copy, from any task */

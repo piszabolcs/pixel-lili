@@ -10,7 +10,17 @@ static float s_win[WH_N], s_cos[WH_N / 2], s_sin[WH_N / 2];
 static float s_re[WH_N], s_im[WH_N];
 static uint16_t s_rev[WH_N];
 static whistle_state_t s_st;
-static whistle_params_t s_p = { .thr_db = 12.0f, .frames = 8, .tol = 0.15f, .floor_db = -60.0f };
+/* v2 (2026-10-19 evening): loosened after the live test needed loud, long whistles. Each gate
+   alone can be loosened this far with 0 false alarms on the labelled recording, because the
+   others still hold; together they also simulate to 11/11, 0 false. 6 frames = 192 ms is
+   below spec 5.8's 250 ms on purpose (docs/decisions.md). */
+/* v3 (2026-10-19, run 2 with normal-volume whistles and 75 s of podcast): + the loudness gate.
+   The whistles' loudest frames reach -9..-33 dBFS, the podcast's near-misses -49..-50: -42 is the
+   middle of that gap; replayed on both recordings: 24/24 whistles, 0 false alarms. */
+static whistle_params_t s_p = { .thr_db = 16.0f, .frames = 6, .tol = 0.15f, .floor_db = -65.0f,
+                                .frac_min = 0.80f, .low_max_db = 10.0f, .gap = 1, .rearm = 6, .peak_min_db = -42.0f };
+static bool s_armed = true;
+static float s_pmax;                                   /* the current streak's loudest peak, dBFS */
 static portMUX_TYPE s_mx = portMUX_INITIALIZER_UNLOCKED;
 static float s_ref_hz; static int s_quiet;
 static volatile bool s_log; static volatile int s_label;
@@ -22,8 +32,9 @@ void whistle_init(void) {
     for (int i = 0; i < WH_N / 2; i++) { s_cos[i] = cosf(-2.0f * (float)M_PI * i / WH_N); s_sin[i] = sinf(-2.0f * (float)M_PI * i / WH_N); }
     for (int i = 0; i < WH_N; i++) { int r = 0; for (int b = 0; b < 9; b++) if (i & (1 << b)) r |= 1 << (8 - b); s_rev[i] = (uint16_t)r; }
     memset(&s_st, 0, sizeof s_st);
-    ESP_LOGI(TAG, "detector: band %d-%d Hz, peak/mean > %.0f dB, +-%.0f %%, %d frames (%d ms), floor %.0f dBFS",
-             WH_BIN0 * WH_RATE / WH_N, WH_BIN1 * WH_RATE / WH_N, s_p.thr_db, s_p.tol * 100, s_p.frames, s_p.frames * 1000 * WH_N / WH_RATE, s_p.floor_db);
+    ESP_LOGI(TAG, "detector: band %d-%d Hz, peak/mean > %.0f dB, frac >= %.2f, low <= %.0f dB, +-%.0f %%, %d frames (%d ms), gap %d, rearm %d, floor %.0f dBFS",
+             WH_BIN0 * WH_RATE / WH_N, WH_BIN1 * WH_RATE / WH_N, s_p.thr_db, s_p.frac_min, s_p.low_max_db, s_p.tol * 100, s_p.frames,
+             s_p.frames * 1000 * WH_N / WH_RATE, s_p.gap, s_p.rearm, s_p.floor_db);
 }
 whistle_params_t *whistle_params(void) { return &s_p; }
 void whistle_set_log(bool on) { s_log = on; if (on) printf("W,frame,label,rms_l,peak_hz,peak_db,ratio_db,frac,low_rel_db,tone,streak\n"); }
@@ -78,18 +89,25 @@ void whistle_frame(const int16_t *l, const int16_t *r) {
     st.frac = sum > 0 ? e5 / sum : 0;
     float low = 0; for (int k = 3; k <= 28; k++) low += pw[k];          /* 94-875 Hz */
     st.low_rel_db = 10.0f * log10f((low + 1e-12f) / (pmax + 1e-12f));
-    st.tone = st.ratio_db > s_p.thr_db && st.peak_db > s_p.floor_db;
+    st.tone = st.ratio_db > s_p.thr_db && st.peak_db > s_p.floor_db
+           && st.frac >= s_p.frac_min            /* one line, not a spread (put-downs, knocks) */
+           && st.low_rel_db <= s_p.low_max_db;   /* little below 875 Hz (speech's voice and first formant) */
     int64_t now = esp_timer_get_time();
     if (st.tone) {
-        if (st.streak > 0 && fabsf(st.peak_hz - s_ref_hz) <= s_p.tol * s_ref_hz) { st.streak++; s_ref_hz = 0.8f * s_ref_hz + 0.2f * st.peak_hz; }
-        else { st.streak = 1; s_ref_hz = st.peak_hz; }
+        /* the reference is the whistle's first frame and does not follow the peak: a melody
+           (speech) wanders, a whistle stays within +-tol of where it started */
+        if (st.streak > 0 && fabsf(st.peak_hz - s_ref_hz) <= s_p.tol * s_ref_hz) { st.streak++; s_pmax = fmaxf(s_pmax, st.peak_db); }
+        else { st.streak = 1; s_ref_hz = st.peak_hz; s_pmax = st.peak_db; }
         s_quiet = 0;
-        if (st.streak == s_p.frames) {                      /* the event, once per whistle */
+        if (st.streak >= s_p.frames && s_armed && s_pmax >= s_p.peak_min_db) {   /* the event, once per whistle */
+            s_armed = false;
             st.count++; st.last_us = now; st.shown = true;
-            ESP_LOGI(TAG, "FÜTTY #%d: %.0f Hz, peak %.1f dBFS, %.1f dB over the band (%d frames)", st.count, s_ref_hz, st.peak_db, st.ratio_db, st.streak);
+            ESP_LOGI(TAG, "FÜTTY #%d: %.0f Hz, loudest %.1f dBFS, %.1f dB over the band, frac %.2f, low %.1f dB", st.count, s_ref_hz, s_pmax, st.ratio_db, st.frac, st.low_rel_db);
         }
     } else {
-        if (++s_quiet >= 3) st.streak = 0;                  /* two frames of breath do not end a whistle; three do */
+        ++s_quiet;
+        if (s_quiet > s_p.gap) st.streak = 0;               /* one frame of breath does not end a whistle; two do */
+        if (s_quiet >= s_p.rearm) s_armed = true;           /* ~190 ms of quiet before the next event */
     }
     if (st.shown && now - st.last_us > HOLD_US) st.shown = false;
     st.frames++;

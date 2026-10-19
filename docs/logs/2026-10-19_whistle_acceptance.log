@@ -1,0 +1,58 @@
+--- 18:17:47 port COM3 open
+18:17:51 I (21109) diag: 36.5 fps (ACTIVE) | frame 26.8 ms | mic L -56 R I (26128) diag: 36.4 fps (ACTIVE) | frame 26.7 ms | mic L -61 R -61 dBFS, peak 1300 Hz ratio 12.0 dB, whistles 0 | heap 223 KB | 4157 mV USB
+18:17:56 I (31146) diag: 37.0 fps (ACTIVE) | frame 26.5 ms | mic L -55 R -55 dBFS, peak 1247 Hz ratio 11.6 dB, whistles 0 | heap 223 KB | 4157 mV USB
+18:18:01 I (36169) diag: 36.9 fps (ACTIVE) | frame 26.5 ms | mic L -60 R -59 dBFS, peak 1119 Hz ratio 14.2 dB, whistles 0 | heap 223 KB | 4158 mV USB
+18:18:06 I (41174) diag: 37.0 fps (ACTIVE) | frame 26.6 ms | mic L -57 R -56 dBFS, peak 1283 Hz ratio 15.1 dB, whistles 0 | heap 223 KB | 4157 mV USB
+18:18:11 I (46195) diag: 37.0 fps (ACTIVE) | frame 26.2 ms | mic L -72 R -72 dBFS, peak 1179 Hz ratio 10.6 dB, whistles 0 | heap 223 KB | 4157 mV USB
+18:18:16 I (51204) diag: 37.0 fps (ACTIVE) | frame 26.6 ms | mic L -60 R -60 dBFS, peak 1349 Hz ratio 14.5 dB, whistles 0 | heap 223 KB | 4157 mV USB
+18:18:21 I (56215) diag: 36.8 fps (ACTIVE) | frame 26.8 ms | mic L -54 R -54 dBFS, peak 1038 Hz ratio 12.5 dB, whistles 0 | heap 223 KB | 4156 mV USB
+18:18:26 I (61218) diag: 37.0 fps (ACTIVE) | frame 26.4 ms | mic L -65 R -65 dBFS, peak 1283 Hz ratio 14.5 dB, whistles 0 | heap 223 KB | 4157 mV USB
+18:18:31 I (66243) diag: 37.0 fps (ACTIVE) | frame 26.6 ms | mic L -58 R -58 dBFS, peak 1251 Hz ratio 12.9 dB, whistles 0 | heap 223 KB | 4158 mV USB
+18:18:36 I (71258) diag: 37.0 fps (ACTIVE) | frame 26.5 ms | mic L -56 R -56 dBFS, peak 984 Hz ratio 19.3 dB, whistles 0 | heap 223 KB | 4157 mV USB
+18:18:41 I (76261) diag: 37.0 fps (ACTIVE) | frame 26.8 ms | mic L -55 R -55 dBFS, peak 1530 Hz ratio 12.2 dB, whistles 0 | heap 223 KB | 4159 mV USB
+18:18:46 I (81263) diag: 36.9 fps (ACTIVE) | frame 26.7 ms | mic L -58 R -57 dBFS, peak 3090 Hz ratio 8.6 dB, whistles 0 | heap 223 KB | 4157 mV USB
+18:18:51 I (86273) diag: 37.0 fps (ACTIVE) | frame 26.8 ms | mic L -55 R -55 dBFS, peak 2005 Hz ratio 8.4 dB, whistles 0 | heap 223 KB | 4158 mV USB
+18:18:56 I (91290) diag: 36.7 fps (ACTIVE) | frame 27.0 ms | mic L -53 R -52 dBFS, peak 1619 Hz ratio 13.1 dB, whistles 0 | heap 223 KB | 4157 mV USB
+18:19:01 I (96298) diag: 37.0 fps (ACTIVE) | frame 26.3 ms | mic L -68 R -68 dBFS, peak 1000 Hz ratio 11.0 dB, whistles 0 | heap 223 KB | 4158 mV USB
+18:19:06 I (101311) diag: 36.9 fps (ACTIVE) | frame 26.6 ms | mic L -65 R -66 dBFS, peak 1063 Hz ratio 12.1 dB, whistles 0 | heap 223 KB | 4156 mV USB
+18:19:11 I (106321) diag: 36.3 fps (ACTIVE) | frame 26.4 ms | mic L -70 R -70 dBFS, peak 1342 Hz ratio 12.0 dB, whistles 0 | heap 223 KB | 4158 mV USB
+18:19:16 I (111346) diag: 36.5 fps (ACTIVE) | frame 26.6 ms | mic L -54 R -54 dBFS, peak 1148 Hz ratio 11.5 dB, whistles 0 | heap 223 KB | 4157 mV USB
+18:19:20 I (115433) whistle: FÜTTY #1: 1469 Hz, peak -15.9 dBFS, 31.5 dB over the band, frac 1.00, low -18.4 dB
+18:19:21 I (116369) diag: 32.6 fps (ACTIVE) | frame 30.0 ms | mic L -58 R -58 dBFS, peak 1336 Hz ratio 11.1 dB, whistles 1 | heap 223 KB | 4158 mV USB
+18:19:22 I (117193) whistle: FÜTTY #2: 1473 Hz, peak -45.8 dBFS, 26.0 dB over the band, frac 0.95, low -12.7 dB
+18:19:24 I (119401) whistle: FÜTTY #3: 1529 Hz, peak -37.8 dBFS, 23.2 dB over the band, frac 0.97, low -17.8 dB
+18:19:26 I (121257) whistle: FÜTTY #4: 1535 Hz, peak -22.2 dBFS, 36.0 dB over the band, frac 1.00, low -36.9 dB
+18:19:26 I (121389) diag: 33.6 fps (ACTIVE) | frame 30.3 ms | mic L -47 R -49 dBFS, peak 1459 Hz ratio 24.7 dB, whistles 4 | heap 223 KB | 4157 mV USB
+18:19:28 I (123081) whistle: FÜTTY #5: 1557 Hz, peak -25.2 dBFS, 31.0 dB over the band, frac 1.00, low -33.9 dB
+18:19:29 I (124553) whistle: FÜTTY #6: 1699 Hz, peak -46.3 dBFS, 27.3 dB over the band, frac 0.98, low -16.1 dB
+18:19:31 I (126410) diag: 35.9 fps (ACTIVE) | frame 26.3 ms | mic L -70 R -69 dBFS, peak 1215 Hz ratio 15.5 dB, whistles 6 | heap 223 KB | 4157 mV USB
+18:19:32 I (127145) whistle: FÜTTY #7: 1731 Hz, peak -19.8 dBFS, 40.4 dB over the band, frac 1.00, low -35.2 dB
+18:19:36 I (131436) diag: 36.7 fps (ACTIVE) | frame 26.9 ms | mic L -57 R -58 dBFS, peak 1778 Hz ratio 11.1 dB, whistles 7 | heap 223 KB | 4157 mV USB
+18:19:41 I (136464) diag: 36.8 fps (ACTIVE) | frame 27.3 ms | mic L -50 R -53 dBFS, peak 1778 Hz ratio 18.1 dB, whistles 7 | heap 223 KB | 4157 mV USB
+18:19:43 I (137961) whistle: FÜTTY #8: 1378 Hz, peak -44.4 dBFS, 26.7 dB over the band, frac 0.93, low -10.1 dB
+18:19:45 I (140233) whistle: FÜTTY #9: 1433 Hz, peak -44.6 dBFS, 38.5 dB over the band, frac 1.00, low -23.0 dB
+18:19:46 I (141478) diag: 33.0 fps (ACTIVE) | frame 30.2 ms | mic L -57 R -58 dBFS, peak 1989 Hz ratio 10.7 dB, whistles 9 | heap 223 KB | 4158 mV USB
+18:19:49 I (144329) whistle: FÜTTY #10: 1429 Hz, peak -42.4 dBFS, 31.0 dB over the band, frac 0.99, low -13.1 dB
+18:19:51 I (146478) diag: 36.4 fps (ACTIVE) | frame 26.5 ms | mic L -60 R -58 dBFS, peak 3510 Hz ratio 13.6 dB, whistles 10 | heap 223 KB | 4158 mV USB
+18:19:56 I (151489) diag: 35.9 fps (ACTIVE) | frame 27.9 ms | mic L -14 R -15 dBFS, peak 1281 Hz ratio 49.6 dB, whistles 10 | heap 223 KB | 4158 mV USB
+18:19:56 I (151561) whistle: FÜTTY #11: 1365 Hz, peak -45.5 dBFS, 20.6 dB over the band, frac 0.94, low -14.8 dB
+18:20:00 I (155465) whistle: FÜTTY #12: 1667 Hz, peak -19.8 dBFS, 31.0 dB over the band, frac 0.99, low -10.2 dB
+18:20:01 I (156497) diag: 33.2 fps (ACTIVE) | frame 29.9 ms | mic L -57 R -55 dBFS, peak 3463 Hz ratio 12.3 dB, whistles 12 | heap 223 KB | 4156 mV USB
+18:20:02 I (157001) whistle: FÜTTY #13: 1689 Hz, peak -17.6 dBFS, 34.1 dB over the band, frac 1.00, low -10.2 dB
+18:20:03 I (158473) whistle: FÜTTY #14: 1743 Hz, peak -17.4 dBFS, 29.8 dB over the band, frac 0.99, low -12.4 dB
+18:20:06 I (161510) diag: 36.6 fps (ACTIVE) | frame 27.1 ms | mic L -54 R -54 dBFS, peak 1404 Hz ratio 12.3 dB, whistles 14 | heap 223 KB | 4158 mV USB
+18:20:11 I (166514) diag: 36.5 fps (ACTIVE) | frame 26.6 ms | mic L -60 R -62 dBFS, peak 1395 Hz ratio 24.3 dB, whistles 14 | heap 223 KB | 4158 mV USB
+18:20:16 I (171522) diag: 37.1 fps (ACTIVE) | frame 26.4 ms | mic L -69 R -69 dBFS, peak 1238 Hz ratio 10.2 dB, whistles 14 | heap 223 KB | 4159 mV USB
+18:20:21 I (176532) diag: 37.0 fps (ACTIVE) | frame 26.6 ms | mic L -57 R -57 dBFS, peak 1382 Hz ratio 18.2 dB, whistles 14 | heap 223 KB | 4158 mV USB
+18:20:26 I (181542) diag: 37.0 fps (ACTIVE) | frame 26.4 ms | mic L -67 R -67 dBFS, peak 1042 Hz ratio 10.7 dB, whistles 14 | heap 223 KB | 4158 mV USB
+18:20:31 I (186550) diag: 37.1 fps (ACTIVE) | frame 26.5 ms | mic L -68 R -67 dBFS, peak 1060 Hz ratio 16.2 dB, whistles 14 | heap 223 KB | 4159 mV USB
+18:20:36 I (191558) diag: 36.4 fps (ACTIVE) | frame 27.2 ms | mic L -53 R -52 dBFS, peak 1432 Hz ratio 17.4 dB, whistles 14 | heap 223 KB | 4157 mV USB
+18:20:41 I (196562) diag: 36.0 fps (ACTIVE) | frame 26.9 ms | mic L -58 R -59 dBFS, peak 1268 Hz ratio 13.8 dB, whistles 14 | heap 223 KB | 4158 mV USB
+18:20:46 I (201565) diag: 36.6 fps (ACTIVE) | frame 27.3 ms | mic L -58 R -57 dBFS, peak 1909 Hz ratio 12.1 dB, whistles 14 | heap 223 KB | 4157 mV USB
+18:20:51 I (206570) diag: 37.1 fps (ACTIVE) | frame 26.3 ms | mic L -67 R -67 dBFS, peak 1324 Hz ratio 12.4 dB, whistles 14 | heap 223 KB | 4157 mV USB
+18:20:56 I (211575) diag: 37.0 fps (ACTIVE) | frame 26.4 ms | mic L -73 R -72 dBFS, peak 1129 Hz ratio 10.4 dB, whistles 14 | heap 223 KB | 4157 mV USB
+18:21:01 I (216582) diag: 36.9 fps (ACTIVE) | frame 26.4 ms | mic L -65 R -65 dBFS, peak 1244 Hz ratio 12.0 dB, whistles 14 | heap 223 KB | 4157 mV USB
+18:21:06 I (221600) diag: 37.0 fps (ACTIVE) | frame 26.9 ms | mic L -52 R -52 dBFS, peak 1056 Hz ratio 13.2 dB, whistles 14 | heap 223 KB | 4158 mV USB
+18:21:11 I (226614) diag: 37.0 fps (ACTIVE) | frame 26.4 ms | mic L -70 R -71 dBFS, peak 1031 Hz ratio 8.4 dB, whistles 14 | heap 223 KB | 4156 mV USB
+18:21:16 I (231626) diag: 36.8 fps (ACTIVE) | frame 26.5 ms | mic L -63 R -63 dBFS, peak 1371 Hz ratio 19.7 dB, whistles 14 | heap 223 KB | 4157 mV USB
+18:21:21 I (236634) diag: 37.0 fps (ACTIVE) | frame 26.4 ms | mic L -70 R -69 dBFS, peak 1084 Hz ratio 8.2 dB, whistles 14 | heap 223 KB | 4157 mV USB
