@@ -19,3 +19,4 @@ A pocket-tank saját mért adatai (upstream): `docs/pocket-tank-stats.md` és `d
 | 2026-10-18 | Képkocka-idő a panelen (pocket-tank square, 2 hal, első-indítás oldal) | 39,1-41,8 ms/képkocka (~24-25 fps): polls 0,8 + tick 1,4-2,0 + render 8,0-11,0 + flush 16,5-22,4 (fill 13,5-20,0) + sleep 5-12 ms | docs/logs/2026-10-18_frames_and_buttons_216.log |
 | 2026-10-19 | RTC eltérés beállítás előtt | RTC - PC = -167 s (a pocket-tank boot-kori seedje óta, nem drift) | tools/rtc_sync.py --check, diag fw |
 | 2026-10-19 17:23:09 | RTC beállítás a PC órájához igazítva | utána RTC - PC = -0,61 .. +0,17 s (egész másodperces regiszter, +-1 s) | tools/rtc_sync.py |
+| 2026-10-19 17:27 | RTC megtartás PMIC-kikapcsolás után (ki 17:26:19, be 17:26:47, akkuról) | RTC - PC = -0,56 .. +0,22 s, valid (OS bit 0): az idő megmaradt | tools/rtc_sync.py --check, diag powerlog |

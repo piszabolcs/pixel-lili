@@ -24,3 +24,6 @@ Még nincs mérve. A pocket-tank 40 px-szel fut (a gyártó képei alapján).
 - A boot ~8 s-ig tart a modell bench miatt (1,1 s -> 9,2 s), ez alatt a kijelző már él.
 - Az RTC érvényes időt adott az első bootkor (2026-10-18 17:08), külön beállítás nélkül.
 - Az ES7210 (mikrofon) felfüggesztve indul; az M1.6 diag appban kell élesíteni.
+
+## M1.8 RTC (kész, 2026-10-19)
+A PCF85063 a PMIC-kikapcsolás alatt is jár (VCC-RTC). Beállítás: `py -3.12 tools/rtc_sync.py` (diag firmware kell), ellenőrzés: `--check`. Kikapcsolás-bekapcsolás után az eltérés +-1 s-on belül maradt, az OS bit 0. Drift: hosszabb idő után `--check`-kel mérendő.
