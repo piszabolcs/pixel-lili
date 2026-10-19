@@ -55,6 +55,30 @@ static int s_wom_thr = 100, s_wom_blank = 8;           /* mg; samples at 21 Hz *
 static bool s_wom_awake;                               /* WoM armed while awake (INFO page shows INT1) */
 static int s_wom_events;
 static int s_corner_pick;
+/* the step-5 labelled recording: `label` arms it, BOOT starts it, the screen says what to do */
+typedef struct { const char *say; int secs; } lab_phase_t;
+static const lab_phase_t LAB[] = {
+    { "CSEND", 10 }, { "FÜTTYENTS 5x", 25 }, { "BESZÉLJ / PODCAST", 25 },
+    { "TEDD LE, VEDD FEL 5x", 25 }, { "KOPOGJ AZ ASZTALON", 15 },
+};
+#define LAB_N ((int)(sizeof LAB / sizeof LAB[0]))
+static bool s_lab_armed; static int s_lab_phase = -1; static int64_t s_lab_t0;
+static void lab_start(void) {
+    s_lab_phase = 0; s_lab_t0 = esp_timer_get_time();
+    whistle_set_log(true); whistle_set_label(1);
+    ESP_LOGI("diag", "label run: started");
+}
+static void lab_tick(int64_t now) {
+    if (s_lab_phase < 0) return;
+    int64_t el = (now - s_lab_t0) / 1000000; int acc = 0, ph = -1;
+    for (int i = 0; i < LAB_N; i++) { acc += LAB[i].secs; if (el < acc) { ph = i; break; } }
+    if (ph < 0) { whistle_set_label(0); whistle_set_log(false); s_lab_phase = -1; s_lab_armed = false; ESP_LOGI("diag", "label run: done"); return; }
+    if (ph != s_lab_phase) { s_lab_phase = ph; whistle_set_label(ph + 1); }
+}
+static int lab_left(int64_t now) {
+    int acc = 0; for (int i = 0; i <= s_lab_phase; i++) acc += LAB[i].secs;
+    return acc - (int)((now - s_lab_t0) / 1000000);
+}
 /* the M1.5 run: WAIT (the cable out) -> ACTIVE -> DIM -> SLEEP (PWR ends it) */
 static int s_prun = -1; static int64_t s_prun_t0, s_prun_sample;
 static int s_prun_active_s = 1200, s_prun_dim_s = 1200;
@@ -142,6 +166,15 @@ static void draw_mic(const whistle_state_t *ws) {
         gfx_rect(60, 150, 360, 130, C_WHITE);
         int w = gfx_text_w(10, "FÜTTY");
         gfx_text(240 - w / 2, 170, 10, C_BLACK, "FÜTTY");
+    }
+    if (s_lab_armed) {                                 /* the labelled recording's prompt, over the coarse spectrum */
+        gfx_fill(36, 318, 408, 70, C_DGREY); gfx_rect(36, 318, 408, 70, C_ORANGE);
+        if (s_lab_phase < 0) { int w = gfx_text_w(3, "NYOMD MEG: BOOT"); gfx_text(240 - w / 2, 340, 3, C_ORANGE, "NYOMD MEG: BOOT"); }
+        else {
+            int64_t now = esp_timer_get_time();
+            int w = gfx_text_w(3, LAB[s_lab_phase].say); gfx_text(240 - w / 2, 326, 3, C_ORANGE, LAB[s_lab_phase].say);
+            gfx_textf(196, 360, 2, C_WHITE, "%d/%d  %2d s", s_lab_phase + 1, LAB_N, lab_left(now));
+        }
     }
     footer();
 }
@@ -335,6 +368,7 @@ static void run(char *line) {
     }
     else if (!strcmp(c, "bright") && argc > 1) { display_port_set_brightness((uint8_t)atoi(argv[1])); ESP_LOGI(TAG, "brightness %d", display_port_brightness()); }
     else if (!strcmp(c, "dim")) set_dim(argc > 1 ? !strcmp(argv[1], "on") : !s_dim);
+    else if (!strcmp(c, "label")) { s_lab_armed = true; s_scene = SC_MIC; if (s_dim) set_dim(false); ESP_LOGI(TAG, "label run: armed, BOOT starts it"); }
     else if (!strcmp(c, "time")) pcf_rtc_log();
     else if (!strcmp(c, "settime") && argc > 1) { char buf[40]; snprintf(buf, sizeof buf, "%s%s%s", argv[1], argc > 2 ? " " : "", argc > 2 ? argv[2] : ""); pcf_rtc_set_iso(buf); }
     else if (!strcmp(c, "bat")) { float f; bool ch; bool ok = battery_port_read(&f, &ch); ESP_LOGI(TAG, "battery %s: %d%% %d mV, %s, charge current %d mA", ok ? "ok" : "n/a", (int)(f * 100 + 0.5f), battery_port_vbat_mv(),
@@ -411,7 +445,8 @@ static void keys_init(void) {
 static void keys_poll(void) {
     static bool boot_prev = true, key3_prev = true; static int64_t key3_down;
     bool boot = gpio_get_level(PIN_BOOT), key3 = gpio_get_level(PIN_KEY3);
-    if (boot_prev && !boot) { set_dim(!s_dim); ESP_LOGI(TAG, "BOOT pressed: %s", s_dim ? "DIM" : "ACTIVE"); }
+    if (boot_prev && !boot && s_lab_armed && s_lab_phase < 0) lab_start();
+    else if (boot_prev && !boot) { set_dim(!s_dim); ESP_LOGI(TAG, "BOOT pressed: %s", s_dim ? "DIM" : "ACTIVE"); }
     if (key3_prev && !key3) key3_down = esp_timer_get_time();
     if (!key3_prev && !key3 && key3_down && esp_timer_get_time() - key3_down > 1500000) { key3_down = 0; ESP_LOGI(TAG, "KEY3 held: the desk sleep"); while (!gpio_get_level(PIN_KEY3)) vTaskDelay(pdMS_TO_TICKS(10)); s_scene = SC_INFO; do_sleep(true, 1800, 0, false, "key3"); }
     if (!key3_prev && key3 && key3_down) { key3_down = 0; s_scene = (s_scene + 1) % SC_N; ESP_LOGI(TAG, "KEY3: scene %s", SCENE_NAMES[s_scene]); }
@@ -462,6 +497,7 @@ void app_main(void) {
         con_poll();
         keys_poll();
         prun_tick();
+        lab_tick(t0);
         whistle_get(&ws);
         if (s_wom_awake && t0 - last_wom > 500000) {    /* awake WoM check: the event flag, the INT line cleared */
             last_wom = t0;

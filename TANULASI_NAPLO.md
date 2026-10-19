@@ -40,6 +40,14 @@ Döntés: ismert frekvenciájú tesztjelet használtunk, mert egy hibás órabe�
 
 Fogalmak: I2S, MCLK (256 fs), dBFS, FFT bin
 
+## 2026-10-19 | 5a-5b. lépés: füttydetektor mérése és hangolása szimulációval
+
+Készült: a detektor keretenként naplózza a mérőszámait (tonalitás `frac`, mély sáv `low_rel_db`), a panel vezetett címkézett felvételt készít (`label`), a PC-n `tools/whistle_stats.py` és `tools/whistle_sim.py` visszajátssza; a régi detektor 17 téves riasztást adott, az új kapukkal 0, és mind a 11 fütty megvan.
+
+Döntés: a küszöböket nem a panelen próbálgattuk, hanem a felvett jellemzőkön PC-n, mert így egy mérésből bármennyi változat kipróbálható újraflashelés nélkül; a kiválasztott érték egy széles "plató" közepe, nem a széle.
+
+Fogalmak: címkézett adat, tonalitás (spektrális koncentráció), robusztus küszöb (plató), újraélesítés (refrakter idő)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -71,3 +79,11 @@ Fogalmak: I2S, MCLK (256 fs), dBFS, FFT bin
 **dBFS:** decibel a digitális végkitéréshez (full scale) képest: 0 dBFS a legnagyobb ábrázolható szint, -72 dBFS a 16 bites tartomány alján lévő zaj. Nem hangnyomás (dB SPL), csak a digitális szint.
 
 **FFT bin:** a 512 pontos FFT a 0..8 kHz-et 256 egyenlő sávra (binre) osztja, mindegyik 16000 / 512 = 31,25 Hz széles. A csúcs pontos helyét a szomszéd binek arányából lehet finomítani, így lett a hiba 1 Hz-en belüli.
+
+**címkézett adat:** minden minta mellett ott az ismert igazság (ez fütty, ez beszéd). Ebből választható olyan küszöb, ami a csoportokat a legjobban szétválasztja; ugyanez az elv az LLM tanításánál.
+
+**tonalitás (spektrális koncentráció):** a sáv energiájának hányada a csúcs körüli néhány binben. Egy fütty majdnem tiszta szinusz (~1,0), a beszéd és a zaj szétterül (0,3-0,7).
+
+**robusztus küszöb (plató):** ha egy paramétertartományban mindenhol ugyanaz a jó eredmény jön ki, a tartomány közepét választjuk, nem a szélét, mert így egy kicsit más környezetben (más szoba, más zaj) is jó marad.
+
+**újraélesítés (refrakter idő):** egy esemény után a detektor csak egy rövid csendes szakasz után jelezhet újra, így egy akadozó fütty nem számít kettőnek.

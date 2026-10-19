@@ -16,6 +16,8 @@ typedef struct {
     float band_db[WH_BAND];     /* the band's bins, dBFS (a full-scale sine's peak bin = 0) */
     float full_db[WH_FULL];
     float peak_hz, peak_db, mean_db, ratio_db;
+    float frac;                 /* tonality: energy of the peak's +-2 bins / the whole band's (a whistle ~1, speech low) */
+    float low_rel_db;           /* 94-875 Hz energy relative to the peak bin, dB (a whistle has little low end) */
     int   streak;               /* frames the candidate has held */
     bool  tone;                 /* this frame passes the ratio + floor gates */
     bool  shown;                /* "FÜTTY" is being shown (hold after an event) */
@@ -28,4 +30,8 @@ void whistle_init(void);
 void whistle_frame(const int16_t *left, const int16_t *right);   /* WH_N frames; from the audio task */
 void whistle_get(whistle_state_t *out);                           /* a consistent copy, from any task */
 whistle_params_t *whistle_params(void);
+/* the step-5 measurement: one CSV line per frame on the console, tagged with a label
+ * (0 none, 1 silence, 2 whistle, 3 speech, 4 put down / pick up, 5 knock) */
+void whistle_set_log(bool on);
+void whistle_set_label(int label);
 #endif

@@ -13,6 +13,8 @@ static whistle_state_t s_st;
 static whistle_params_t s_p = { .thr_db = 12.0f, .frames = 8, .tol = 0.15f, .floor_db = -60.0f };
 static portMUX_TYPE s_mx = portMUX_INITIALIZER_UNLOCKED;
 static float s_ref_hz; static int s_quiet;
+static volatile bool s_log; static volatile int s_label;
+#include <stdio.h>
 #define HOLD_US 1500000
 
 void whistle_init(void) {
@@ -24,6 +26,8 @@ void whistle_init(void) {
              WH_BIN0 * WH_RATE / WH_N, WH_BIN1 * WH_RATE / WH_N, s_p.thr_db, s_p.tol * 100, s_p.frames, s_p.frames * 1000 * WH_N / WH_RATE, s_p.floor_db);
 }
 whistle_params_t *whistle_params(void) { return &s_p; }
+void whistle_set_log(bool on) { s_log = on; if (on) printf("W,frame,label,rms_l,peak_hz,peak_db,ratio_db,frac,low_rel_db,tone,streak\n"); }
+void whistle_set_label(int label) { s_label = label; }
 
 static void fft512(void) {                                   /* in place, radix-2, decimation in time */
     for (int i = 0; i < WH_N; i++) { int j = s_rev[i]; if (j > i) { float t = s_re[i]; s_re[i] = s_re[j]; s_re[j] = t; t = s_im[i]; s_im[i] = s_im[j]; s_im[j] = t; } }
@@ -69,6 +73,11 @@ void whistle_frame(const int16_t *l, const int16_t *r) {
     st.peak_db = 10.0f * log10f(pmax + 1e-12f) - ref;
     st.mean_db = 10.0f * log10f(mean + 1e-12f) - ref;
     st.ratio_db = st.peak_db - st.mean_db;
+    /* step-5 features: how much of the band sits in the peak line, and how loud the low end is */
+    float e5 = 0; for (int k = pk - 2; k <= pk + 2; k++) if (k >= WH_BIN0 && k <= WH_BIN1) e5 += pw[k];
+    st.frac = sum > 0 ? e5 / sum : 0;
+    float low = 0; for (int k = 3; k <= 28; k++) low += pw[k];          /* 94-875 Hz */
+    st.low_rel_db = 10.0f * log10f((low + 1e-12f) / (pmax + 1e-12f));
     st.tone = st.ratio_db > s_p.thr_db && st.peak_db > s_p.floor_db;
     int64_t now = esp_timer_get_time();
     if (st.tone) {
@@ -84,6 +93,7 @@ void whistle_frame(const int16_t *l, const int16_t *r) {
     }
     if (st.shown && now - st.last_us > HOLD_US) st.shown = false;
     st.frames++;
+    if (s_log) printf("W,%u,%d,%.1f,%.0f,%.1f,%.1f,%.3f,%.1f,%d,%d\n", (unsigned)st.frames, s_label, st.rms_db_l, st.peak_hz, st.peak_db, st.ratio_db, st.frac, st.low_rel_db, st.tone, st.streak);
     taskENTER_CRITICAL(&s_mx); memcpy(&s_st, &st, sizeof st); taskEXIT_CRITICAL(&s_mx);
 }
 void whistle_get(whistle_state_t *out) { taskENTER_CRITICAL(&s_mx); memcpy(out, &s_st, sizeof *out); taskEXIT_CRITICAL(&s_mx); }

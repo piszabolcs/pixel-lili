@@ -1,0 +1,11 @@
+--- 17:15:05 port COM3 open
+17:15:09 I (21095) diag: 36.5 fps (ACTIVE) | frame 26.7 ms | mic L -70 R I (768277) diag: 36.8 fps (ACTIVE) | frame 26.9 ms | mic L -68 R -67 dBFS, peak 1034 Hz ratio 11.8 dB, whistles 96 | heap 224 KB | 4137 mV USB
+17:15:14 I (773292) diag: 35.1 fps (ACTIVE) | frame 27.5 ms | mic L -57 R -58 dBFS, peak 1856 Hz ratio 8.9 dB, whistles 96 | heap 224 KB | 4137 mV USB
+17:15:16 I (775429) whistle: FÜTTY #97: 1360 Hz, peak -58.7 dBFS, 14.4 dB over the band (8 frames)
+17:15:19 I (778314) diag: 35.5 fps (ACTIVE) | frame 27.8 ms | mic L -51 R -52 dBFS, peak 1432 Hz ratio 16.6 dB, whistles 97 | heap 224 KB | 4136 mV USB
+17:15:20 I (779365) whistle: FÜTTY #98: 1179 Hz, peak -53.1 dBFS, 15.8 dB over the band (8 frames)
+17:15:24 I (783329) diag: 35.6 fps (ACTIVE) | frame 27.6 ms | mic L -51 R -50 dBFS, peak 1312 Hz ratio 9.4 dB, whistles 98 | heap 224 KB | 4137 mV USB
+17:15:29 I (788330) diag: 36.1 fps (ACTIVE) | frame 27.4 ms | mic L -51 R -51 dBFS, peak 1118 Hz ratio 18.9 dB, whistles 98 | heap 224 KB | 4137 mV USB
+17:15:34 I (793339) diag: 36.5 fps (ACTIVE) | frame 26.8 ms | mic L -70 R -70 dBFS, peak 1340 Hz ratio 14.7 dB, whistles 98 | heap 224 KB | 4137 mV USB
+17:15:39 I (798364) diag: 36.6 fps (ACTIVE) | frame 27.0 ms | mic L -65 R -65 dBFS, peak 1105 Hz ratio 13.3 dB, whistles 98 | heap 224 KB | 4135 mV USB
+17:15:44 I (803374) diag: 35.9 fps (ACTIVE) | frame 27.2 ms | mic L -56 R -57 dBFS, peak 1465 Hz ratio 11.1 dB, whistles 98 | heap 224 KB | 4137 mV USB
