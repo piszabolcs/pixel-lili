@@ -46,7 +46,7 @@ CFLAGS  := $(ROUNDF) -O2 -std=c11 $(ARCH) -I. -I../common -I../common/llm -DLV_C
 LDFLAGS := $(ARCH) $(SDL_LIBS) -lm
 
 ifdef LILI
-APP_SRCS  := lili_main.c ../common/lili/lili_world.c
+APP_SRCS  := lili_main.c ../common/lili/lili_world.c ../common/lili/render8.c ../common/lili/palette.c
 CFLAGS    += -I../common/lili
 else
 APP_SRCS  := main.c advisor_llm.c persist_port_sim.c net_port_sim.c ../common/tank.c ../common/update.c ../common/advisor.c ../common/render.c ../common/icons.c ../common/progression.c ../common/setup.c ../common/audio.c ../common/notice.c ../common/sounds.c ../common/battery.c ../common/llm/q4_model.c ../common/llm/word_tok.c ../common/llm/advisor_core.c
@@ -64,7 +64,7 @@ SELFTESTS := --selftest --selftest-hunger --selftest-shop --selftest-battery \
 # the dev repo does not track model/out (the public one does): NOMODEL=1 runs
 # the same checks without the LLM selftest, for a checkout with no model
 ifdef LILI
-SELFTESTS := --selftest
+SELFTESTS := --selftest --bench
 endif
 ifdef NOMODEL
 SELFTESTS := $(filter-out --selftest-llm,$(SELFTESTS))
@@ -100,6 +100,13 @@ $(BUILD)/%.o: %.c
 clean:
 	rm -rf build build-round build-watch build-square build-lili fishsim fishsim-round fishsim-watch fishsim-square lilisim
 
+# LVGL is pinned (v9.2.2) and never edited: the Lili target tracks only its own
+# headers. Reading ~300 LVGL .d files means thousands of header checks, and on
+# /mnt/c (the repo's home, a network-like 9P mount) that took minutes per make.
+ifdef LILI
+-include $(filter-out $(BUILD)/lvgl/%,$(OBJS:.o=.d))
+else
 -include $(OBJS:.o=.d)
+endif
 
 .PHONY: check check-all check-nomodel clean

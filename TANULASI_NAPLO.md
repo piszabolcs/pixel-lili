@@ -74,6 +74,16 @@ Döntés: külön szimulátor-cél a pocket-tank 5439 soros main.c-jének kibele
 
 Fogalmak: platformfüggetlen mag (common), determinisztikus PRNG (xorshift32), helyőrző grafika
 
+## 2026-10-19 | M2, 2. lépés: 8 bites indexelt renderelő
+
+Készült: `common/lili/render8.c/h` (240x240 bájtos vászon, 256 elemű RGB565 LUT, 2x nagyító flush sorsávokra), `palette.c/h` (indextérkép: 0 átlátszó, 1-15 UI, 8-as rámpák), a világ már indexekben rajzol; selftest: LUT, 2x, 24 soros sávok, páratlan sávkezdet, átlátszóság, vágás; `--bench`.
+
+Döntés: a szín csak a flush-ban születik meg, mert így a napszak/évszak egy LUT-csere, a vászon nyolcad akkora, és a panel sávjai ugyanabból a függvényből jönnek, mint a szimulátor teljes képe.
+
+Hiba: a `make check` a /mnt/c-n percekig tartott (az LVGL ~300 függőségfájljának fejlécellenőrzése 9P-n); a Lili-cél csak a saját függőségeit követi, így 5,4 s.
+
+Fogalmak: indexelt szín és paletta, LUT, rámpa, 32 bites dupla írás
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -131,3 +141,11 @@ Fogalmak: platformfüggetlen mag (common), determinisztikus PRNG (xorshift32), h
 **determinisztikus PRNG (xorshift32):** három eltolás és XOR egy 32 bites állapoton; ugyanabból a magból mindig ugyanaz a sorozat jön, minden gépen. Ezért reprodukálhatók a selftestek (spec 4.6).
 
 **helyőrző grafika:** a végleges sprite-ok helyén egyszerű formák (spec 7.7), hogy a világ, a mozgás és az agy fejlesztése ne várjon a Blenderes grafikára; a formátum ugyanaz, csak a tartalom cserélődik.
+
+**indexelt szín és paletta:** a pixel nem színt tárol, hanem egy sorszámot (0-255) egy 256 színű palettában. Egy pixel 1 bájt 2 helyett, és a paletta cseréjével az egész kép átszíneződik.
+
+**LUT (lookup table):** előre kiszámolt táblázat; itt indexből RGB565 színt ad egyetlen tömbolvasással, számolás nélkül. A forró ciklusban ez a leggyorsabb.
+
+**rámpa:** egy anyag (bunda, padló, fű) 8 árnyalata egymás után a palettában, sötéttől világosig. A toon árnyalás és a helyi fények (napfolt, este) csak eltolják az indexet a rámpán belül.
+
+**32 bites dupla írás:** a 2x vízszintes nagyításnál ugyanaz a 16 bites szín kétszer kell egymás mellé; egy 32 bites szóba kétszer betéve egyetlen írással megvan, és a következő fizikai sor egy `memcpy`.
