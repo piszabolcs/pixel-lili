@@ -1,0 +1,37 @@
+{
+  "name": "yard",
+  "view": 1,
+  "_note": "Spec 8.3, logical px. Lili comes out of the house at the bottom (the door at x 104-136), the hedge is at the back.",
+  "background": { "floor_ramp": "grass", "wall_ramp": "hedge", "wall_bottom": 30 },
+  "floor": [[4, 32], [236, 32], [236, 212], [4, 212]],
+  "blocked": [
+    { "id": "trunk_1",    "circle": [50, 62, 6] },
+    { "id": "trunk_2",    "circle": [196, 50, 6] },
+    { "id": "flowerbed",  "rect": [166, 188, 22, 14] }
+  ],
+  "points": {
+    "spot_door_yard": [120, 206, 0],
+    "spot_grass":     [120, 150, 0],
+    "spot_bush_1":    [40, 120, 0],
+    "spot_bush_2":    [202, 130, 0],
+    "spot_bush_3":    [128, 66, 0],
+    "spot_tree":      [50, 76, 0],
+    "spot_flowers":   [176, 184, 0]
+  },
+  "zones": {
+    "hide_bush_1": { "rect": [28, 114, 24, 12] },
+    "hide_bush_2": { "rect": [190, 124, 24, 12] },
+    "hide_bush_3": { "rect": [116, 60, 24, 12] }
+  },
+  "props": [
+    { "id": "house_wall", "rect": [0, 214, 104, 26],  "ramp": "house",  "flat": true },
+    { "id": "house_wall2","rect": [136, 214, 104, 26],"ramp": "house",  "flat": true },
+    { "id": "house_door", "rect": [104, 214, 32, 26], "ramp": "wood",   "flat": true },
+    { "id": "flowerbed",  "rect": [166, 188, 22, 14], "ramp": "flower", "height": 3 },
+    { "id": "bush_1",     "rect": [26, 120, 28, 14],  "ramp": "hedge",  "height": 18 },
+    { "id": "bush_2",     "rect": [188, 130, 28, 14], "ramp": "hedge",  "height": 18 },
+    { "id": "bush_3",     "rect": [114, 66, 28, 14],  "ramp": "hedge",  "height": 18 },
+    { "id": "tree_1",     "rect": [30, 58, 40, 8],    "ramp": "leaf",   "height": 50 },
+    { "id": "tree_2",     "rect": [176, 46, 40, 8],   "ramp": "leaf",   "height": 40 }
+  ]
+}

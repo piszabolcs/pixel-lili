@@ -21,4 +21,12 @@ void pal_placeholder(uint8_t out[256][3]) {
     ramp(out, PAL_HEDGE, 70, 128, 62);
     ramp(out, PAL_FUR,   226, 170, 110);
     ramp(out, PAL_FUR_W, 250, 242, 230);
+    ramp(out, PAL_WOOD,    176, 120, 72);      /* the corner bench, the door */
+    ramp(out, PAL_BLANKET, 226, 40, 120);      /* D-14: the photo shows magenta-pink, not red */
+    ramp(out, PAL_METAL,   180, 186, 196);
+    ramp(out, PAL_WATER,   96, 160, 230);
+    ramp(out, PAL_PAD,     235, 240, 250);     /* the white pad (its thin blue edge: M3) */
+    ramp(out, PAL_HOUSE,   214, 196, 170);
+    ramp(out, PAL_FLOWER,  240, 120, 150);
+    ramp(out, PAL_LEAF,    86, 150, 70);
 }

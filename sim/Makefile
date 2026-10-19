@@ -46,7 +46,7 @@ CFLAGS  := $(ROUNDF) -O2 -std=c11 $(ARCH) -I. -I../common -I../common/llm -DLV_C
 LDFLAGS := $(ARCH) $(SDL_LIBS) -lm
 
 ifdef LILI
-APP_SRCS  := lili_main.c ../common/lili/lili_world.c ../common/lili/render8.c ../common/lili/palette.c ../common/lili/mask.c
+APP_SRCS  := lili_main.c ../common/lili/lili_world.c ../common/lili/render8.c ../common/lili/palette.c ../common/lili/mask.c ../common/lili/maps_gen.c
 CFLAGS    += -I../common/lili
 else
 APP_SRCS  := main.c advisor_llm.c persist_port_sim.c net_port_sim.c ../common/tank.c ../common/update.c ../common/advisor.c ../common/render.c ../common/icons.c ../common/progression.c ../common/setup.c ../common/audio.c ../common/notice.c ../common/sounds.c ../common/battery.c ../common/llm/q4_model.c ../common/llm/word_tok.c ../common/llm/advisor_core.c
@@ -104,6 +104,10 @@ clean:
 # headers. Reading ~300 LVGL .d files means thousands of header checks, and on
 # /mnt/c (the repo's home, a network-like 9P mount) that took minutes per make.
 ifdef LILI
+# the maps are data: edit assets/maps/*.json, this regenerates the C (never edit maps_gen.*)
+../common/lili/maps_gen.c ../common/lili/maps_gen.h: ../tools/gen_maps.py $(wildcard ../assets/maps/*.json)
+	python3 ../tools/gen_maps.py
+$(BUILD)/common/lili/lili_world.o $(BUILD)/lili_main.o: ../common/lili/maps_gen.h
 -include $(filter-out $(BUILD)/lvgl/%,$(OBJS:.o=.d))
 else
 -include $(OBJS:.o=.d)

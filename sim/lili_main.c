@@ -15,6 +15,7 @@
 #include "render8.h"
 #include "palette.h"
 #include "mask.h"
+#include "maps_gen.h"
 #include "lvgl/lvgl.h"
 #include <SDL2/SDL.h>
 
@@ -30,7 +31,7 @@ static void canvas_init(void) {
 }
 static void frame(void) {
     world_render(&s_world, &s_r8);
-    if (s_debug) mask_debug_draw(&s_r8, PAL_DEBUG);
+    if (s_debug) { world_debug_draw(&s_world, &s_r8); mask_debug_draw(&s_r8, PAL_DEBUG); }
     r8_flush_rows(&s_r8, s_fb, 0, LILI_PHYS_H);        /* the sim takes the whole frame; the panel takes stripes */
     mask_apply_rows(&s_mask, s_fb, 0, LILI_PHYS_H);    /* the glass's corners and edge fade, on the same rows */
 }
@@ -92,6 +93,31 @@ static int selftest(void) {
     CHECK(!mask_point_safe(2, 2) && mask_point_safe(120, 120) && mask_point_safe(120, 3), "safe zone: a corner no, the middle yes, an edge's middle yes");
     CHECK(mask_point_safe(198, 196) && mask_point_safe(114, 181), "spec 8.2: the water bowl and the pad centres are safe");
 
+    /* --- the maps (assets/maps/<name>.json -> maps_gen.c) --- */
+    for (int v = 0; v < VIEW_COUNT; v++) {
+        const map_t *m = &MAPS[v];
+        for (int sp = 0; sp < SPOT_COUNT; sp++) {
+            const map_point_t *p = &m->points[sp];
+            if (p->z == 0 && !map_walkable(m, p->x, p->y)) { printf("FAIL: %s point %d (%d,%d) is not walkable\n", m->name, sp, p->x, p->y); return 1; }
+        }
+    }
+    const map_t *room = &MAPS[VIEW_ROOM], *yard = &MAPS[VIEW_YARD];
+    CHECK(!map_walkable(room, 52, 120) && room->points[SPOT_ON_BED].z == 16, "the bed is not walked through: jumped onto (z 16)");
+    CHECK(map_walkable(room, 208, 150), "the nook under the bench is walkable (H10, H11)");
+    CHECK(!map_walkable(yard, 50, 62) && !map_walkable(yard, 120, 10), "the yard: a tree trunk and the hedge block");
+    const int interactive[] = { SPOT_BOWL_FOOD, SPOT_BOWL_WATER, SPOT_PAD, SPOT_ROPE_START, SPOT_PLUSH_START };
+    for (size_t i = 0; i < sizeof interactive / sizeof interactive[0]; i++)
+        CHECK(mask_point_safe(room->points[interactive[i]].x, room->points[interactive[i]].y), "every interactive room point is in the safe zone (spec 5.2)");
+    /* the Y-sort: behind the bed Lili is covered by it, in front of it she covers it */
+    world_init(&s_world, 1); actor_t *l = &s_world.actors[0];
+    l->x = 52; l->y = 80; frame();                     /* just behind the bed's back edge (y 84): the raised bed hides her body */
+    uint16_t behind = px(52, 74);
+    l->y = 200; frame();
+    uint16_t front = px(44, 190), bedfront = px(52, 170);  /* (44, 190): her fur, left of the white chest */
+    l->x = 120; l->y = 140; frame();
+    CHECK(behind == s_r8.lut[pal_ramp(RAMP_ID_BLANKET, 6)], "behind the bed, the bed (its top face) covers Lili");
+    CHECK(front != bedfront && front == s_r8.lut[PAL_FUR + 5], "in front of the bed, Lili is drawn over the floor");
+
     /* --- the world --- */
     world_init(&s_world, 1234);
     for (int i = 0; i < 600; i++) world_tick(&s_world, 1.0f / 60.0f);
@@ -100,7 +126,7 @@ static int selftest(void) {
     const actor_t *a = &s_world.actors[0];
     CHECK(px((int)a->x, (int)a->y - 6) != px(120, 220), "the placeholder dog is drawn in the room");
     world_switch_view(&s_world); frame();
-    CHECK(px((int)a->x, (int)a->y - 6) == px(120, 220), "the dog stays in the room when the yard is shown");
+    CHECK(px((int)a->x, (int)a->y - 6) == s_r8.lut[pal_ramp(RAMP_ID_GRASS, 5)], "the dog stays in the room when the yard is shown (bare grass there)");
     CHECK(s_world.view == VIEW_YARD, "Tab goes to the yard");
     world_switch_view(&s_world);
     CHECK(s_world.view == VIEW_ROOM, "and back to the room");
@@ -147,7 +173,9 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
     if (argc > 2 && !strcmp(argv[1], "--screenshot")) {
         s_debug = argc > 3 && !strcmp(argv[3], "--debug");
-        canvas_init(); world_init(&s_world, 1234); frame(); write_ppm(argv[2], s_fb);
+        canvas_init(); world_init(&s_world, 1234);
+        if (getenv("LILI_VIEW")) s_world.view = (view_t)(atoi(getenv("LILI_VIEW")) % VIEW_COUNT);   /* 1 = the yard */
+        frame(); write_ppm(argv[2], s_fb);
         printf("wrote %s\n", argv[2]); return 0;
     }
     canvas_init();

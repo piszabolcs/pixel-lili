@@ -94,6 +94,16 @@ Hiba: a vizestál korábbi "26 px az ívtől" távolsága rossz geometria volt (
 
 Fogalmak: előjeles távolságfüggvény (SDF), szimmetria-kihasználás
 
+## 2026-10-19 | M2, 4. lépés: szoba és udvar térképből
+
+Készült: `assets/maps/room.json`, `yard.json` (spec 8.2-8.3: padló, akadályok, pontok, zónák, bútorok), `tools/gen_maps.py` -> `common/lili/maps_gen.c/h` (60x60-as járhatósági bitmaszk, SPOT_* azonosítók, RAMP_ID_*), a világ a bútorokat dobozként rajzolja, Lilivel együtt mélység (Y) szerint rendezve; `M` billentyű: járhatatlan cellák és pontok; selftest: minden pont járható, a biztonsági zónában vannak az érinthető pontok, az ágy mögött Lilit eltakarja az ágy.
+
+Döntés: JSON forrás, fordításkori C-generálás, mert a panelen nincs mit JSON-t elemezni (kód, RAM, hibalehetőség), a JSON viszont olvasható és szerkeszthető marad.
+
+Hibák: (1) `/*` a kommentben (`assets/maps/*.json`) beágyazott komment-figyelmeztetést adott; (2) két selftest rossz pixelt választott (a mellkas fehér, az udvaron a ház fala), a kód jó volt. Tanulság: tesztpontot a rajzolás koordinátáiból számolva kell választani, nem szemre.
+
+Fogalmak: kódgenerálás (build-time), bitmaszk, Y-rendezés (painter's algorithm)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -163,3 +173,9 @@ Fogalmak: előjeles távolságfüggvény (SDF), szimmetria-kihasználás
 **előjeles távolságfüggvény (SDF):** egy pont távolsága egy alakzat határától, belül negatív, kívül pozitív előjellel. Egy lekerekített négyzetre egy rövid képlet; ebből jön a maszk (kívül fekete), a vignetta (a határ közelében halványít) és a biztonsági zóna (legalább 24 px-re belül) is, egyetlen függvényből.
 
 **szimmetria-kihasználás:** ha egy forma tükrös az x és y tengelyre, elég egy negyedét kiszámolni és tárolni; a másik háromba tükrözött indexszel olvasunk. Itt 4x kevesebb memória (57,6 KB 230 KB helyett).
+
+**kódgenerálás (build-time):** egy script fordításkor állít elő forráskódot egy adatfájlból (itt JSON-ból C-táblákat). Az adat egy helyen él, a generált kódot kézzel nem szerkesztjük; a make újragenerálja, ha a forrás változik.
+
+**bitmaszk:** sok igen/nem érték bitenként tárolva; a 60x60 = 3600 járhatósági cella 450 bájt. Kiolvasás: a cella sorszámából bájt (`>> 3`) és bit (`& 7`).
+
+**Y-rendezés (painter's algorithm):** hátulról előre rajzolunk, mint a festő: a kisebb Y (távolabbi) elem előbb, a nagyobb Y (közelebbi) később, így a közelebbi eltakarja a távolabbit. A kulcs a talppont Y-ja.

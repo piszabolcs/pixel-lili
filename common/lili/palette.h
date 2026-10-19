@@ -19,7 +19,12 @@ enum {
     PAL_HEDGE   = 40,       /* 40..47 */
     PAL_FUR     = 48,       /* 48..55: Lili's cream-fawn (L2) */
     PAL_FUR_W   = 56,       /* 56..63: her white chest and paws (L3) */
+    PAL_WOOD    = 64, PAL_BLANKET = 72, PAL_METAL = 80, PAL_WATER = 88,
+    PAL_PAD     = 96, PAL_HOUSE   = 104, PAL_FLOWER = 112, PAL_LEAF = 120,
 };
+
+/* the ramps in the order of tools/gen_maps.py RAMPS (RAMP_ID_*): ramp k starts at 16 + 8 k */
+static inline uint8_t pal_ramp(int ramp_id, int shade) { return (uint8_t)(16 + ramp_id * PAL_RAMP + shade); }
 
 /* fills a palette: the fixed slots, and each ramp from 35 % to 115 % of its base colour */
 void pal_placeholder(uint8_t out[256][3]);
