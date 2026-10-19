@@ -21,3 +21,5 @@ A pocket-tank saját mért adatai (upstream): `docs/pocket-tank-stats.md` és `d
 | 2026-10-19 17:23:09 | RTC beállítás a PC órájához igazítva | utána RTC - PC = -0,61 .. +0,17 s (egész másodperces regiszter, +-1 s) | tools/rtc_sync.py |
 | 2026-10-19 17:27 | RTC megtartás PMIC-kikapcsolás után (ki 17:26:19, be 17:26:47, akkuról) | RTC - PC = -0,56 .. +0,22 s, valid (OS bit 0): az idő megmaradt | tools/rtc_sync.py --check, diag powerlog |
 | 2026-10-19 | Kijelző sarok sugara (látható üveg) | 64 px ív levágva, 72 px ív teljesen látszik -> CORNER_R 72 fizikai px; egyenes széleken nincs takarás (px 0 és 479 látszik) | diag sarokteszt, gazdi fotója |
+| 2026-10-19 | Mikrofonlánc frekvenciapontossága (ES7210, I2S 16 kHz, FFT 512) | lejátszva 1250 / 2000 / 3000 Hz -> mérve 1251 / 2000 / 3000 Hz (hiba <= 1 Hz, egy bin 31,25 Hz) | tools/mic_tone_check.py, PC hangszóró |
+| 2026-10-19 | Mikrofon szintek (gain kód 10 = 30 dB) | csendes zaj: L -73 / R -72 dBFS; tesztton a hangszóróból: -31..-38 dBFS csúcs; beszéd (podcast): -26..-29 dBFS | diag status sor |

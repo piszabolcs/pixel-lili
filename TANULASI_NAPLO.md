@@ -32,6 +32,14 @@ Döntés: a tesztet kibővítettük 72 px-ig, mert az első fotó már mutatta, 
 
 Fogalmak: fizikai és logikai pixel, biztonsági zóna
 
+## 2026-10-19 | 4. lépés: M1.6 mikrofon és szintmérő
+
+Készült: `tools/mic_tone_check.py`, ami ismert hangokat játszik a PC hangszórójából és összeveti a panel mérésével; a lánc 1 Hz-en belül pontos, a zajpadló -72 dBFS, a beszéd -26 dBFS körül.
+
+Döntés: ismert frekvenciájú tesztjelet használtunk, mert egy hibás órabeállítás minden frekvenciát ugyanazzal a szorzóval torzítana, és ezt csak egy ismert bemenet leplezi le.
+
+Fogalmak: I2S, MCLK (256 fs), dBFS, FFT bin
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -55,3 +63,11 @@ Fogalmak: fizikai és logikai pixel, biztonsági zóna
 **fizikai és logikai pixel:** a kijelző 480x480 fizikai pixel; a játék világa 240x240 logikai rácson él, és kirajzoláskor minden logikai pixel 2x2 fizikai pixel lesz. A sarok 72 fizikai px = 36 logikai px.
 
 **biztonsági zóna:** a képernyőnek az a része, ahol egy elem biztosan teljesen látszik és megérinthető. A lekerekített sarkoknál egy pont akkor látszik, ha a sarokkör középpontjától legfeljebb R távolságra van; a spec 5.2 szerint az érinthető elemek közepe ennél még 24 logikai px-szel beljebb legyen.
+
+**I2S:** soros hangbusz három vonallal: BCLK (bitóra), LRCK/WS (melyik csatorna: bal vagy jobb), adat. Itt az ESP a master, ő adja az órákat, az ES7210 ezekhez igazodva küldi a mintákat.
+
+**MCLK (256 fs):** a kodek belső mesterórája, a mintavételi frekvencia (fs) egész számú többszöröse: 256 x 16 kHz = 4,096 MHz. Ebből osztja le az ADC a saját ütemét; ha az osztó nem illik az MCLK-hoz, a mintavétel elcsúszik.
+
+**dBFS:** decibel a digitális végkitéréshez (full scale) képest: 0 dBFS a legnagyobb ábrázolható szint, -72 dBFS a 16 bites tartomány alján lévő zaj. Nem hangnyomás (dB SPL), csak a digitális szint.
+
+**FFT bin:** a 512 pontos FFT a 0..8 kHz-et 256 egyenlő sávra (binre) osztja, mindegyik 16000 / 512 = 31,25 Hz széles. A csúcs pontos helyét a szomszéd binek arányából lehet finomítani, így lett a hiba 1 Hz-en belüli.

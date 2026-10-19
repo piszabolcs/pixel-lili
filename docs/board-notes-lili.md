@@ -27,3 +27,6 @@ A square lapon **nincs I/O expander** (a 1.75-ön a QMI_INT1 az expander P6 láb
 
 ## M1.8 RTC (kész, 2026-10-19)
 A PCF85063 a PMIC-kikapcsolás alatt is jár (VCC-RTC). Beállítás: `py -3.12 tools/rtc_sync.py` (diag firmware kell), ellenőrzés: `--check`. Kikapcsolás-bekapcsolás után az eltérés +-1 s-on belül maradt, az OS bit 0. Drift: hosszabb idő után `--check`-kel mérendő.
+
+## M1.6/a Mikrofon (2026-10-19)
+ES7210 @0x40, I2S standard (Philips) 16 kHz 16 bit sztereó, MCLK 42 (4,096 MHz = 256 fs), BCLK 9, LRCK 45, adat be GPIO 10; MIC1 = bal, MIC2 = jobb csatorna. Gain kód 10 (30 dB). A frekvenciapontosság ellenőrizve (`tools/mic_tone_check.py`). Regiszter-visszaolvasás: két érték eltér a beírttól (0x40: 43 -> 42, 0x4C: FF -> F0); a működést nem befolyásolja, valószínűleg nem olvasható bitek, adatlapból ellenőrizendő.
