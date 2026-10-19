@@ -66,6 +66,14 @@ Hiba és tanulság: a "lefagyott" látszat oka az volt, hogy az USB-konzol könn
 
 Fogalmak: WoM (wake-on-motion), szintérzékeny ébresztés, könnyű alvás
 
+## 2026-10-19 | M2, 1. lépés: Lili saját szimulátor-célja és a közös mag
+
+Készült: `common/lili/` (config.h, lili_types.h, lili_world.c/h) és `sim/lili_main.c`; `make LILI=1` -> `lilisim` (ablak: Tab szoba/udvar, Q kilépés), `make LILI=1 check` zöld; a halas `fishsim-square` érintetlenül fordul tovább.
+
+Döntés: külön szimulátor-cél a pocket-tank 5439 soros main.c-jének kibelezése helyett, mert így a halas kód referencia marad, és a pocket-tank frissítései konfliktus nélkül átvehetők.
+
+Fogalmak: platformfüggetlen mag (common), determinisztikus PRNG (xorshift32), helyőrző grafika
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -117,3 +125,9 @@ Fogalmak: WoM (wake-on-motion), szintérzékeny ébresztés, könnyű alvás
 **szintérzékeny ébresztés:** könnyű alvásban a GPIO-ébresztés egy szintre (magas vagy alacsony) éled, nem élre. Ha alváskor a láb már az ébresztő szinten áll, a chip azonnal felébred; ezért kell az aktuális szint ellentétére élesíteni.
 
 **könnyű alvás (light sleep):** a CPU-k órája leáll, a RAM megmarad, a program az alvás utáni sorban folytatódik; az ébredés ms-os. A mélyalvással ellentétben nincs újraindulás, de több áramot fogyaszt.
+
+**platformfüggetlen mag:** a `common/lili` csak szabványos C-t használ (nincs SDL, LVGL, ESP-IDF, malloc); a szimulátor és a firmware ugyanezt a forrást fordítja, és csak a "testet" adja hozzá (ablak vagy kijelző, egér vagy érintés). Így a logika a PC-n tesztelhető, és ugyanúgy fut a panelen.
+
+**determinisztikus PRNG (xorshift32):** három eltolás és XOR egy 32 bites állapoton; ugyanabból a magból mindig ugyanaz a sorozat jön, minden gépen. Ezért reprodukálhatók a selftestek (spec 4.6).
+
+**helyőrző grafika:** a végleges sprite-ok helyén egyszerű formák (spec 7.7), hogy a világ, a mozgás és az agy fejlesztése ne várjon a Blenderes grafikára; a formátum ugyanaz, csak a tartalom cserélődik.

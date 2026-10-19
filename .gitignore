@@ -59,3 +59,5 @@ firmware/diag/sdkconfig
 firmware/diag/sdkconfig.old
 firmware/diag/dependencies.lock
 firmware/diag/managed_components/
+sim/build-lili/
+sim/lilisim

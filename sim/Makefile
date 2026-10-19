@@ -17,7 +17,13 @@ SDL_LIBS   := $(shell sdl2-config --libs)
 # ./fishsim-round, built beside the rectangle's in build-round/.
 # `make WATCH=1`: the watch's 410 x 502 portrait tank (the Waveshare 2.06) as ./fishsim-watch
 # `make SQUARE=1`: the square's 480 x 480 tank (the Waveshare 2.16) as ./fishsim-square
-ifdef ROUND
+# `make LILI=1`: Pixel Lili's own simulator (lili_main.c + common/lili) as ./lilisim;
+# the fish targets below are untouched. `make LILI=1 check` runs its selftests.
+ifdef LILI
+BUILD   := build-lili
+OUT     := lilisim
+ROUNDF  := -DLILI_SIM
+else ifdef ROUND
 BUILD   := build-round
 OUT     := fishsim-round
 ROUNDF  := -DTANK_ROUND
@@ -39,7 +45,12 @@ CFLAGS  := $(ROUNDF) -O2 -std=c11 $(ARCH) -I. -I../common -I../common/llm -DLV_C
            -Wall -Wextra -Wno-unused-parameter -MMD -MP
 LDFLAGS := $(ARCH) $(SDL_LIBS) -lm
 
+ifdef LILI
+APP_SRCS  := lili_main.c ../common/lili/lili_world.c
+CFLAGS    += -I../common/lili
+else
 APP_SRCS  := main.c advisor_llm.c persist_port_sim.c net_port_sim.c ../common/tank.c ../common/update.c ../common/advisor.c ../common/render.c ../common/icons.c ../common/progression.c ../common/setup.c ../common/audio.c ../common/notice.c ../common/sounds.c ../common/battery.c ../common/llm/q4_model.c ../common/llm/word_tok.c ../common/llm/advisor_core.c
+endif
 
 LVGL_SRCS := $(shell find lvgl/src -name '*.c')
 OBJS      := $(patsubst %.c,$(BUILD)/%.o,$(filter-out ../common/%,$(APP_SRCS)) $(LVGL_SRCS)) $(patsubst ../common/%.c,$(BUILD)/common/%.o,$(filter ../common/%,$(APP_SRCS)))
@@ -52,6 +63,9 @@ SELFTESTS := --selftest --selftest-hunger --selftest-shop --selftest-battery \
              --selftest-saves --selftest-update
 # the dev repo does not track model/out (the public one does): NOMODEL=1 runs
 # the same checks without the LLM selftest, for a checkout with no model
+ifdef LILI
+SELFTESTS := --selftest
+endif
 ifdef NOMODEL
 SELFTESTS := $(filter-out --selftest-llm,$(SELFTESTS))
 endif
@@ -84,7 +98,7 @@ $(BUILD)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf build build-round build-watch build-square fishsim fishsim-round fishsim-watch fishsim-square
+	rm -rf build build-round build-watch build-square build-lili fishsim fishsim-round fishsim-watch fishsim-square lilisim
 
 -include $(OBJS:.o=.d)
 
