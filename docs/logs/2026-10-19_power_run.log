@@ -1,0 +1,9 @@
+--- 19:28:54 port COM3 open
+>>> power run 60 60
+19:28:55 I (11078) diag: 35.8 fps (ACTIVE) | frame 26.9 ms | mic L -49 R I (336609) diag: ACTIVE: brightness 255, full rate
+19:28:55 I (336615) plog: row: WAIT wait | 100% 4164 mV | USB
+19:28:55 I (336615) diag: power run: waiting for the cable to come out, then ACTIVE 3600 s, DIM 3600 s, then sleep until the PWR key
+19:28:56 I (336954) diag: 35.7 fps (ACTIVE) | frame 27.3 ms | mic L -52 R -52 dBFS, peak 2216 Hz ratio 10.5 dB, whistles 0 | heap 224 KB | 4164 mV USB
+>>> bat
+19:28:56 I (337649) diag: battery ok: 100% 4164 mV, USB, charge current 500 mA
+19:28:58 I (339152) battery: charge: set 500 mA (code 11) | done | VBUS 4985 mV (input limit 1500 mA, VINDPM 4360 mV) | VSYS 4429 mV | VBAT 4165 mV 100% | die 40.9 C | precharge 100 mA, end 100 mA, CV code 3
