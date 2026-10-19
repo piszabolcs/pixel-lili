@@ -38,18 +38,42 @@ const map_t *world_map(const world_t *w, view_t v) { (void)w; return &MAPS[v]; }
 
 /* a prop seen from the 3/4 camera: its footprint (x, y, w, h) on the floor, raised by `height`:
    the top face is lighter, the front face darker, a 1 px outline around both (spec 7.1) */
-/* the owner's rug (photo, 2026-10-19): big triangles in four colours, cut by the two
-   diagonals and the middle line, with a shaggy speckle. The speckle comes from a hash of
-   the pixel's own position, so it is the same in every frame (no flicker, no PRNG state). */
+/* the owner's rug (photo reference/photos/rug_owner_room_2026-10-19.jpg, 300 x 200 cm, lying
+   lengthwise into the room). Its pattern as 12 triangles in rug coordinates (u across 0..1,
+   v along 0..1, from the far end): green top-left, dark grey top-right, a big off-white band
+   across the upper middle, light grey down the left, dark grey in the middle and right, dark
+   grey bottom-left, green bottom-right. The vertices: the corners, two points on each edge,
+   and two inside (P, Q); the 12 triangles tile the rectangle exactly. */
+enum { RUG_GREEN, RUG_WHITE, RUG_LIGHT, RUG_DARK };
+static const float RUG_V[12][2] = {
+    { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 },                 /* A B C D: the corners */
+    { 0.55f, 0 }, { 1, 0.35f }, { 1, 0.75f }, { 0.45f, 1 }, /* E F G H: on the top, right, right, bottom edges */
+    { 0, 0.62f }, { 0, 0.28f },                             /* I J: on the left edge */
+    { 0.5f, 0.3f }, { 0.5f, 0.68f },                        /* P Q: inside */
+};
+enum { VA, VB, VC, VD, VE, VF, VG, VH, VI, VJ, VP, VQ };
+static const uint8_t RUG_T[12][4] = {                       /* three vertices and a colour */
+    { VA, VE, VJ, RUG_GREEN }, { VE, VB, VF, RUG_DARK },  { VJ, VE, VP, RUG_WHITE }, { VE, VF, VP, RUG_WHITE },
+    { VJ, VP, VI, RUG_LIGHT }, { VP, VF, VQ, RUG_DARK },  { VF, VG, VQ, RUG_DARK },  { VI, VP, VQ, RUG_LIGHT },
+    { VI, VQ, VH, RUG_LIGHT }, { VI, VH, VD, RUG_DARK },  { VQ, VG, VH, RUG_LIGHT }, { VG, VC, VH, RUG_GREEN },
+};
+static float edge(const float *a, const float *b, float u, float v) { return (b[0] - a[0]) * (v - a[1]) - (b[1] - a[1]) * (u - a[0]); }
+static int rug_colour(float u, float v) {                   /* the triangle holding (u, v): all three edge functions agree in sign */
+    for (int t = 0; t < 12; t++) {
+        const float *a = RUG_V[RUG_T[t][0]], *b = RUG_V[RUG_T[t][1]], *c = RUG_V[RUG_T[t][2]];
+        float e0 = edge(a, b, u, v), e1 = edge(b, c, u, v), e2 = edge(c, a, u, v);
+        if ((e0 >= 0 && e1 >= 0 && e2 >= 0) || (e0 <= 0 && e1 <= 0 && e2 <= 0)) return RUG_T[t][3];
+    }
+    return RUG_LIGHT;
+}
+/* the speckle (a shaggy pile) comes from a hash of the pixel's own position, so it is the
+   same in every frame: no flicker, no PRNG state */
 static void draw_rug(render8_t *r, const map_prop_t *p) {
-    const uint8_t col[8] = { pal_ramp(RAMP_ID_RUG_GREEN, 5), pal_ramp(RAMP_ID_RUG_GRAY, 7), pal_ramp(RAMP_ID_RUG_GRAY, 5), pal_ramp(RAMP_ID_RUG_GRAY, 2),
-                             pal_ramp(RAMP_ID_RUG_GRAY, 5), pal_ramp(RAMP_ID_RUG_GREEN, 5), pal_ramp(RAMP_ID_RUG_GRAY, 2), pal_ramp(RAMP_ID_RUG_GRAY, 7) };
+    const uint8_t col[4] = { pal_ramp(RAMP_ID_RUG_GREEN, 5), pal_ramp(RAMP_ID_RUG_GRAY, 7), pal_ramp(RAMP_ID_RUG_GRAY, 5), pal_ramp(RAMP_ID_RUG_GRAY, 2) };
     r8_fill(r, p->x, p->y, p->w, p->h, pal_ramp(RAMP_ID_RUG_GRAY, 1));          /* the bound edge */
     for (int y = 1; y < p->h - 1; y++)
         for (int x = 1; x < p->w - 1; x++) {
-            float u = (float)x / p->w, v = (float)y / p->h;
-            int region = (u > v) | ((u + v > 1.0f) << 1) | ((v > 0.5f) << 2);
-            uint8_t c = col[region];
+            uint8_t c = col[rug_colour((x + 0.5f) / p->w, (y + 0.5f) / p->h)];
             uint32_t hsh = (uint32_t)(p->x + x) * 73856093u ^ (uint32_t)(p->y + y) * 19349663u;
             if ((hsh >> 7) % 6 == 0) c = (uint8_t)(c - 1);                            /* a darker tuft: one shade down the ramp */
             int lx = p->x + x, ly = p->y + y;

@@ -115,7 +115,11 @@ static int selftest(void) {
     }
     CHECK(room->props[0].x >= 0, "props exist");
     const map_prop_t *side = NULL; for (int i = 0; i < room->n_props; i++) if (!strcmp(room->props[i].name, "bench_side")) side = &room->props[i];
-    CHECK(side && LILI_LOG_W - (side->x + side->w) <= 5 && LILI_LOG_H - (side->y + side->h) <= 20, "the bench reaches near the right and bottom edges (owner, 2026-10-19)");
+    CHECK(side && LILI_LOG_W - (side->x + side->w) <= 5, "the bench stands at the right wall (owner, 2026-10-19)");
+    CHECK(side->y + side->h <= 180 && mask_rect_visible(side->x, side->y - side->height, side->w, side->h + side->height, 2),
+          "the bench keeps its length and stays clear of the bottom-right corner arc");
+    const map_prop_t *rug = NULL; for (int i = 0; i < room->n_props; i++) if (!strcmp(room->props[i].name, "rug")) rug = &room->props[i];
+    CHECK(rug && rug->h * 2 == rug->w * 3, "the rug is 3:2 like the real 300 x 200 cm one, lengthwise");
     /* the Y-sort, in the yard (H13): behind a bush Lili is covered by it, in front of it she covers it */
     world_init(&s_world, 1); actor_t *l = &s_world.actors[0];
     s_world.view = VIEW_YARD; l->view = VIEW_YARD;

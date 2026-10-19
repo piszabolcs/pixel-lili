@@ -30,3 +30,4 @@ A pocket-tank saját mért adatai (upstream): `docs/pocket-tank-stats.md` és `d
 | 2026-10-19 | make LILI=1 check a /mnt/c-n | kb. 5 perc -> 5,4 s (az LVGL .d fájljai kimaradnak a Lili-célnál) | sim/Makefile |
 | 2026-10-19 | Kávamaszk a PC-n (lilisim --bench) | mask 18,7 us / képkocka (flush 23,6 us, render 0,9 us); a tábla 57 840 B, képkockánként kb. 22 ezer pixel érintett | WSL2 |
 | 2026-10-19 | Térképek (gen_maps) | szoba: 2057 / 3600 járható cella, udvar: 2575 / 3600; 18 pont; render a bútorokkal 4,1 us / képkocka a PC-n | tools/gen_maps.py, lilisim --bench |
+| 2026-10-19 | Render a szőnyeg háromszögmintájával | 98,6 us / képkocka a PC-n (előtte 12 us): a statikus háttér gyorsítótárba kerül az M2.6-ban | lilisim --bench |

@@ -12,7 +12,7 @@
     "spot_center":  [120, 140, 0],
     "spot_front":   [120, 210, 0],
     "spot_nook":    [218, 160, 0],
-    "spot_rug":     [52, 126, 0],
+    "spot_rug":     [46, 128, 0],
     "bowl_food":    [176, 225, 0],
     "bowl_water":   [200, 225, 0],
     "spot_pad":     [52, 218, 0],
@@ -22,16 +22,16 @@
   },
   "zones": {
     "sunbeam": { "poly": [[104, 70], [136, 70], [160, 150], [84, 150]] },
-    "nook":    { "rect": [206, 96, 30, 125] },
-    "rug":     { "rect": [14, 84, 76, 84] },
+    "nook":    { "rect": [206, 96, 30, 80] },
+    "rug":     { "rect": [14, 80, 64, 96] },
     "deco":    { "rect": [100, 206, 40, 24] }
   },
   "props": [
     { "id": "door",       "rect": [104, 20, 32, 44], "ramp": "wood",    "flat": true },
-    { "id": "rug",        "rect": [14, 84, 76, 84],  "ramp": "rug_gray", "flat": true, "pattern": "rug" },
+    { "id": "rug",        "rect": [14, 80, 64, 96],  "ramp": "rug_gray", "flat": true, "pattern": "rug" },
     { "id": "pad",        "rect": [30, 205, 44, 26], "ramp": "pad",     "flat": true },
-    { "id": "bench_back", "rect": [160, 64, 76, 32], "ramp": "wood",    "height": 22 },
-    { "id": "bench_side", "rect": [206, 96, 30, 125], "ramp": "wood",    "height": 22, "seat_only": true },
+    { "id": "bench_back", "rect": [160, 64, 46, 32], "ramp": "wood",    "height": 22 },
+    { "id": "bench_side", "rect": [206, 64, 30, 112], "ramp": "wood",    "height": 22, "seat_only": true },
     { "id": "bowl_food",  "rect": [170, 221, 12, 8], "ramp": "metal",   "height": 4 },
     { "id": "bowl_water", "rect": [194, 221, 12, 8], "ramp": "water",   "height": 4 }
   ]

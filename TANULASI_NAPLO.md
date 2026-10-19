@@ -122,6 +122,14 @@ Hiba: a Python-heredocban írt C-stringben a `\n` megint valódi sortöréssé v
 
 Fogalmak: konvex alakzat (sarokellenőrzés)
 
+## 2026-10-19 | M2, 4d. lépés: a sarokülő és a szőnyeg javítása
+
+Készült: a sarokülő az eredeti hosszában a jobb falnál, egy L-ként; a szőnyeg 3:2-es, a fotó mintája 12 háromszögből, a háromszögön belüliséget élfüggvények döntik el.
+
+Döntés és hiba: a "le a széléig" kérést félreértettem (meghosszabbítottam a sarokülőt), és a szőnyeget általános X-mintára egyszerűsítettem; most a fotó és a valódi arányok az alap. Tanulság: térbeli kérésnél egy mondatban visszaigazolom, mit értettem (mozgatás vagy átméretezés), mielőtt átírom.
+
+Fogalmak: élfüggvény (pont a háromszögben)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -201,3 +209,5 @@ Fogalmak: konvex alakzat (sarokellenőrzés)
 **hash-alapú textúra:** a pixel koordinátáiból egy keverőfüggvénnyel (hash) "véletlenszerű" számot képzünk, és ebből döntjük el, sötétebb-e. Mivel csak a koordinátától függ, minden képkockán ugyanaz, nem villog, és nem kell hozzá tárolt kép vagy PRNG-állapot.
 
 **konvex alakzat:** bármely két belső pontját összekötő szakasz is belül marad (pl. a lekerekített négyzet). Ezért ha egy téglalap mind a 4 sarka belül van, az egész téglalap belül van: 4 ellenőrzés elég a több ezer pixel helyett.
+
+**élfüggvény (pont a háromszögben):** egy él (a -> b) és egy pont p esetén a (b - a) x (p - a) kereszt-szorzat előjele megmondja, hogy p az él melyik oldalán van. Ha a háromszög mindhárom élére ugyanaz az előjel jön, a pont bent van; így rajzolják a háromszögeket a grafikus kártyák is.

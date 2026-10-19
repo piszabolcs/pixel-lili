@@ -38,23 +38,23 @@ static const map_point_t pts_room[SPOT_COUNT] = {
     [SPOT_GRASS] = { 0, 0, -1 },
     [SPOT_NOOK] = { 218, 160, 0 },
     [SPOT_PAD] = { 52, 218, 0 },
-    [SPOT_RUG] = { 52, 126, 0 },
+    [SPOT_RUG] = { 46, 128, 0 },
     [SPOT_TREE] = { 0, 0, -1 },
 };
 static const map_prop_t props_room[] = {
     { "door", 104, 20, 32, 44, RAMP_ID_WOOD, 0, 1, 64, 0 },
-    { "rug", 14, 84, 76, 84, RAMP_ID_RUG_GRAY, 0, 1, 168, 1 },
+    { "rug", 14, 80, 64, 96, RAMP_ID_RUG_GRAY, 0, 1, 176, 1 },
     { "pad", 30, 205, 44, 26, RAMP_ID_PAD, 0, 1, 231, 0 },
-    { "bench_back", 160, 64, 76, 32, RAMP_ID_WOOD, 22, 0, 96, 0 },
-    { "bench_side", 206, 96, 30, 125, RAMP_ID_WOOD, 22, 0, 221, 0 },
+    { "bench_back", 160, 64, 46, 32, RAMP_ID_WOOD, 22, 0, 96, 0 },
+    { "bench_side", 206, 64, 30, 112, RAMP_ID_WOOD, 22, 0, 176, 0 },
     { "bowl_food", 170, 221, 12, 8, RAMP_ID_METAL, 4, 0, 229, 0 },
     { "bowl_water", 194, 221, 12, 8, RAMP_ID_WATER, 4, 0, 229, 0 },
 };
 static const int16_t poly_room_sunbeam[] = { 104, 70, 136, 70, 160, 150, 84, 150 };
 static const map_zone_t zones_room[] = {
     { "sunbeam", 1, 0, 0, 0, 0, poly_room_sunbeam, 4 },
-    { "nook", 0, 206, 96, 30, 125, 0, 0 },
-    { "rug", 0, 14, 84, 76, 84, 0, 0 },
+    { "nook", 0, 206, 96, 30, 80, 0, 0 },
+    { "rug", 0, 14, 80, 64, 96, 0, 0 },
     { "deco", 0, 100, 206, 40, 24, 0, 0 },
 };
 
