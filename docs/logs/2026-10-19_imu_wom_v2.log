@@ -1,0 +1,72 @@
+--- 18:58:27 port COM3 open
+>>> womsleep 600
+18:58:28 I (105) esp_image: segment 1: paddr=00023c7c vaddr=3fc98000 sizeI (5273) diag: sleep (womtest): panel off, mic off, WoM armed (100 mg, blank 8), a row every 600 s, timeout 600 s, a motion wake ends it
+18:58:28 I (5280) plog: row: SLEEP womtest | 100% 4164 mV | USB
+18:58:28 I (5291) mic: ES7210 suspended, I2S off
+18:58:29 I (6841) diag: at rest: yes after 1.5 s
+18:58:29 I (6862) imu: WoM armed: threshold 100 mg, blanking 8 samples, INT1 (GPIO 17) idle low
+18:58:30 I (7282) diag: INT1 (GPIO 17) rests at 0: the wake is armed on 1
+--- 19:06:20 port COM3 open
+>>> imu
+--- 19:06:44 port COM3 open
+>>> imu
+--- 19:06:52 port COM3 open
+>>> imu
+--- 19:07:01 port COM3 open
+>>> imu
+--- 19:07:09 port COM3 open
+>>> imu
+--- 19:07:17 port COM3 open
+>>> imu
+--- 19:07:25 port COM3 open
+>>> imu
+--- 19:07:33 port COM3 open
+>>> imu
+--- 19:07:41 port COM3 open
+>>> imu
+--- 19:07:50 port COM3 open
+>>> imu
+--- 19:07:58 port COM3 open
+>>> imu
+--- 19:08:06 port COM3 open
+>>> imu
+--- 19:08:14 port COM3 open
+>>> imu
+--- 19:08:22 port COM3 open
+>>> imu
+--- 19:08:30 port COM3 open
+>>> imu
+--- 19:08:39 port COM3 open
+>>> imu
+--- 19:08:47 port COM3 open
+>>> imu
+--- 19:08:55 port COM3 open
+>>> imu
+--- 19:09:03 port COM3 open
+>>> imu
+--- 19:09:11 port COM3 open
+>>> imu
+--- 19:09:19 port COM3 open
+>>> imu
+--- 19:09:28 port COM3 open
+>>> imu
+--- 19:09:36 port COM3 open
+>>> imu
+--- 19:09:44 port COM3 open
+>>> imu
+--- 19:09:52 port COM3 open
+>>> imu
+--- 19:10:00 port COM3 open
+>>> imu
+--- 19:10:08 port COM3 open
+>>> imu
+--- 19:10:17 port COM3 open
+>>> imu
+--- 19:10:25 port COM3 open
+>>> imu
+--- 19:10:33 port COM3 open
+>>> imu
+--- 19:10:41 port COM3 open
+>>> imu
+--- 19:10:49 port COM3 open
+>>> powerlog

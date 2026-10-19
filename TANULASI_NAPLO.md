@@ -56,6 +56,16 @@ Döntés: 250 ms helyett 192 ms (eltérés a spectől, rögzítve), mert a hossz
 
 Fogalmak: reprezentatív tanítóadat, redundáns kapuk, mintavételi hiba a fázishatáron
 
+## 2026-10-19 | 6. lépés: M1.4 IMU mozgásra ébresztés
+
+Készült: bizonyítva, hogy a QMI8658 INT1 a GPIO 17, és a felemelés 338 s alvás után felébresztette a panelt; az alvás előtt nyugalmat vár és az INT1 aktuális szintjének ellentétére élesít.
+
+Döntés: szintváltásra (az aktuális szint ellentéte) ébresztünk fix "magas szint" helyett, mert az adatlap szerint a láb eseményenként átvált, és a fix szint az első próbán azonnali téves ébredést okozott.
+
+Hiba és tanulság: a "lefagyott" látszat oka az volt, hogy az USB-konzol könnyű alvás után nem éled vissza; a panel közben futott. Az eredményt a kijelző (és az NVS-napló) mutatta meg. Korábban észrevehető lett volna, ha az alvásos teszt eredményét eleve a kijelzőről vagy a plog-ból olvasom, nem a konzolról.
+
+Fogalmak: WoM (wake-on-motion), szintérzékeny ébresztés, könnyű alvás
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -101,3 +111,9 @@ Fogalmak: reprezentatív tanítóadat, redundáns kapuk, mintavételi hiba a fá
 **redundáns kapuk:** több független feltétel együtt; ha bármelyik kizárja a zavart, a többi lazább lehet. Ezért lehetett egyenként sokat lazítani téves riasztás nélkül, és ezért kell a lazítást mindig együtt is ellenőrizni.
 
 **hiba a fázishatáron:** a címke idő szerint vált, a valóság nem: egy fütty átnyúlhat a következő fázisba és ott "téves riasztásnak" látszik. Elemzéskor a fázisok első 1-2 másodpercét külön kell kezelni.
+
+**WoM (wake-on-motion):** a gyorsulásmérő alacsony fogyasztású módban maga figyeli a mozgást (két egymás utáni minta különbsége a küszöb felett), és egy lábon jelez; így az ESP alhat, és csak mozgásra ébred.
+
+**szintérzékeny ébresztés:** könnyű alvásban a GPIO-ébresztés egy szintre (magas vagy alacsony) éled, nem élre. Ha alváskor a láb már az ébresztő szinten áll, a chip azonnal felébred; ezért kell az aktuális szint ellentétére élesíteni.
+
+**könnyű alvás (light sleep):** a CPU-k órája leáll, a RAM megmarad, a program az alvás utáni sorban folytatódik; az ébredés ms-os. A mélyalvással ellentétben nincs újraindulás, de több áramot fogyaszt.

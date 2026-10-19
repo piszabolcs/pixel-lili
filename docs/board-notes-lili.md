@@ -14,7 +14,7 @@ A gazdi tapasztalata a pocket-tank alatt: **csak a PWR gomb csinál valamit**, a
 
 A soros naplóban a gombnyomások alatt nem jelent meg esemény (`docs/logs/2026-10-18_frames_and_buttons_216.log`), ami egyezik a fentiekkel. Melyik fizikai gomb a BOOT és melyik a KEY3, az M2.1-ben derül ki, amikor a saját kódunk logolja őket.
 
-## M1.4 IMU megszakítás (nyitott)
+## M1.4 IMU megszakítás (kész, 2026-10-19; a lenti régi megjegyzés helyett lásd docs/decisions.md)
 A square lapon **nincs I/O expander** (a 1.75-ön a QMI_INT1 az expander P6 lábán van). A `board_pins.h` a square-hez nem ad IMU INT GPIO-t. A kapcsolási rajzból kell kinézni (Waveshare wiki, `resources/ESP32-S3-Touch-AMOLED-2.16/`), van-e közvetlen GPIO; ha nincs, marad a periodikus ébredés + lekérdezés (spec 5.7 kockázat).
 
 ## M1.7 Sarok (CORNER_R) (kész, 2026-10-19)
@@ -33,3 +33,6 @@ ES7210 @0x40, I2S standard (Philips) 16 kHz 16 bit sztereó, MCLK 42 (4,096 MHz 
 
 ## M1.6/b Füttydetektor (kész, 2026-10-19)
 v3 kapuk a `firmware/diag/main/whistle.c`-ben (indoklás: docs/decisions.md). Újrahangolás menete: diag `label` parancs + BOOT a vezetett felvételhez, `tools/serial_log.py --log ...`, majd `tools/whistle_sim.py <log>` a PC-n. A detektor a bal mikrofont használja; a jobb (MIC2) tartalék.
+
+## M1.4 IMU (kész, 2026-10-19)
+QMI8658 INT1 = GPIO 17 (INT2 = GPIO 21, nem használt). WoM: CAL1_L küszöb (mg), CAL1_H[7:6] pin + kezdőérték, [5:0] blanking; CTRL9 0x08 parancs; a láb minden eseménynél átvált, a STATUS1 kiolvasása elvileg visszaállítja (a gyakorlatban magasan maradhat). Ébresztés: az aktuális szint ellentéte. Az USB-konzol alvás után nem él vissza.

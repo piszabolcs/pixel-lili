@@ -1,0 +1,42 @@
+18:39:42 >>> imu
+18:39:42 I (105) esp_image: segment 1: paddr=00023c6c vaddr=3fc98000 sizeI (475796) diag: imu ok: g=[-445 327 16791] INT1=1 INT2=1 STATUSINT 01 STATUS1 00
+18:39:44 >>> wom on 100 8
+18:39:45 I (477843) imu: WoM armed: threshold 100 mg, blanking 8 samples, INT1 (GPIO 17) idle low
+18:41:27 I (580229) diag: WoM event #1 awake: STATUS1 04, INT1 after the read 1
+18:41:28 I (581263) diag: WoM event #2 awake: STATUS1 04, INT1 after the read 1
+18:41:28 I (581782) diag: WoM event #3 awake: STATUS1 04, INT1 after the read 1
+18:41:29 awake: 3 WoM events in 104 s
+18:41:31 >>> womsleep 300
+18:41:31 I (582308) diag: WoM event #4 awake: STATUS1 00, INT1 after the read 1
+18:41:31 I (582830) diag: WoM event #5 awake: STATUS1 00, INT1 after the read 1
+18:41:31 I (583349) diag: WoM event #6 awake: STATUS1 00, INT1 after the read 1
+18:41:31 I (583854) diag: WoM event #7 awake: STATUS1 04, INT1 after the read 1
+18:41:31 I (584050) diag: sleep (womtest): panel off, mic off, WoM armed (100 mg, blank 8), a row every 600 s, timeout 300 s, a motion wake ends it
+18:41:31 I (584108) imu: WoM armed: threshold 100 mg, blanking 8 samples, INT1 (GPIO 17) idle low
+18:41:32 RESULT: I (583854) diag: WoM event #7 awake: STATUS1 04, INT1 after the read 1
+--- 18:42:06 port COM3 open
+--- 18:43:24 port COM3 open
+>>> powerlog
+>>> whistle
+--- 18:43:58 port COM3 open
+--- 18:48:49 port COM3 open
+>>> powerlog
+--- 18:56:48 port COM3 open
+>>> powerlog
+18:56:49 I (11090) diag: 32.2 fps (ACTIVE) | frame 30.7 ms | mic L -60 R I (381180) plog: 14 rows (time | SoC | VBAT | state | why | mA since the previous row, from the 1000 mAh cell)
+18:56:49 I (381180) plog:   10-19 16:59:35 | 100% | 4137 mV | ACTIVE | boot    | USB 
+18:56:49 I (381185) plog:   10-19 17:26:19 | 100% | 4112 mV | OFF    | off     | (USB in: not counted)
+18:56:49 I (381194) plog:   10-19 17:26:47 | 100% | 4133 mV | ACTIVE | boot    |    0.0 mA over 0.01 h
+18:56:49 I (381202) plog:   10-19 17:32:20 | 100% | 4172 mV | ACTIVE | boot    | USB (USB in: not counted)
+18:56:49 I (381210) plog:   10-19 17:35:47 | 100% | 4161 mV | ACTIVE | boot    | USB (USB in: not counted)
+18:56:49 I (381219) plog:   10-19 18:02:14 | 100% | 4159 mV | ACTIVE | boot    | USB (USB in: not counted)
+18:56:49 I (381228) plog:   10-19 18:17:26 | 100% | 4156 mV | ACTIVE | boot    | USB (USB in: not counted)
+18:56:49 I (381236) plog:   10-19 18:22:28 | 100% | 4158 mV | ACTIVE | boot    | USB (USB in: not counted)
+18:56:49 I (381245) plog:   10-19 18:26:11 | 100% | 4157 mV | ACTIVE | boot    | USB (USB in: not counted)
+18:56:49 I (381253) plog:   10-19 18:31:47 | 100% | 4156 mV | ACTIVE | boot    | USB (USB in: not counted)
+18:56:49 I (381262) plog:   10-19 18:41:30 | 100% | 4156 mV | SLEEP  | womtest | USB (USB in: not counted)
+18:56:49 I (381271) plog:   10-19 18:41:31 | 100% | 4158 mV | SLEEP  | wom     | USB (USB in: not counted)
+18:56:49 I (381279) plog:   10-19 18:41:32 | 100% | 4158 mV | ACTIVE | wom     | USB (USB in: not counted)
+18:56:49 I (381288) plog:   10-19 18:50:28 | 100% | 4153 mV | ACTIVE | boot    | (USB in: not counted)
+18:56:49 I (381296) plog:   OFF   : 0.01 h, 0 mAh -> 0.0 mA average (1% = 10 mAh: a 20 min window is coarse, a night is not)
+18:56:51 I (383230) diag: 32.2 fps (ACTIVE) | frame 30.7 ms | mic L -49 R -48 dBFS, peak 1315 Hz ratio 17.1 dB, whistles 0 | heap 223 KB | 4164 mV USB

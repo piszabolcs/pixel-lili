@@ -259,11 +259,28 @@ static void do_sleep(bool wom, int sample_s, int timeout_s, bool stay_on_wom, co
     mic_stop();
     display_port_sleep();
     bool armed = false;
+    int idle = 0;                                                         /* INT1's level at rest: a wake is the other level */
     if (wom && s_imu_ok) {
+        /* spec 5.7: the desk sleep starts on a panel at rest. 1.5 s with every axis within
+           ~24 mg of the previous sample (400 counts at 16384 / g), at most 15 s of waiting. */
+        int still = 0; int16_t prev[3] = { 0 }, a[3]; bool have = false; int64_t w0 = esp_timer_get_time();
+        while (still < 30 && esp_timer_get_time() - w0 < 15000000) {
+            if (imu_read(a)) {
+                bool calm = have && abs(a[0] - prev[0]) < 400 && abs(a[1] - prev[1]) < 400 && abs(a[2] - prev[2]) < 400;
+                still = calm ? still + 1 : 0; memcpy(prev, a, sizeof prev); have = true;
+            }
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+        ESP_LOGI(TAG, "at rest: %s after %.1f s", still >= 30 ? "yes" : "NO (sleeping anyway)", (esp_timer_get_time() - w0) / 1e6f);
         armed = imu_wom_arm(s_wom_thr, s_wom_blank);
         vTaskDelay(pdMS_TO_TICKS(400));                                   /* the blanking samples at 21 Hz */
-        for (int i = 0; i < 10 && gpio_get_level(IMU_INT1_GPIO); i++) { imu_status1(); vTaskDelay(pdMS_TO_TICKS(50)); }
-        if (gpio_get_level(IMU_INT1_GPIO)) ESP_LOGW(TAG, "INT1 is high before the sleep: a level wake would fire at once");
+        imu_status1();                                                    /* resets the line to its initial value (datasheet 12.4) */
+        vTaskDelay(pdMS_TO_TICKS(20));
+        /* the datasheet: "for each WoM event, the state of the selected interrupt line is toggled".
+           The 2026-10-19 test saw INT1 stay high after a STATUS1 read, and a high-level wake fired
+           at once. So: whatever level INT1 rests at, the wake is armed on the other one. */
+        idle = gpio_get_level(IMU_INT1_GPIO);
+        ESP_LOGI(TAG, "INT1 (GPIO %d) rests at %d: the wake is armed on %d", IMU_INT1_GPIO, idle, !idle);
     } else if (s_imu_ok) imu_sleep();
     while (gpio_get_level(PIN_PWR)) vTaskDelay(pdMS_TO_TICKS(10));        /* a level wake is never armed held */
     vTaskDelay(pdMS_TO_TICKS(30));
@@ -277,7 +294,7 @@ static void do_sleep(bool wom, int sample_s, int timeout_s, bool stay_on_wom, co
         if (left_sample < 1000) left_sample = 1000;
         int64_t slice = left_timeout < left_sample ? left_timeout : left_sample;
         gpio_wakeup_enable(PIN_PWR, GPIO_INTR_HIGH_LEVEL);
-        if (armed) gpio_wakeup_enable(IMU_INT1_GPIO, GPIO_INTR_HIGH_LEVEL);
+        if (armed) gpio_wakeup_enable(IMU_INT1_GPIO, idle ? GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL);
         esp_sleep_enable_gpio_wakeup();
         esp_sleep_enable_timer_wakeup(slice);
         esp_light_sleep_start();
@@ -286,15 +303,16 @@ static void do_sleep(bool wom, int sample_s, int timeout_s, bool stay_on_wom, co
         if (armed) gpio_wakeup_disable(IMU_INT1_GPIO);
         esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);           /* the sources are sticky (the pocket-tank's lesson) */
         if (cause == ESP_SLEEP_WAKEUP_GPIO) {
-            bool int1 = armed && gpio_get_level(IMU_INT1_GPIO);
+            bool int1 = armed && gpio_get_level(IMU_INT1_GPIO) != idle;
             if (int1) {
                 woms++;
                 uint8_t s1 = imu_status1(); int16_t a[3] = { 0, 0, 0 }; imu_read(a);
                 ESP_LOGI(TAG, "WoM wake #%d after %.1f s: STATUS1 %02x, g=[%d %d %d], INT1 now %d", woms, (esp_timer_get_time() - t0) / 1e6f, s1, a[0], a[1], a[2], gpio_get_level(IMU_INT1_GPIO));
                 if (woms <= 40) plog_add(PL_SLEEP, "wom");
                 if (!stay_on_wom) { reason = "wom"; break; }
-                for (int i = 0; i < 10 && gpio_get_level(IMU_INT1_GPIO); i++) { imu_status1(); vTaskDelay(pdMS_TO_TICKS(20)); }
-                if (gpio_get_level(IMU_INT1_GPIO)) { ESP_LOGW(TAG, "INT1 stays high: re-arming the WoM"); imu_wom_arm(s_wom_thr, s_wom_blank); vTaskDelay(pdMS_TO_TICKS(400)); }
+                vTaskDelay(pdMS_TO_TICKS(200));                     /* sleeping on: the new rest level is whatever INT1 settles at */
+                imu_status1(); vTaskDelay(pdMS_TO_TICKS(20));
+                idle = gpio_get_level(IMU_INT1_GPIO);
                 continue;
             }
             if (gpio_get_level(PIN_PWR) || battery_port_key_poll()) { reason = "pwr"; break; }
