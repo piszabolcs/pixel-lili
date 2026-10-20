@@ -138,6 +138,14 @@ Döntés: hosszú ablakok (1 óra, egy éjszaka), mert a töltésmérő 1 %-os (
 
 Fogalmak: kvantálási hiba (mérésnél), töltésmérő (fuel gauge)
 
+## 2026-10-20 | M2, 5. lépés: eseménysor és inspector panel
+
+Készült: `common/lili/events.c/h` (17 eseménytípus, 32 elemű gyűrűs sor, tele sornál a legrégebbit dobja), `world_handle_event` (nézetváltás, időugrás, évszak, napszak), `sim/inspector.c/h` (LVGL: gombok, állapotkijelzés, eseménykonzol, kattintás a képen = TAP), a billentyűk is eseményt küldenek; `--inspector-shot` az egész ablakot PPM-be menti kijelző nélkül.
+
+Döntés: minden bemenet (gomb, egér, később érintés, IMU, mikrofon) ugyanazon a soron át jut a világba, mert így a világ nem tudja, ki küldte, az inspector és a panel azonos viselkedést ad, és egy felvett eseménysorral ugyanaz az élet visszajátszható (selftest).
+
+Fogalmak: gyűrűs puffer (ring buffer), termelő-fogyasztó minta
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -223,3 +231,7 @@ Fogalmak: kvantálási hiba (mérésnél), töltésmérő (fuel gauge)
 **kvantálási hiba (mérésnél):** ha a mérőeszköz csak lépcsőkben mér (itt 1 % = 10 mAh), egy rövid idő alatti változás +-1 lépéssel téved; a hiba relatív súlya a mérési idő növelésével csökken. Ezért mértünk órákat percek helyett.
 
 **töltésmérő (fuel gauge):** a PMIC (AXP2101) becsli az akku töltöttségét feszültségből és áramintegrálásból; teli akkunál egy ideig 100 %-ot mutat (plató), és lépcsősen frissül, ezért rövid távon késik.
+
+**gyűrűs puffer (ring buffer):** fix méretű tömb, amit körbe-körbe használunk: a `head` a legrégebbi elem, a `count` a benne lévők száma, az új elem a `(head + count) % N` helyre kerül. Nincs malloc, nincs mozgatás; ha tele van, vagy az újat dobjuk, vagy (itt) a legrégebbit.
+
+**termelő-fogyasztó minta:** a bemenetet adók (termelők: érintés, IMU, mikrofon, gombok) egy sorba írnak, egyetlen fogyasztó (a képkocka-ciklus) üríti. Így nincs versengés az állapoton, és a bemenet forrása elkülönül a viselkedéstől.

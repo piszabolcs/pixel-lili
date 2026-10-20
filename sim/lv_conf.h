@@ -16,6 +16,7 @@
 
 #define LV_USE_CANVAS 1
 #define LV_USE_LOG 0
+#define LV_USE_SNAPSHOT 1                     /* --inspector-shot: the whole window to a PPM */
 
 #endif /* LV_CONF_H */
 #endif

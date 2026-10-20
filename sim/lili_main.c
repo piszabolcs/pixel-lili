@@ -1,7 +1,8 @@
 /* lili_main.c - the Pixel Lili simulator. The same common/lili code the firmware
  * runs, in an SDL window through LVGL (the pocket-tank's sim recipe).
  *
- *   ./lilisim                         the window: Tab = room <-> yard, M = corner zones, Q = quit
+ *   ./lilisim                         the window: the picture + the inspector (buttons, state, event console)
+ *   ./lilisim --inspector-shot o.ppm  the whole window to a PPM (SDL_VIDEODRIVER=dummy: no display needed)
  *   ./lilisim --selftest              headless checks, exit 0 = green
  *   ./lilisim --bench                 headless: render + flush cost per frame (spec 6.4)
  *   ./lilisim --screenshot out.ppm    headless, one frame to a PPM
@@ -16,6 +17,7 @@
 #include "palette.h"
 #include "mask.h"
 #include "maps_gen.h"
+#include "events.h"
 #include "lvgl/lvgl.h"
 #include <SDL2/SDL.h>
 
@@ -134,6 +136,24 @@ static int selftest(void) {
     int on_rug = 0; for (int sh = 0; sh < 8; sh++) on_rug |= rugpx == s_r8.lut[pal_ramp(RAMP_ID_RUG_GRAY, sh)] || rugpx == s_r8.lut[pal_ramp(RAMP_ID_RUG_GREEN, sh)];
     CHECK(on_rug, "the rug is drawn where the bed was");
 
+    /* --- the event queue (spec 6.3: the one door into the world) --- */
+    ev_queue_t q; ev_init(&q); ev_t e;
+    CHECK(!ev_pop(&q, &e), "an empty queue pops nothing");
+    ev_push(&q, EV_TAP, 10, 20); ev_push(&q, EV_WHISTLE, 0, 0);
+    CHECK(ev_pop(&q, &e) && e.type == EV_TAP && e.a == 10 && e.b == 20, "first in, first out");
+    CHECK(ev_pop(&q, &e) && e.type == EV_WHISTLE && !ev_pop(&q, &e), "and then it is empty again");
+    for (int i = 0; i < EV_QUEUE_LEN + 8; i++) ev_push(&q, EV_TIME_SKIP, i, 0);          /* 8 more than it holds: wraps, drops the oldest */
+    CHECK(q.dropped == 8 && q.count == EV_QUEUE_LEN, "a full queue drops the oldest 8");
+    CHECK(ev_pop(&q, &e) && e.a == 8, "the survivors start at the 9th event");
+    CHECK(!strcmp(ev_name(EV_SHAKE), "SHAKE") && EV_COUNT == 17 && (int)(sizeof s_world.events_seen / sizeof s_world.events_seen[0]) == EV_COUNT,
+          "event names, and the world's counters cover every type");
+    world_init(&s_world, 1);
+    ev_t sv = { EV_SWITCH_VIEW, 0, 0 }, ts = { EV_TIME_SKIP, 3600, 0 }, ss = { EV_SET_SEASON, 3, 0 }, dp = { EV_SET_DAYPART, 9, 0 }, wh = { EV_WHISTLE, 0, 0 };
+    world_handle_event(&s_world, &sv); world_handle_event(&s_world, &ts); world_handle_event(&s_world, &ss); world_handle_event(&s_world, &dp); world_handle_event(&s_world, &wh);
+    CHECK(s_world.view == VIEW_YARD && s_world.clock_s == 3600.0f && s_world.season_force == 3, "view, time skip and season events act on the world");
+    CHECK(s_world.daypart_force == -1, "an out-of-range daypart means from-the-clock");
+    CHECK(s_world.events_seen[EV_WHISTLE] == 1 && s_world.events_seen[EV_SWITCH_VIEW] == 1, "every event is counted");
+
     /* --- the world --- */
     world_init(&s_world, 1234);
     for (int i = 0; i < 600; i++) world_tick(&s_world, 1.0f / 60.0f);
@@ -168,25 +188,88 @@ static int bench(void) {
     return 0;
 }
 
-/* ---------- the window ---------- */
+/* ---------- the window: the picture on the left, the inspector on the right ---------- */
+#include "inspector.h"
+static ev_queue_t s_q;
 static lv_draw_buf_t s_draw_buf;
 static lv_obj_t *s_canvas;
 static uint32_t s_last_ms;
+static float s_fps, s_frame_ms;
 static uint32_t tick_cb(void) { return SDL_GetTicks(); }
+
+/* the one consumer: every event is shown (console + terminal), then handed to the world */
+static void drain_events(void) {
+    ev_t e;
+    while (ev_pop(&s_q, &e)) {
+        char line[72];
+        snprintf(line, sizeof line, "%7.1f  %-14s %d %d", s_world.clock_s, ev_name((ev_type_t)e.type), e.a, e.b);
+        inspector_log(line); puts(line);
+        world_handle_event(&s_world, &e);
+    }
+}
 
 static void frame_cb(lv_timer_t *t) {
     (void)t;
+    double t0 = now_us();
     uint32_t now = SDL_GetTicks();
     float dt = (now - s_last_ms) / 1000.0f; s_last_ms = now;
     if (dt > 0.1f) dt = 0.1f;                           /* a dragged window pauses time, not jumps it */
+    drain_events();
     world_tick(&s_world, dt);
     frame();
     lv_obj_invalidate(s_canvas);
+    if (dt > 0) s_fps = s_fps > 0 ? 0.9f * s_fps + 0.1f / dt : 1.0f / dt;
+    s_frame_ms = (float)((now_us() - t0) / 1000.0);
+    static float since; since += dt;
+    if (since > 0.2f) { since = 0; inspector_update(s_fps, s_frame_ms); }
+}
+
+static void ui_build(void) {
+    lv_init();
+    lv_tick_set_cb(tick_cb);
+    lv_display_t *disp = lv_sdl_window_create(LILI_PHYS_W + INSPECTOR_W, LILI_PHYS_H);
+    lv_sdl_window_set_title(disp, "Pixel Lili sim  (Tab szoba/udvar, W futty, N nev, Enter felvetel, Space razas, T +1 ora, 1-4 evszak, D napszak, M debug, Q kilepes)");
+    lv_sdl_mouse_create();
+    lv_draw_buf_init(&s_draw_buf, LILI_PHYS_W, LILI_PHYS_H, LV_COLOR_FORMAT_RGB565, LILI_PHYS_W * 2, s_fb, sizeof s_fb);
+    s_canvas = lv_canvas_create(lv_screen_active());
+    lv_canvas_set_draw_buf(s_canvas, &s_draw_buf);
+    lv_obj_set_pos(s_canvas, 0, 0);
+    inspector_init(&s_world, &s_q, &s_debug);
+    inspector_bind_canvas(s_canvas);
+    s_last_ms = SDL_GetTicks();
+    lv_timer_create(frame_cb, 16, NULL);
+}
+
+static bool key_edge(int sc) {                          /* true once per press */
+    static bool prev[SDL_NUM_SCANCODES];
+    bool down = SDL_GetKeyboardState(NULL)[sc], rise = down && !prev[sc];
+    prev[sc] = down; return rise;
+}
+
+/* --inspector-shot out.ppm: the whole window (picture + inspector) to a PPM, no display needed
+   (run it with SDL_VIDEODRIVER=dummy); a few events are pushed so the console shows something */
+static int inspector_shot(const char *path) {
+    canvas_init(); world_init(&s_world, 1234); ev_init(&s_q);
+    ui_build();
+    ev_push(&s_q, EV_TAP, 120, 140); ev_push(&s_q, EV_WHISTLE, 0, 0); ev_push(&s_q, EV_SET_SEASON, 3, 0); ev_push(&s_q, EV_TIME_SKIP, 3600, 0);
+    drain_events(); frame(); inspector_update(30.0f, 1.2f);
+    for (int i = 0; i < 5; i++) { lv_obj_invalidate(lv_screen_active()); lv_timer_handler(); }
+    lv_draw_buf_t *snap = lv_snapshot_take(lv_screen_active(), LV_COLOR_FORMAT_XRGB8888);
+    if (!snap) { printf("snapshot failed\n"); return 1; }
+    FILE *f = fopen(path, "wb"); if (!f) { perror(path); return 1; }
+    int w = snap->header.w, h = snap->header.h; fprintf(f, "P6\n%d %d\n255\n", w, h);
+    for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {
+        const uint8_t *p = (const uint8_t *)snap->data + (size_t)y * snap->header.stride + (size_t)x * 4;
+        unsigned char rgb[3] = { p[2], p[1], p[0] }; fwrite(rgb, 1, 3, f);        /* BGRX -> RGB */
+    }
+    fclose(f); lv_draw_buf_destroy(snap);
+    printf("wrote %s (%d x %d)\n", path, w, h); return 0;
 }
 
 int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--selftest")) return selftest();
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
+    if (argc > 2 && !strcmp(argv[1], "--inspector-shot")) return inspector_shot(argv[2]);
     if (argc > 2 && !strcmp(argv[1], "--screenshot")) {
         s_debug = argc > 3 && !strcmp(argv[3], "--debug");
         canvas_init(); world_init(&s_world, 1234);
@@ -196,25 +279,20 @@ int main(int argc, char **argv) {
     }
     canvas_init();
     world_init(&s_world, (uint32_t)time(NULL));
-    lv_init();
-    lv_tick_set_cb(tick_cb);
-    lv_display_t *disp = lv_sdl_window_create(LILI_PHYS_W, LILI_PHYS_H);
-    lv_sdl_window_set_title(disp, "Pixel Lili sim 480x480  (Tab: szoba/udvar, M: sarokzóna, Q: kilépés)");
-    lv_draw_buf_init(&s_draw_buf, LILI_PHYS_W, LILI_PHYS_H, LV_COLOR_FORMAT_RGB565, LILI_PHYS_W * 2, s_fb, sizeof s_fb);
-    s_canvas = lv_canvas_create(lv_screen_active());
-    lv_canvas_set_draw_buf(s_canvas, &s_draw_buf);
-    lv_obj_center(s_canvas);
-    s_last_ms = SDL_GetTicks();
-    lv_timer_create(frame_cb, 16, NULL);
-    bool tab_down = false, m_down = false;
+    ev_init(&s_q);
+    ui_build();
     for (;;) {
         uint32_t wait = lv_timer_handler();
-        const Uint8 *k = SDL_GetKeyboardState(NULL);
-        if (k[SDL_SCANCODE_Q]) break;
-        if (k[SDL_SCANCODE_TAB] && !tab_down) world_switch_view(&s_world);
-        tab_down = k[SDL_SCANCODE_TAB];
-        if (k[SDL_SCANCODE_M] && !m_down) s_debug = !s_debug;
-        m_down = k[SDL_SCANCODE_M];
+        if (key_edge(SDL_SCANCODE_Q)) break;
+        if (key_edge(SDL_SCANCODE_TAB))    ev_push(&s_q, EV_SWITCH_VIEW, 0, 0);
+        if (key_edge(SDL_SCANCODE_W))      ev_push(&s_q, EV_WHISTLE, 0, 0);
+        if (key_edge(SDL_SCANCODE_N))      ev_push(&s_q, EV_CALL_NAME, 0, 0);
+        if (key_edge(SDL_SCANCODE_RETURN)) ev_push(&s_q, EV_PICKUP, 0, 0);
+        if (key_edge(SDL_SCANCODE_SPACE))  ev_push(&s_q, EV_SHAKE, 0, 0);
+        if (key_edge(SDL_SCANCODE_T))      ev_push(&s_q, EV_TIME_SKIP, 3600, 0);
+        for (int k = 0; k < 4; k++) if (key_edge(SDL_SCANCODE_1 + k)) ev_push(&s_q, EV_SET_SEASON, k, 0);
+        if (key_edge(SDL_SCANCODE_D)) { int c = s_world.daypart_force; ev_push(&s_q, EV_SET_DAYPART, c >= 3 ? -1 : c + 1, 0); }
+        if (key_edge(SDL_SCANCODE_M)) s_debug = !s_debug;
         SDL_Delay(wait < 5 ? wait : 5);
     }
     return 0;

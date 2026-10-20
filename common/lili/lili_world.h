@@ -5,11 +5,13 @@
 #include "lili_types.h"
 #include "render8.h"
 #include "map.h"
+#include "events.h"
 
 void     world_init(world_t *w, uint32_t seed);
 void     world_tick(world_t *w, float dt);             /* the body: physics, plans, needs (later layers) */
 void     world_switch_view(world_t *w);                /* KEY3 / Tab / an edge swipe */
 uint32_t world_rand(world_t *w);                       /* the one PRNG (xorshift32), seeded */
+void     world_handle_event(world_t *w, const ev_t *e);/* the one door in: reflexes and plans hang here from M4 on */
 
 /* the shown view into the 8-bit canvas; the caller flushes it (r8_flush_rows) */
 void     world_render(const world_t *w, render8_t *r);

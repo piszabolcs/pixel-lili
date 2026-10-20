@@ -14,6 +14,7 @@ void world_init(world_t *w, uint32_t seed) {
     w->seed = seed;
     w->rng = seed ? seed : 0x2545F491u;                /* xorshift must never hold 0 */
     w->view = VIEW_ROOM;
+    w->season_force = -1; w->daypart_force = -1;       /* memset gave 0 = "spring": -1 means "from the date / the clock" */
     actor_t *lili = &w->actors[0];
     lili->present = true;
     lili->view = VIEW_ROOM;
@@ -28,6 +29,17 @@ void world_tick(world_t *w, float dt) {
 
 void world_switch_view(world_t *w) {
     w->view = (view_t)((w->view + 1) % VIEW_COUNT);
+}
+
+void world_handle_event(world_t *w, const ev_t *e) {
+    if (e->type < EV_COUNT) w->events_seen[e->type]++;
+    switch (e->type) {
+    case EV_SWITCH_VIEW: world_switch_view(w); break;
+    case EV_TIME_SKIP:   if (e->a > 0) w->clock_s += (float)e->a; break;
+    case EV_SET_SEASON:  w->season_force = (int8_t)(e->a < 0 || e->a > 3 ? -1 : e->a); break;
+    case EV_SET_DAYPART: w->daypart_force = (int8_t)(e->a < 0 || e->a > 3 ? -1 : e->a); break;
+    default: break;      /* the finger, the body and the voice: counted above; the reflexes (M4.5) will answer them */
+    }
 }
 
 /* ---- the placeholder picture (spec 7.7): the map's props as shaded boxes, Lili as a capsule ---- */

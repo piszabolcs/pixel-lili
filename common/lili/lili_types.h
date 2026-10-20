@@ -24,6 +24,9 @@ typedef struct {
     uint32_t rng;
     float    clock_s;          /* seconds since init */
     view_t   view;             /* the place the owner is looking at */
+    int8_t   season_force;     /* -1 = from the date, 0..3 = forced (the sim's 1-4 keys, spec 9.4) */
+    int8_t   daypart_force;    /* -1 = from the clock, 0..3 = forced (the sim's D key, spec 9.3) */
+    uint32_t events_seen[17];  /* per ev_type_t (17 = EV_COUNT): what has reached the world, for tests and the inspector */
     actor_t  actors[MAX_ACTORS];
 } world_t;
 
