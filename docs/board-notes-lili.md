@@ -36,3 +36,6 @@ v3 kapuk a `firmware/diag/main/whistle.c`-ben (indoklás: docs/decisions.md). Ú
 
 ## M1.4 IMU (kész, 2026-10-19)
 QMI8658 INT1 = GPIO 17 (INT2 = GPIO 21, nem használt). WoM: CAL1_L küszöb (mg), CAL1_H[7:6] pin + kezdőérték, [5:0] blanking; CTRL9 0x08 parancs; a láb minden eseménynél átvált, a STATUS1 kiolvasása elvileg visszaállítja (a gyakorlatban magasan maradhat). Ébresztés: az aktuális szint ellentéte. Az USB-konzol alvás után nem él vissza.
+
+## M1.5 Fogyasztás (kész, 2026-10-20)
+ACTIVE ~80-90 mA, DIM ~40 mA, könnyű alvás 13-20 mA (a pocket-tankénál ~3x több, lásd stats.md). A töltésmérő 1 %-os lépésű és a 100 %-on platózik: rövid ablakokból nem érdemes áramot számolni, legalább 1 óra vagy egy éjszaka kell.

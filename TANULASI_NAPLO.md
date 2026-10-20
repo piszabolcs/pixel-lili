@@ -130,6 +130,14 @@ Döntés és hiba: a "le a széléig" kérést félreértettem (meghosszabbítot
 
 Fogalmak: élfüggvény (pont a háromszögben)
 
+## 2026-10-20 | 7. lépés: M1.5 fogyasztásmérés, M1 lezárva
+
+Készült: egy éjszakás automatikus mérés (60 perc ACTIVE, 60 perc DIM, 9 óra könnyű alvás, sorok az NVS-ben): ~80-90 / ~40 / 13-20 mA; DESK türelmi idő javaslat 8 óra.
+
+Döntés: hosszú ablakok (1 óra, egy éjszaka), mert a töltésmérő 1 %-os (10 mAh-s) lépésű, és a 100 %-on platózik; 20 perces ablakból +-30 mA hiba lett volna.
+
+Fogalmak: kvantálási hiba (mérésnél), töltésmérő (fuel gauge)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -211,3 +219,7 @@ Fogalmak: élfüggvény (pont a háromszögben)
 **konvex alakzat:** bármely két belső pontját összekötő szakasz is belül marad (pl. a lekerekített négyzet). Ezért ha egy téglalap mind a 4 sarka belül van, az egész téglalap belül van: 4 ellenőrzés elég a több ezer pixel helyett.
 
 **élfüggvény (pont a háromszögben):** egy él (a -> b) és egy pont p esetén a (b - a) x (p - a) kereszt-szorzat előjele megmondja, hogy p az él melyik oldalán van. Ha a háromszög mindhárom élére ugyanaz az előjel jön, a pont bent van; így rajzolják a háromszögeket a grafikus kártyák is.
+
+**kvantálási hiba (mérésnél):** ha a mérőeszköz csak lépcsőkben mér (itt 1 % = 10 mAh), egy rövid idő alatti változás +-1 lépéssel téved; a hiba relatív súlya a mérési idő növelésével csökken. Ezért mértünk órákat percek helyett.
+
+**töltésmérő (fuel gauge):** a PMIC (AXP2101) becsli az akku töltöttségét feszültségből és áramintegrálásból; teli akkunál egy ideig 100 %-ot mutat (plató), és lépcsősen frissül, ezért rövid távon késik.

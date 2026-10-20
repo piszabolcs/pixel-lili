@@ -1,0 +1,108 @@
+--- 06:29:22 port COM3 open
+>>> powerlog
+--- 06:30:15 port COM3 open
+>>> powerlog
+06:30:17 I (7687773) diag: 36.4 fps (ACTIVE) | frame 27.9 ms | mic L -50 I (7701897) plog: 96 rows (time | SoC | VBAT | state | why | mA since the previous row, from the 1000 mAh cell)
+06:30:17 I (7701897) plog:   10-19 18:26:11 | 100% | 4157 mV | ACTIVE | boot    | USB 
+06:30:17 I (7701903) plog:   10-19 18:31:47 | 100% | 4156 mV | ACTIVE | boot    | USB (USB in: not counted)
+06:30:17 I (7701911) plog:   10-19 18:41:30 | 100% | 4156 mV | SLEEP  | womtest | USB (USB in: not counted)
+06:30:17 I (7701920) plog:   10-19 18:41:31 | 100% | 4158 mV | SLEEP  | wom     | USB (USB in: not counted)
+06:30:17 I (7701929) plog:   10-19 18:41:32 | 100% | 4158 mV | ACTIVE | wom     | USB (USB in: not counted)
+06:30:17 I (7701937) plog:   10-19 18:50:28 | 100% | 4153 mV | ACTIVE | boot    | (USB in: not counted)
+06:30:17 I (7701946) plog:   10-19 18:58:23 | 100% | 4165 mV | ACTIVE | boot    | USB (USB in: not counted)
+06:30:17 I (7701954) plog:   10-19 18:58:27 | 100% | 4164 mV | SLEEP  | womtest | USB (USB in: not counted)
+06:30:17 I (7701963) plog:   10-19 19:04:07 | 100% | 4161 mV | SLEEP  | wom     | USB (USB in: not counted)
+06:30:17 I (7701972) plog:   10-19 19:04:08 | 100% | 4161 mV | ACTIVE | wom     | USB (USB in: not counted)
+06:30:17 I (7701980) plog:   10-19 19:23:19 | 100% | 4144 mV | OFF    | off     | (USB in: not counted)
+06:30:17 I (7701989) plog:   10-19 19:23:19 | 100% | 4158 mV | ACTIVE | boot    | 
+06:30:17 I (7701995) plog:   10-19 19:28:54 | 100% | 4164 mV | WAIT   | wait    | USB (USB in: not counted)
+06:30:17 I (7702004) plog:   10-19 19:30:27 | 100% | 4166 mV | ACTIVE | start   | (USB in: not counted)
+06:30:17 I (7702012) plog:   10-19 19:35:27 | 100% | 4115 mV | ACTIVE | 5min    |    0.0 mA over 0.08 h
+06:30:17 I (7702021) plog:   10-19 19:40:27 | 100% | 4101 mV | ACTIVE | 5min    |    0.0 mA over 0.08 h
+06:30:17 I (7702029) plog:   10-19 19:45:27 |  98% | 4088 mV | ACTIVE | 5min    |  240.0 mA over 0.08 h
+06:30:17 I (7702037) plog:   10-19 19:50:27 |  97% | 4077 mV | ACTIVE | 5min    |  120.0 mA over 0.08 h
+06:30:17 I (7702046) plog:   10-19 19:55:27 |  96% | 4070 mV | ACTIVE | 5min    |  120.0 mA over 0.08 h
+06:30:17 I (7702054) plog:   10-19 20:00:27 |  96% | 4063 mV | ACTIVE | 5min    |    0.0 mA over 0.08 h
+06:30:17 I (7702062) plog:   10-19 20:05:27 |  95% | 4059 mV | ACTIVE | 5min    |  120.0 mA over 0.08 h
+06:30:17 I (7702071) plog:   10-19 20:10:27 |  94% | 4056 mV | ACTIVE | 5min    |  120.0 mA over 0.08 h
+06:30:18 I (7702079) plog:   10-19 20:15:27 |  93% | 4054 mV | ACTIVE | 5min    |  120.0 mA over 0.08 h
+06:30:18 I (7702087) plog:   10-19 20:20:27 |  93% | 4049 mV | ACTIVE | 5min    |    0.0 mA over 0.08 h
+06:30:18 I (7702096) plog:   10-19 20:25:27 |  92% | 4049 mV | ACTIVE | 5min    |  120.0 mA over 0.08 h
+06:30:18 I (7702104) plog:   10-19 20:30:27 |  92% | 4046 mV | DIM    | dim     |    0.0 mA over 0.08 h
+06:30:18 I (7702112) plog:   10-19 20:35:27 |  92% | 4045 mV | DIM    | 5min    |    0.0 mA over 0.08 h
+06:30:18 I (7702121) plog:   10-19 20:40:27 |  92% | 4048 mV | DIM    | 5min    |    0.0 mA over 0.08 h
+06:30:18 I (7702129) plog:   10-19 20:45:27 |  91% | 4040 mV | DIM    | 5min    |  120.0 mA over 0.08 h
+06:30:18 I (7702137) plog:   10-19 20:50:27 |  91% | 4043 mV | DIM    | 5min    |    0.0 mA over 0.08 h
+06:30:18 I (7702146) plog:   10-19 20:55:27 |  91% | 4042 mV | DIM    | 5min    |    0.0 mA over 0.08 h
+06:30:18 I (7702154) plog:   10-19 21:00:27 |  90% | 4037 mV | DIM    | 5min    |  120.0 mA over 0.08 h
+06:30:18 I (7702162) plog:   10-19 21:05:27 |  90% | 4031 mV | DIM    | 5min    |    0.0 mA over 0.08 h
+06:30:18 I (7702171) plog:   10-19 21:10:27 |  90% | 4029 mV | DIM    | 5min    |    0.0 mA over 0.08 h
+06:30:18 I (7702179) plog:   10-19 21:15:27 |  89% | 4025 mV | DIM    | 5min    |  120.0 mA over 0.08 h
+06:30:18 I (7702187) plog:   10-19 21:20:28 |  89% | 4017 mV | DIM    | 5min    |    0.0 mA over 0.08 h
+06:30:18 I (7702196) plog:   10-19 21:25:28 |  89% | 4019 mV | DIM    | 5min    |    0.0 mA over 0.08 h
+06:30:18 I (7702204) plog:   10-19 21:30:27 |  88% | 4016 mV | SLEEP  | run     |  120.4 mA over 0.08 h
+06:30:18 I (7702212) plog:   10-19 21:34:55 |  88% | 4035 mV | SLEEP  | wom     |    0.0 mA over 0.07 h
+06:30:18 I (7702221) plog:   10-19 22:00:08 |  88% | 4034 mV | SLEEP  | tick    |    0.0 mA over 0.42 h
+06:30:18 I (7702229) plog:   10-19 22:07:43 |  88% | 4034 mV | SLEEP  | wom     |    0.0 mA over 0.13 h
+06:30:18 I (7702237) plog:   10-19 22:07:43 |  88% | 4034 mV | SLEEP  | wom     | 
+06:30:18 I (7702244) plog:   10-19 22:30:08 |  88% | 4031 mV | SLEEP  | tick    |    0.0 mA over 0.37 h
+06:30:18 I (7702252) plog:   10-19 23:00:08 |  88% | 4028 mV | SLEEP  | tick    |    0.0 mA over 0.50 h
+06:30:18 I (7702260) plog:   10-19 23:08:18 |  88% | 4027 mV | SLEEP  | wom     |    0.0 mA over 0.14 h
+06:30:18 I (7702269) plog:   10-19 23:08:19 |  88% | 4027 mV | SLEEP  | wom     |    0.0 mA over 0.00 h
+06:30:18 I (7702277) plog:   10-19 23:08:19 |  88% | 4027 mV | SLEEP  | wom     | 
+06:30:18 I (7702283) plog:   10-19 23:08:19 |  88% | 4028 mV | SLEEP  | wom     | 
+06:30:18 I (7702290) plog:   10-19 23:08:20 |  88% | 4028 mV | SLEEP  | wom     |    0.0 mA over 0.00 h
+06:30:18 I (7702298) plog:   10-19 23:08:20 |  88% | 4020 mV | SLEEP  | wom     | 
+06:30:18 I (7702305) plog:   10-19 23:08:21 |  88% | 4020 mV | SLEEP  | wom     |    0.0 mA over 0.00 h
+06:30:18 I (7702313) plog:   10-19 23:08:21 |  88% | 4020 mV | SLEEP  | wom     | 
+06:30:18 I (7702320) plog:   10-19 23:08:22 |  88% | 4027 mV | SLEEP  | wom     |    0.0 mA over 0.00 h
+06:30:18 I (7702328) plog:   10-19 23:08:22 |  88% | 4027 mV | SLEEP  | wom     | 
+06:30:18 I (7702334) plog:   10-19 23:08:22 |  88% | 4027 mV | SLEEP  | wom     | 
+06:30:18 I (7702341) plog:   10-19 23:08:22 |  88% | 4027 mV | SLEEP  | wom     | 
+06:30:18 I (7702348) plog:   10-19 23:08:23 |  88% | 4027 mV | SLEEP  | wom     |    0.0 mA over 0.00 h
+06:30:18 I (7702356) plog:   10-19 23:08:23 |  88% | 4027 mV | SLEEP  | wom     | 
+06:30:18 I (7702363) plog:   10-19 23:08:24 |  88% | 4020 mV | SLEEP  | wom     |    0.0 mA over 0.00 h
+06:30:18 I (7702371) plog:   10-19 23:08:24 |  88% | 4020 mV | SLEEP  | wom     | 
+06:30:18 I (7702377) plog:   10-19 23:08:24 |  88% | 4023 mV | SLEEP  | wom     | 
+06:30:18 I (7702384) plog:   10-19 23:08:24 |  88% | 4023 mV | SLEEP  | wom     | 
+06:30:18 I (7702390) plog:   10-19 23:08:25 |  88% | 4023 mV | SLEEP  | wom     |    0.0 mA over 0.00 h
+06:30:18 I (7702399) plog:   10-19 23:08:25 |  88% | 4023 mV | SLEEP  | wom     | 
+06:30:18 I (7702405) plog:   10-19 23:08:25 |  88% | 4019 mV | SLEEP  | wom     | 
+06:30:18 I (7702412) plog:   10-19 23:08:26 |  88% | 4019 mV | SLEEP  | wom     |    0.0 mA over 0.00 h
+06:30:18 I (7702420) plog:   10-19 23:08:26 |  88% | 4027 mV | SLEEP  | wom     | 
+06:30:18 I (7702427) plog:   10-19 23:30:08 |  88% | 4023 mV | SLEEP  | tick    |    0.0 mA over 0.36 h
+06:30:18 I (7702435) plog:   10-20 00:00:08 |  88% | 4017 mV | SLEEP  | tick    |    0.0 mA over 0.50 h
+06:30:18 I (7702443) plog:   10-20 00:30:08 |  87% | 4010 mV | SLEEP  | tick    |   20.0 mA over 0.50 h
+06:30:18 I (7702452) plog:   10-20 01:00:08 |  86% | 4004 mV | SLEEP  | tick    |   20.0 mA over 0.50 h
+06:30:18 I (7702460) plog:   10-20 01:30:08 |  85% | 3995 mV | SLEEP  | tick    |   20.0 mA over 0.50 h
+06:30:18 I (7702468) plog:   10-20 02:00:08 |  84% | 3987 mV | SLEEP  | tick    |   20.0 mA over 0.50 h
+06:30:18 I (7702477) plog:   10-20 02:30:08 |  83% | 3978 mV | SLEEP  | tick    |   20.0 mA over 0.50 h
+06:30:18 I (7702485) plog:   10-20 03:00:08 |  82% | 3970 mV | SLEEP  | tick    |   20.0 mA over 0.50 h
+06:30:18 I (7702493) plog:   10-20 03:30:08 |  81% | 3960 mV | SLEEP  | tick    |   20.0 mA over 0.50 h
+06:30:18 I (7702502) plog:   10-20 04:00:08 |  80% | 3952 mV | SLEEP  | tick    |   20.0 mA over 0.50 h
+06:30:18 I (7702510) plog:   10-20 04:30:08 |  79% | 3945 mV | SLEEP  | tick    |   20.0 mA over 0.50 h
+06:30:18 I (7702518) plog:   10-20 05:00:08 |  78% | 3938 mV | SLEEP  | tick    |   20.0 mA over 0.50 h
+06:30:18 I (7702527) plog:   10-20 05:30:08 |  77% | 3932 mV | SLEEP  | tick    |   20.0 mA over 0.50 h
+06:30:18 I (7702535) plog:   10-20 06:00:08 |  76% | 3926 mV | SLEEP  | tick    |   20.0 mA over 0.50 h
+06:30:18 I (7702543) plog:   10-20 06:28:22 |  76% | 3920 mV | SLEEP  | wom     |    0.0 mA over 0.47 h
+06:30:18 I (7702552) plog:   10-20 06:28:23 |  76% | 3910 mV | SLEEP  | wom     |    0.0 mA over 0.00 h
+06:30:18 I (7702560) plog:   10-20 06:28:23 |  76% | 3910 mV | SLEEP  | wom     | 
+06:30:18 I (7702566) plog:   10-20 06:28:23 |  76% | 3910 mV | SLEEP  | wom     | 
+06:30:18 I (7702573) plog:   10-20 06:28:23 |  76% | 3917 mV | SLEEP  | wom     | 
+06:30:18 I (7702579) plog:   10-20 06:28:24 |  76% | 3917 mV | SLEEP  | wom     |    0.0 mA over 0.00 h
+06:30:18 I (7702588) plog:   10-20 06:28:24 |  76% | 3917 mV | SLEEP  | wom     | 
+06:30:18 I (7702594) plog:   10-20 06:28:24 |  76% | 3917 mV | SLEEP  | wom     | 
+06:30:18 I (7702601) plog:   10-20 06:28:25 |  76% | 3914 mV | SLEEP  | wom     |    0.0 mA over 0.00 h
+06:30:18 I (7702609) plog:   10-20 06:28:25 |  76% | 3914 mV | SLEEP  | wom     | 
+06:30:18 I (7702615) plog:   10-20 06:28:25 |  76% | 3914 mV | SLEEP  | wom     | 
+06:30:18 I (7702622) plog:   10-20 06:28:26 |  76% | 4042 mV | SLEEP  | wom     |    0.0 mA over 0.00 h
+06:30:18 I (7702630) plog:   10-20 06:28:27 |  76% | 4044 mV | SLEEP  | wom     | USB (USB in: not counted)
+06:30:18 I (7702639) plog:   10-20 06:28:27 |  76% | 4044 mV | SLEEP  | wom     | USB 
+06:30:18 I (7702646) plog:   10-20 06:29:41 |  76% | 4079 mV | DIM    | pwr     | USB (USB in: not counted)
+06:30:18 I (7702655) plog:   ACTIVE: 1.00 h, 80 mAh -> 80.0 mA average (1% = 10 mAh: a 20 min window is coarse, a night is not)
+06:30:18 I (7702665) plog:   DIM   : 1.00 h, 40 mAh -> 40.0 mA average (1% = 10 mAh: a 20 min window is coarse, a night is not)
+06:30:18 I (7702675) plog:   SLEEP : 8.97 h, 120 mAh -> 13.4 mA average (1% = 10 mAh: a 20 min window is coarse, a night is not)
+06:30:18 I (7702793) diag: 34.5 fps (ACTIVE) | frame 26.2 ms | mic L -73 R -73 dBFS, peak 1059 Hz ratio 9.1 dB, whistles 13 | heap 223 KB | 4085 mV USB
+>>> bat
+06:30:18 I (7702904) diag: battery ok: 76% 4085 mV, charging, charge current 500 mA
+06:30:20 I (7704407) battery: charge: set 500 mA (code 11) | CONSTANT CURRENT | VBUS 4740 mV (input limit 1500 mA, VINDPM 4360 mV) | VSYS 4361 mV | VBAT 4084 mV 76% | die 42.5 C | precharge 100 mA, end 100 mA, CV code 3
