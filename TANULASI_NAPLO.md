@@ -237,6 +237,13 @@ Döntés: a kemény 3 sávot lágy átmenet váltja, mert a pixelesítő úgyis 
 
 Fogalmak: színrámpa interpolációja (CONSTANT, LINEAR, EASE), kvantálás rámpára
 
+## 2026-10-21 | M3, 4f. lépés: hátsó lábak barnán, a fül a felénél konyul
+Készült: a fehér maszk szűkítve (has közepe, mellkas, két első láb és mancs), a jobb fül hajtása a hálóba építve (a felső fél 125 fokkal előre-lefelé, lágy gerinccel); élő Blenderben beállítva, a szkriptbe visszavezetve, újragenerálva.
+
+Hiba: a Bend modifier a fület a szélessége mentén tekerte fel. Gyökérok: a Simple Deform "limits" értéke a deformációs tengely mentén szűkít, nem a fül hossza mentén, és a hajlítás előjele is hátrafelé vitte a hegyét. Javítás: a hajtás a bmesh-ben, a csúcsokat a gerinc körül forgatva; az előjelet a kép alapján állítottam be (első próba hátra, második előre).
+
+Fogalmak: csúcsforgatás tengely körül (Matrix.Rotation), lágy gerinc (súlyozott hajtás)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -398,3 +405,7 @@ Fogalmak: színrámpa interpolációja (CONSTANT, LINEAR, EASE), kvantálás rá
 **színrámpa interpolációja:** a Color Ramp két pont között CONSTANT módban ugrik (kemény sáv), LINEAR módban egyenletesen, EASE módban S-görbével megy át. A lágy árnyaláshoz EASE: a fény-árnyék határ elmosódik, de a két végén tartja a palettaszínt.
 
 **kvantálás rámpára:** a pixelesítő minden renderelt pixelhez a paletta legközelebbi színét választja; a rámpa 8 árnyalata között a folyamatos átmenet 5-8 fokozatú lépcsővé válik. Ezért a lágy render pixelesen is lágy, a kemény sáv viszont pixelesen is kemény.
+
+**csúcsforgatás tengely körül:** egy ponthalmaz hajlítása úgy, hogy a kiválasztott csúcsokat egy tengely (itt a fül keresztirányú gerince) körül forgatjuk egy forgatási mátrixszal; a gerinc alatti csúcsok a helyükön maradnak.
+
+**lágy gerinc (súlyozott hajtás):** a forgatás szöge a gerinctől távolodva 0-ról teljesre nő (itt negyed fülmagasságon át), így nem éles törés, hanem ívelt hajlat lesz; a Subdivision tovább simítja.

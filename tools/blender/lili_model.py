@@ -59,13 +59,14 @@ def body_material(fur, white):
     L(s2r.outputs["Color"], rf.inputs["Fac"]); L(s2r.outputs["Color"], rw.inputs["Fac"])
     tc = N("ShaderNodeTexCoord"); sep = N("ShaderNodeSeparateXYZ"); L(tc.outputs["Object"], sep.inputs[0])
     x, y, z = sep.outputs["X"], sep.outputs["Y"], sep.outputs["Z"]
-    belly = math("MULTIPLY", math("LESS_THAN", z, math("ADD", math("MULTIPLY", x, 0.36), 0.165)), math("GREATER_THAN", z, 0.075))   # the underside, above the legs
+    belly = math("MULTIPLY", math("MULTIPLY", math("LESS_THAN", z, math("ADD", math("MULTIPLY", x, 0.36), 0.165)), math("GREATER_THAN", z, 0.075)),
+                 math("MAXIMUM", math("LESS_THAN", math("ABSOLUTE", y), 0.040), math("GREATER_THAN", x, 0.02)))   # the underside centre and the chest; the hind thighs stay fawn (the owner)
     front_legs = math("MULTIPLY", math("GREATER_THAN", x, 0.02), math("LESS_THAN", z, 0.12))        # the front legs are white (L3)
     muzzle = math("MULTIPLY", math("MULTIPLY", math("GREATER_THAN", x, 0.212), math("LESS_THAN", z, 0.318)),
                   math("LESS_THAN", math("ABSOLUTE", y), 0.046))                                     # the short muzzle, white, only as wide as the muzzle
     blaze = math("MULTIPLY", math("MULTIPLY", math("LESS_THAN", math("ABSOLUTE", y), 0.011), math("GREATER_THAN", x, 0.17)),
                  math("GREATER_THAN", z, 0.30))                                                      # the blaze up the forehead
-    paws = math("LESS_THAN", z, 0.028)
+    paws = math("MULTIPLY", math("LESS_THAN", z, 0.028), math("GREATER_THAN", x, 0.02))              # only the front paws (the hind legs are all fawn)
     mask = math("MAXIMUM", math("MAXIMUM", belly, muzzle), math("MAXIMUM", math("MAXIMUM", blaze, paws), front_legs))
     mix = N("ShaderNodeMixRGB"); mix.blend_type = "MIX"
     L(mask, mix.inputs["Fac"]); L(rf.outputs["Color"], mix.inputs["Color1"]); L(rw.outputs["Color"], mix.inputs["Color2"])
@@ -104,13 +105,14 @@ def capsule(name, loc, r, h, mat, parent, coll="LILI"):
     o.parent = parent; lc.link(o, coll)
     return o
 
-def ear(name, loc, rot, mat, inner, parent, coll="LILI", w=0.075, h=0.125, thick=0.014, inset=0.013, fold=0.0):
-    """a big chihuahua ear (the sheet, shaped in the live Blender 2026-10-21): a rounded triangle, thick, with the
-    pink inner ear inset on the front, subdivided soft; `fold` bends it (the drooping right ear, D-03).
-    Local: X across, Z up, -Y the front."""
+def ear(name, loc, rot, mat, inner, parent, coll="LILI", w=0.075, h=0.125, thick=0.014, inset=0.013, fold=0.0, fold_at=0.45):
+    """a big chihuahua ear (the sheet, shaped in the live Blender 2026-10-21): a rounded triangle with a soft
+    tip, thick, the pink inner ear inset on the front, subdivided soft. `fold` (degrees) bends the part above
+    fold_at * h forward and down about a crease across the ear (the drooping right ear, D-03: the base stands,
+    the tip hangs, the inner showing); the crease eases in over a quarter of the height. Local: X across, Z up, -Y front."""
     import bmesh
-    bm = bmesh.new(); pts = []; n = 14
-    tip = 0.012                                                   # the tip is a small arc, not a point (soft)
+    from mathutils import Vector, Matrix
+    bm = bmesh.new(); pts = []; n = 14; tip = 0.012
     for i in range(n + 1):
         t = i / n; pts.append((tip + (w / 2 - tip) * (1 - t) ** 0.85 + 0.008 * math.sin(math.pi * t), 0, (h - tip) * t))
     for k in range(1, 6):                                         # the arc over the tip
@@ -125,13 +127,18 @@ def ear(name, loc, rot, mat, inner, parent, coll="LILI", w=0.075, h=0.125, thick
         f.material_index = 0 if f in ring else 1; f.smooth = True
         if f not in ring:
             for v in f.verts: v.co.y += 0.0025                     # the inner ear sits back a little (cupped)
+    bmesh.ops.subdivide_edges(bm, edges=[e for e in bm.edges], cuts=2, use_grid_fill=True)   # geometry for the fold to bend over
+    if fold:
+        zc = fold_at * h
+        for v in bm.verts:
+            if v.co.z > zc:
+                k = min(1.0, (v.co.z - zc) / (0.25 * h))
+                v.co = Matrix.Rotation(math.radians(fold) * k, 4, "X") @ (v.co - Vector((0, 0, zc))) + Vector((0, 0, zc))
     me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free()
     me.materials.append(mat); me.materials.append(inner)
     o = bpy.data.objects.new(name, me); lc.link(o, coll)
     o.parent = parent; o.location = loc; o.rotation_euler = rot; o.scale = (1.15, 1.0, 1.08)
     sol = o.modifiers.new("thick", "SOLIDIFY"); sol.thickness = thick; sol.offset = 1.0
-    if fold:
-        b = o.modifiers.new("fold", "SIMPLE_DEFORM"); b.deform_method = "BEND"; b.angle = math.radians(fold); b.deform_axis = "X"
     sub = o.modifiers.new("soft", "SUBSURF"); sub.levels = 2; sub.render_levels = 3
     return o
 
@@ -204,7 +211,7 @@ def build(coll="LILI"):
         sphere(f"lili_eye_{side}", (0.096, y, 0.036), (0.028, 0.028, 0.030), M["eye"], head)   # big, round, dark, set apart (L5)
         sphere(f"lili_gloss_{side}", (0.118, y + (0.006 if side == "l" else -0.006), 0.047), (0.007, 0.007, 0.007), M["gloss"], head)
     ear("lili_ear_l", (0.028, 0.048, 0.122), (math.radians(-16), math.radians(6), math.radians(22)), M["fawn"], M["pink"], head)      # her left ear: up, a little outward, the pink forward
-    ear("lili_ear_r", (0.028, -0.055, 0.112), (math.radians(140), math.radians(-4), math.radians(-28)), M["fawn"], M["pink"], head, fold=35)   # her RIGHT ear hangs beside the head, folded (D-03)
+    ear("lili_ear_r", (0.028, -0.050, 0.122), (math.radians(26), math.radians(-6), math.radians(-24)), M["fawn"], M["pink"], head, fold=125)   # her RIGHT ear: stands at the base, folds forward-down at its half (D-03)
     tail(t, M["fawn"])
     return {"root": root, "body": body, "head": head, "legs": legs, "tail": t}
 
