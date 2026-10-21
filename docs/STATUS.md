@@ -26,7 +26,7 @@ Frissítve: 2026-10-20 (reggel)
 - **RTC drift:** `py -3.12 tools/rtc_sync.py --check` (beállítva 2026-10-19 17:23:09).
 
 ## Következő
-- **M3.1 kész:** `tools/blender/lili_common.py` (a kamera, a fény, a toon anyag), `scene_setup.py` (kollekciók, 7 pontos kamera-ellenőrzés, 8 irányú helyőrző kutya), `tools/blender_run.py`, `tools/contact_sheet.py`; `docs/img/m3_1_check.png`. Nyitott: blender-mcp vagy szkriptes modellezés (decisions.md).
+- **M3.1 kész:** `tools/blender/lili_common.py` (a kamera, a fény, a toon anyag), `scene_setup.py` (kollekciók, 7 pontos kamera-ellenőrzés, 8 irányú helyőrző kutya), `tools/blender_run.py`, `tools/contact_sheet.py`; `docs/img/m3_1_check.png`. Élő Blender: `mcp-for-blender` 2.2.2 telepítve (telemetria tiltva), `tools/blender_live.py` (jelenet, nézetkép, kód futtatása a nyitott Blenderben); `docs/img/m3_1_live_viewport.png`.
 - **M3.2 [G]** `palette_from_photos.py`, a mester-paletta jóváhagyása.
 - **M3 Blender gyártósor** (a gazdi Blender 5.2.2 LTS-t telepített).
 - Később (D-07): "Lili" névfelismerés.

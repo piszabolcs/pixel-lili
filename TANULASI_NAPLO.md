@@ -162,6 +162,13 @@ Hiba: az első futáson 3 ellenőrzés elbukott. Tünet: a mélység 16 px-t ér
 
 Fogalmak: ortografikus vetítés, fejetlen (headless) futtatás, származtatott mátrix frissítése, emissziós toon árnyalás
 
+## 2026-10-21 | M3, 1b. lépés: élő Blender (MCP)
+Készült: a `mcp-for-blender` 2.2.2 (a blender-mcp új neve) telepítve: Blender-kiegészítő + MCP szerver a Claude Code-ban, verzióra rögzítve, telemetria háromszorosan tiltva. `tools/blender_live.py`: ugyanazon a helyi socketen parancsot küld a nyitott Blendernek (jelenet listája, nézetkép, kód futtatása).
+
+Döntés: telepítés előtt a letöltött csomag kódját átnéztem, mert a kiegészítő tetszőleges Python kódot futtat a Blenderben, és a csomag adatgyűjtő modult is tartalmaz. A gyártás továbbra is gyári beállításokkal fut, így a kiegészítő nem befolyásolja a buildet.
+
+Fogalmak: MCP (Model Context Protocol), helyi socket (localhost port), verzió-rögzítés, opt-in telemetria
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -267,3 +274,11 @@ Fogalmak: ortografikus vetítés, fejetlen (headless) futtatás, származtatott 
 **származtatott mátrix frissítése:** a Blender az objektum helyéből és forgatásából számolja a világmátrixot (`matrix_world`), de csak a jelenet frissítésekor. Aki közben olvassa, a régi értéket kapja. Általános minta: a gyorsítótárazott, származtatott adatot frissíteni kell, mielőtt olvasunk belőle.
 
 **emissziós toon árnyalás:** a fény erősségét (Shader to RGB) egy lépcsős színátmenet (Color Ramp, konstans) három palettaszínre képezi, és ezt fényforrásként (Emission) adjuk ki. Így a kimenet nem keveredik további fénnyel: a pixel pontosan a palettaszín.
+
+**MCP (Model Context Protocol):** szabványos csatlakozó, amivel egy AI-asszisztens külső programot eszközként használhat. A Claude Code elindít egy kis szervert (`uvx mcp-for-blender`), ami a Claude kéréseit a Blender parancsaira fordítja. Az eszközlista a munkamenet indulásakor töltődik be.
+
+**helyi socket (localhost port):** két program hálózati csatornán beszél, de csak a saját gépen belül (`127.0.0.1`, itt a 9876-os port). Kívülről nem érhető el; a kérés és a válasz itt JSON szöveg.
+
+**verzió-rögzítés (pinning):** a csomagot pontos verzióval kérjük (`==2.2.2`), nem "a legújabbat". Így egy későbbi frissítés nem változtat csendben a működésen, és pontosan azt futtatjuk, amit átnéztünk.
+
+**opt-in telemetria:** adatgyűjtés, ami csak kifejezett engedéllyel indul (alapból ki). Mi ezen felül környezeti változóval is tiltjuk, hogy egy véletlen kattintás se kapcsolja be.
