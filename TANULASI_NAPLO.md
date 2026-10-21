@@ -169,6 +169,15 @@ Döntés: telepítés előtt a letöltött csomag kódját átnéztem, mert a ki
 
 Fogalmak: MCP (Model Context Protocol), helyi socket (localhost port), verzió-rögzítés, opt-in telemetria
 
+## 2026-10-21 | M3, 2. lépés: a mester-paletta a célképekből
+Készült: `tools/palette_from_photos.py` (k-means Oklabban a célképek kijelölt területein, horgony-színek, 8 árnyalatú rámpák), `assets/palettes/master.gpl` + `master.json`, `docs/img/m3_2_palette.png` (jóváhagyási kapu). `--probe` mód: egy terület domináns színei, ezzel választottam a területeket.
+
+Döntés: a színek a jóváhagyott célképekből jönnek, nem a nyers fotókból (azok a telefon fehéregyensúlyát hordozzák). A rámpa nem a bázisszín sötétítése és világosítása (az sáros lesz), hanem Oklabban lépked, és az árnyék a kék, a fény a sárga felé hajlik, ahogy a hi-bit pixel artban.
+
+Hiba: az első futás elakadt, mert az ajtón át látszó kert zöldjét "zöld árnyalat" szabállyal kerestem, de a terület nagy része napfényes krém, zöld alig volt. Javítás: horgony-szín (a klaszter, ami a megadott színhez a legközelebb áll), ez minden bizonytalan anyagra jobb, mint az árnyalat-szabály.
+
+Fogalmak: Oklab, k-means, horgony-szín, hue shift az árnyékban
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -282,3 +291,11 @@ Fogalmak: MCP (Model Context Protocol), helyi socket (localhost port), verzió-r
 **verzió-rögzítés (pinning):** a csomagot pontos verzióval kérjük (`==2.2.2`), nem "a legújabbat". Így egy későbbi frissítés nem változtat csendben a működésen, és pontosan azt futtatjuk, amit átnéztünk.
 
 **opt-in telemetria:** adatgyűjtés, ami csak kifejezett engedéllyel indul (alapból ki). Mi ezen felül környezeti változóval is tiltjuk, hogy egy véletlen kattintás se kapcsolja be.
+
+**Oklab:** észlelésalapú színtér (L világosság, a és b színtengelyek): két szín távolsága benne nagyjából azt méri, amennyire a szem különbözőnek látja őket. Az RGB-ben a számtani átlag és a távolság félrevezet (a sötét színek összemosódnak, a sárga "könnyebb", mint a kék).
+
+**k-means:** csoportosító eljárás: k középpontot keres úgy, hogy minden pixel a hozzá legközelebbi középponthoz tartozzon, és a középpontok a saját csoportjuk átlagai legyenek. Néhány kör után beáll; a nagy csoportok adják egy terület domináns színeit.
+
+**horgony-szín:** egy kézzel megadott közelítő szín; a mért klaszterek közül azt választjuk, amelyik ehhez a legközelebb áll. Így a mérés adja a pontos értéket, de az ember mondja meg, melyik anyagról van szó.
+
+**hue shift az árnyékban:** a festők és a pixelművészek az árnyékot nem pusztán sötétebbre, hanem hidegebbre (kékebbre), a fényt melegebbre (sárgábbra) veszik. Ettől él a kép; a tiszta sötétítés szürkés, "sáros" lesz.
