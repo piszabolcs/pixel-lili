@@ -268,7 +268,8 @@ A kalibráció a pocket-tank 2.16 értékeiből indul (`CAL_S_*`, a landolási t
 | FLICK | játékon indul, felengedéskor a sebesség > 600 px/s (utolsó 80 ms átlaga) | `EV_FLICK(toy, vx, vy)` |
 | DRAG_TOY | játékon indul, lassú | a játék az ujjat követi, elengedve leesik |
 | APPROACH | ujj lent, távolság Lilitől csökken, sebesség < 300 px/s, Lili `play_bow`-ban | `EV_APPROACH(dist)` |
-| EDGE_SWIPE | indulás a bal/jobb széltől 24 px-en belül, vízszintes elmozdulás > 120 px | `EV_SWITCH_VIEW` |
+| EDGE_SWIPE | indulás az alsó/felső széltől 24 px-en belül, függőleges elmozdulás > 120 px (2026-10-21: a váltás felfelé, az ajtó felé történik) | `EV_SWITCH_VIEW` |
+| TAP az ajtón | koppintás a spot_door környékén (2026-10-21) | `EV_SWITCH_VIEW` |
 
 ### 5.4 Gombok
 
@@ -458,9 +459,11 @@ Ablak: bal oldalon a 480x480-as kijelző a kávamaszkkal (40 px sarok, fekete pe
 
 ### 7.1 Művészeti irány
 
-- **Világ:** a Game Boy Color / GBA Pokémon (Gold, Red, Blue) hangulata: döntött, 3/4-es felülnézet, vaskos pixelek, meleg, korlátozott paletta, karakteres sziluettek.
-- **Karakter és tárgyak:** 1 px-es sötétbarna kontúr (`#3B2418` kiinduló érték), 3 tónusú "toon" árnyalás, fix fény bal felülről.
-- **Padló, fű, falak:** kontúr nélkül, csempés textúrával.
+- **Világ (a gazdi döntése 2026-10-21, a célképek: `reference/concept/`):** modern "hi-bit" pixel art, top-down 3/4 nézet. Telített, meleg fő színek hideg árnyékokkal; puha, dinamikus fény (napfénycsík az ajtóból, esti lámpa, holdfény az ablakon); festői, részletes csempék; tiszta pixelrács. A Game Boy / Pokémon look elvetve.
+- **Karakter és tárgyak:** selective outline: a kontúr nem fekete, hanem az anyag legsötétebb árnyalata (a kutyán sötét vörösesbarna, a fán sötétbarna); 3-4 tónusú árnyalás, fix fény bal felülről. Lili arányai a jóváhagyott karakterlap szerint (nagy fej, nagy szemek, rövid lábak, felkunkorodó farok), nem gömbökből.
+- **Padló, fű, falak:** kontúr nélkül, csempés textúrával; a szoba fapadló deszkákkal, a hátsó fal tapéta és lambéria.
+- **A szoba berendezése (a jóváhagyott célkép + a gazdi kérései):** ajtó hátul középen, animált (napközben nyitva, este vagy rossz időben csukva), mellette ablak, amin csukott ajtónál holdfény szűrődik be; a falon képek (nem tányérok) és a sarokülő felett egy óra; 3:2 háromszögmintás szőnyeg a célképnél nagyobb háromszögekkel; L alakú sarokülő kuckóval és takaróval; pelenka, tálak, virágváza.
+- **Ütemezés:** az első kör az aktuális, őszi évszak; a többi évszak későbbi frissítésekben.
 - **Felület:** modern glassmorphism (tejüveg) kapszula a pixeles világ fölött, natív 480 px felbontásban (7.8).
 
 ### 7.2 Technikai vászon és renderelés
@@ -656,7 +659,7 @@ Térbeli logika: a szobában Lili a hátsó falon lévő ajtón megy ki, az udva
 - Útkeresés: A* 8 szomszédsággal, utána húrhúzásos (string-pulling) simítás.
 - Kormányzás: "arrive" viselkedés, gyorsulási korlát, irány 8-ra kvantálva hiszterézissel (ne villogjon két irány között).
 - Sebességek stílus szerint (logikai px/mp): sleepy 18, tiptoe 20, curious 26, walk 32, trot 48, scurry 64, sprint 90.
-- Nézetváltás: Lili a spot_door-hoz megy, az ajtóban "kilép", 0,5 mp múlva a másik nézet ajtópontján jelenik meg. **A kamera nem követi** (a gazdinak kell lapoznia). Ha a `CONFIG_LILI_SEARCH_HINT` be van kapcsolva, a nézet szélén 8 mp-ig kis mancsnyom jelzi, merre ment.
+- Nézetváltás: Lili a spot_door-hoz megy, az ajtóban "kilép", 0,5 mp múlva a másik nézet ajtópontján jelenik meg. **A kamera nem követi** (a gazdinak kell lapoznia). **A lapozás iránya (a gazdi, 2026-10-21): nem oldalra, hanem felfelé, az ajtón át** (a szoba képe felcsúszik, az udvar alulról jön), és **az ajtóra koppintás is vált**, nem csak a KEY3 és a húzás. Ha a `CONFIG_LILI_SEARCH_HINT` be van kapcsolva, a nézet szélén 8 mp-ig kis mancsnyom jelzi, merre ment.
 
 ### 8.5 Takarás és bújás
 
