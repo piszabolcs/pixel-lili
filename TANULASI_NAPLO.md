@@ -153,6 +153,15 @@ Döntés: nincs 460 KB-os RGB565 keretpuffer; minden 24 soros csíkot a callback
 
 Fogalmak: csíkos generálás (callback), vezetékbeli bájtsorrend, memoizálás (gyorsítótár), képkocka-költségvetés
 
+## 2026-10-21 | M3, 1. lépés: a Blender jelenet és a közös kamera
+Készült: `tools/blender/lili_common.py` (kamera, fény, toon anyag, irányok), `tools/blender/scene_setup.py` (kollekciók, kamera-ellenőrzés, helyőrző kutya 8 irányban), `tools/blender_run.py` (fejetlen Blender Windows-ról), `tools/contact_sheet.py` (kontaktlap). Kép: `docs/img/m3_1_check.png`.
+
+Döntés: a kamera számai (35 fok, 1,25 cm/px, pivot a (24, 40)-en) egyetlen fájlban élnek, és a szkript minden futáskor számokkal bizonyítja őket, mert ha a háttér és Lili kamerája eltér, a kutya "lebeg" vagy belesüllyed a padlóba. A toon szín emisszióként jön ki, így a render pontosan a palettaszínt adja.
+
+Hiba: az első futáson 3 ellenőrzés elbukott. Tünet: a mélység 16 px-t ért 9,2 helyett, a magasság 0-t. Gyökérok: a kamera forgatását beállítottam, de a Blender a `matrix_world`-öt csak a jelenet frissítésekor számolja újra, a vetítő függvény a régi (lefelé néző) mátrixot olvasta. Javítás: `view_layer.update()` a kamera beállítása után. Korábbi észlelés: pont erre való a beépített ellenőrzés; a renderek jók voltak, mert a render maga frissít.
+
+Fogalmak: ortografikus vetítés, fejetlen (headless) futtatás, származtatott mátrix frissítése, emissziós toon árnyalás
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -250,3 +259,11 @@ Fogalmak: csíkos generálás (callback), vezetékbeli bájtsorrend, memoizálá
 **memoizálás (gyorsítótár):** amit sokszor ugyanúgy számolnánk ki, egyszer kiszámoljuk és eltesszük, majd csak másoljuk. Kulcs kell hozzá: a `world_bg_key` megmondja, mikor lenne más az eredmény (ma csak nézetváltáskor); ha a kulcs változik, újraszámol.
 
 **képkocka-költségvetés:** 60 fps = 16,7 ms egy képkockára. A mérés bontása (tick, render, kitöltés, küldés) megmutatja, hova megy az idő, és hol érdemes gyorsítani: nálunk a gyorsítótár a rendert 10,5-ről 1,75 ms-ra vitte, a maradék nagy tétel a csíkok kitöltése (9,5 ms).
+
+**ortografikus vetítés:** a kamera sugarai párhuzamosak, nincs perspektíva: ami távolabb van, nem lesz kisebb. Ezért egy tárgy ugyanakkora a szoba elején és végén, és a pixelméret mindenhol ugyanaz (1,25 cm/px). 35 fokos lenézésnél egy talajon fekvő távolság sin 35 = 0,57-szeresre, egy függőleges magasság cos 35 = 0,82-szeresre rövidül a képen.
+
+**fejetlen (headless) futtatás:** a program ablak nélkül, parancssorból fut (`blender -b -P script.py`). Így a gyártás megismételhető: ugyanaz a parancs mindig ugyanazt a képet adja, kézi kattintgatás nélkül.
+
+**származtatott mátrix frissítése:** a Blender az objektum helyéből és forgatásából számolja a világmátrixot (`matrix_world`), de csak a jelenet frissítésekor. Aki közben olvassa, a régi értéket kapja. Általános minta: a gyorsítótárazott, származtatott adatot frissíteni kell, mielőtt olvasunk belőle.
+
+**emissziós toon árnyalás:** a fény erősségét (Shader to RGB) egy lépcsős színátmenet (Color Ramp, konstans) három palettaszínre képezi, és ezt fényforrásként (Emission) adjuk ki. Így a kimenet nem keveredik további fénnyel: a pixel pontosan a palettaszín.
