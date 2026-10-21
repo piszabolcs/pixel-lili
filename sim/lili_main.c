@@ -18,18 +18,30 @@
 #include "mask.h"
 #include "maps_gen.h"
 #include "events.h"
+#include "pak.h"
 #include "lvgl/lvgl.h"
 #include <SDL2/SDL.h>
 
 static world_t s_world;
 static render8_t s_r8;
-static bgcache_t s_bg;                       /* the static layer, drawn once per view (M2.6) */
+static bgcache_t s_bg;
+static pak_t s_pak;                          /* ../assets/build/assets.pak, read once at start (the sim may malloc here: not the frame loop) */                       /* the static layer, drawn once per view (M2.6) */
 static uint16_t s_fb[LILI_PHYS_W * LILI_PHYS_H];
 static mask_t s_mask;
 static bool s_debug;                                   /* M: the corner-zone debug layer */
 
+static void pak_load(const char *path) {
+    FILE *f = fopen(path, "rb"); if (!f) { printf("pak: no %s (placeholder graphics)\n", path); return; }
+    fseek(f, 0, SEEK_END); long n = ftell(f); fseek(f, 0, SEEK_SET);
+    uint8_t *buf = malloc((size_t)n);
+    if (buf && fread(buf, 1, (size_t)n, f) == (size_t)n && pak_open(&s_pak, buf, (uint32_t)n)) { world_set_pak(&s_pak); printf("pak: %s, %ld B, %d entries\n", path, n, s_pak.n); }
+    else printf("pak: %s is not a valid LPAK (placeholder graphics)\n", path);
+    fclose(f);
+}
 static void canvas_init(void) {
-    uint8_t pal[256][3]; pal_placeholder(pal); r8_set_palette(&s_r8, pal);
+    uint8_t pal[256][3];
+    if (!pak_palette(&s_pak, pal)) pal_master(pal);        /* the pak's palette, else the one compiled in (the same bytes) */
+    r8_set_palette(&s_r8, pal);
     mask_init(&s_mask);
 }
 static void frame(void) {
@@ -58,7 +70,7 @@ static int selftest(void) {
     canvas_init();
     /* --- render8: the LUT, the 2x, the stripes, the transparency --- */
     CHECK(s_r8.lut[PAL_WHITE] == 0xFFFF || s_r8.lut[PAL_WHITE] == 0xFFDE, "white maps to RGB565 white");
-    CHECK(s_r8.lut[PAL_OUTLINE] == (uint16_t)(((0x3B & 0xF8) << 8) | ((0x24 & 0xFC) << 3) | (0x18 >> 3)), "the outline's RGB565 is exact");
+    CHECK(s_r8.lut[PAL_OUTLINE] == (uint16_t)(((PAL_MASTER[1][0] & 0xF8) << 8) | ((PAL_MASTER[1][1] & 0xFC) << 3) | (PAL_MASTER[1][2] >> 3)), "the outline's RGB565 is exact (the master palette's slot 1)");
     r8_clear(&s_r8, PAL_FLOOR + 5); r8_fill(&s_r8, 10, 20, 1, 1, PAL_DEBUG);
     r8_flush_rows(&s_r8, s_fb, 0, LILI_PHYS_H);
     for (int dy = 0; dy < 2; dy++) for (int dx = 0; dx < 2; dx++)
@@ -129,9 +141,14 @@ static int selftest(void) {
     l->x = 40; l->y = 112; frame();                    /* bush_1: footprint y 120-134, raised 18: its top face hides her */
     uint16_t behind = px(40, 106);
     l->y = 170; frame();
-    uint16_t front = px(32, 166);                      /* her fur, left of the white chest */
+    int front_dog = 0;                                  /* the sprite (or the capsule) above the pivot: anything that is not grass */
+    for (int yy = 150; yy < 170; yy++) for (int xx = 36; xx < 44; xx++) {
+        uint16_t c = px(xx, yy); int grass = 0;
+        for (int sh = 0; sh < 8; sh++) grass |= c == s_r8.lut[pal_ramp(RAMP_ID_GRASS, sh)];
+        front_dog += !grass;
+    }
     CHECK(behind == s_r8.lut[pal_ramp(RAMP_ID_HEDGE, 6)], "behind a bush, the bush covers Lili (H13)");
-    CHECK(front == s_r8.lut[PAL_FUR + 5], "in front of a bush, Lili is drawn over the grass");
+    CHECK(front_dog > 60, "in front of a bush, Lili is drawn over the grass");
     world_init(&s_world, 1); frame();
     uint16_t rugpx = px(30, 100);
     int on_rug = 0; for (int sh = 0; sh < 8; sh++) on_rug |= rugpx == s_r8.lut[pal_ramp(RAMP_ID_RUG_GRAY, sh)] || rugpx == s_r8.lut[pal_ramp(RAMP_ID_RUG_GREEN, sh)];
@@ -154,6 +171,26 @@ static int selftest(void) {
     CHECK(s_world.view == VIEW_YARD && s_world.clock_s == 3600.0f && s_world.season_force == 3, "view, time skip and season events act on the world");
     CHECK(s_world.daypart_force == -1, "an out-of-range daypart means from-the-clock");
     CHECK(s_world.events_seen[EV_WHISTLE] == 1 && s_world.events_seen[EV_SWITCH_VIEW] == 1, "every event is counted");
+
+    /* --- the pak (M3.3): a bad pack is refused, a sprite frame lands at the pivot and is clipped --- */
+    {
+        static uint8_t bad[32] = "LPAK";
+        pak_t t; CHECK(!pak_open(&t, bad, sizeof bad) && !pak_open(&t, NULL, 0), "a bad or missing pack is refused (placeholder graphics then)");
+        if (s_pak.data) {
+            sprite_set_t set; sprite_frame_t fr;
+            CHECK(pak_sprite_set(&s_pak, ANIM_IDLE_STAND, &set) && set.cell_w == 48 && set.pivot_x == 24 && set.pivot_y == 40 && set.n_frames == 6, "idle_stand: 48 px cell, pivot (24, 40), 6 frames");
+            CHECK(pak_frame(&set, DIR_S, 0, &fr) && fr.rle_len > 0, "frame S/0 exists");
+            r8_clear(&s_r8, PAL_FLOOR + 5); pak_blit(&s_r8, &set, &fr, 120, 140);
+            int painted = 0, out_of_cell = 0;
+            for (int y = 0; y < LILI_LOG_H; y++) for (int x = 0; x < LILI_LOG_W; x++) if (s_r8.px[y * LILI_LOG_W + x] != PAL_FLOOR + 5) {
+                painted++; if (x < 120 - 24 || x >= 120 + 24 || y < 140 - 40 || y >= 140 + 8) out_of_cell++;
+            }
+            CHECK(painted > 200 && !out_of_cell, "the sprite paints inside its cell around the pivot");
+            CHECK(s_r8.px[(140 - 1) * LILI_LOG_W + 120] != PAL_FLOOR + 5 || s_r8.px[(140 - 2) * LILI_LOG_W + 120] != PAL_FLOOR + 5, "the paws stand on the pivot row");
+            r8_clear(&s_r8, 0); pak_blit(&s_r8, &set, &fr, 2, 2); pak_blit(&s_r8, &set, &fr, 238, 238);   /* clipped at both corners: no crash */
+            CHECK(pak_frame(&set, DIR_NE, 7, &fr), "a frame index wraps, a missing direction falls back");
+        } else printf("note: no pak loaded, the sprite tests were skipped\n");
+    }
 
     /* --- the static-layer cache (M2.6): the same picture as the plain render, on a miss and on a hit, in both views --- */
     {
@@ -243,7 +280,7 @@ static void ui_build(void) {
     lv_init();
     lv_tick_set_cb(tick_cb);
     lv_display_t *disp = lv_sdl_window_create(LILI_PHYS_W + INSPECTOR_W, LILI_PHYS_H);
-    lv_sdl_window_set_title(disp, "Pixel Lili sim  (Tab szoba/udvar, W futty, N nev, Enter felvetel, Space razas, T +1 ora, 1-4 evszak, D napszak, M debug, Q kilepes)");
+    lv_sdl_window_set_title(disp, "Pixel Lili sim  (Tab szoba/udvar, W futty, N nev, Enter felvetel, Space razas, T +1 ora, 1-4 evszak, D napszak, A animacio, R irany, M debug, Q kilepes)");
     lv_sdl_mouse_create();
     lv_draw_buf_init(&s_draw_buf, LILI_PHYS_W, LILI_PHYS_H, LV_COLOR_FORMAT_RGB565, LILI_PHYS_W * 2, s_fb, sizeof s_fb);
     s_canvas = lv_canvas_create(lv_screen_active());
@@ -282,6 +319,7 @@ static int inspector_shot(const char *path) {
 }
 
 int main(int argc, char **argv) {
+    pak_load("../assets/build/assets.pak");
     if (argc > 1 && !strcmp(argv[1], "--selftest")) return selftest();
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
     if (argc > 2 && !strcmp(argv[1], "--inspector-shot")) return inspector_shot(argv[2]);
@@ -308,6 +346,8 @@ int main(int argc, char **argv) {
         for (int k = 0; k < 4; k++) if (key_edge(SDL_SCANCODE_1 + k)) ev_push(&s_q, EV_SET_SEASON, k, 0);
         if (key_edge(SDL_SCANCODE_D)) { int c = s_world.daypart_force; ev_push(&s_q, EV_SET_DAYPART, c >= 3 ? -1 : c + 1, 0); }
         if (key_edge(SDL_SCANCODE_M)) s_debug = !s_debug;
+        if (key_edge(SDL_SCANCODE_A)) { actor_t *l = &s_world.actors[0]; l->anim = l->anim == ANIM_IDLE_STAND ? ANIM_WALK : ANIM_IDLE_STAND; l->anim_t = 0; }
+        if (key_edge(SDL_SCANCODE_R)) { actor_t *l = &s_world.actors[0]; l->dir = (dir8_t)((l->dir + 1) % DIR_COUNT); }
         SDL_Delay(wait < 5 ? wait : 5);
     }
     return 0;

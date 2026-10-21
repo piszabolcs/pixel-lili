@@ -29,5 +29,8 @@ static inline uint8_t pal_ramp(int ramp_id, int shade) { return (uint8_t)(16 + r
 
 /* fills a palette: the fixed slots, and each ramp from 35 % to 115 % of its base colour */
 void pal_placeholder(uint8_t out[256][3]);
+/* the master palette (M3.2, approved 2026-10-21): tools/palette_from_photos.py -> master.json -> palette_gen.c */
+extern const uint8_t PAL_MASTER[256][3];
+void pal_master(uint8_t out[256][3]);
 
 #endif

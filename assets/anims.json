@@ -1,0 +1,5 @@
+{
+  "_note": "The animation catalogue (spec 7.4): id = the A-number, fps = playback, dirs = how many of the 8 directions are rendered (8 = all; a list names them), loop. render_all.py renders what is listed here and the pak carries the same ids (common/asset_ids.h is generated from this file).",
+  "idle_stand": { "id": 1, "frames": 6, "fps": 6, "dirs": 8, "loop": true },
+  "walk":       { "id": 4, "frames": 6, "fps": 10, "dirs": 8, "loop": true }
+}

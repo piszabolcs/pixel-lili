@@ -28,7 +28,9 @@ Frissítve: 2026-10-20 (reggel)
 ## Következő
 - **M3.1 kész:** `tools/blender/lili_common.py` (a kamera, a fény, a toon anyag), `scene_setup.py` (kollekciók, 7 pontos kamera-ellenőrzés, 8 irányú helyőrző kutya), `tools/blender_run.py`, `tools/contact_sheet.py`; `docs/img/m3_1_check.png`. Élő Blender: `mcp-for-blender` 2.2.2 telepítve (telemetria tiltva), `tools/blender_live.py` (jelenet, nézetkép, kód futtatása a nyitott Blenderben); `docs/img/m3_1_live_viewport.png`.
 - **Célképek jóváhagyva (2026-10-21):** `reference/concept/` (szoba, Lili karakterlap); spec 7.1 átírva hi-bit pixel artra; az ajtó/ablak/óra/képek és a felfelé lapozás döntései a decisions.md-ben.
-- **M3.2 [G]** `palette_from_photos.py`: a mester-paletta Lili fotóiból **és a jóváhagyott célképekből**, a gazdi jóváhagyja.
+- **M3.2 kész, jóváhagyva (2026-10-21):** `tools/palette_from_photos.py` -> `assets/palettes/master.gpl`, `docs/img/m3_2_palette.png`; a mag a `PAL_MASTER`-rel indul (`palette_gen.c`).
+- **M3.3 kész:** egy parancs (`py -3.12 tools/build_assets.py`) végigviszi: paletta -> Blender jelenet -> 96 kocka render (helyőrző kutya, idle_stand + walk) -> pixelesítés (`tools/pixelize.py`, B7 szabályok) -> kontaktlapok (`docs/img/sheets/`) -> `assets/build/assets.pak` (42,6 KB) + `common/asset_ids.h`. A szimulátor betölti a pakot, Lili a sprite (`docs/img/m3_3_sim_sprite.png`); A = animáció, R = irány. A firmware a pak olvasóval fordul, a pak betöltése a panelen később (partíció, M4 után).
+- **M3.4 [G]** Lili modellje (B2-B4) a karakterlap szerint; jóváhagyási kapu.
 - **M3 Blender gyártósor** (a gazdi Blender 5.2.2 LTS-t telepített).
 - Később (D-07): "Lili" névfelismerés.
 

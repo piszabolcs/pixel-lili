@@ -21,10 +21,16 @@ void world_init(world_t *w, uint32_t seed) {
     lili->x = LILI_LOG_W / 2.0f;                       /* spec 8.2 spot_center */
     lili->y = 140.0f;
     lili->dir = DIR_S;
+    lili->anim = ANIM_IDLE_STAND;
 }
+
+static const pak_t *s_pak;
+void world_set_pak(const pak_t *p) { s_pak = p && p->data ? p : NULL; }
+const pak_t *world_pak(void) { return s_pak; }
 
 void world_tick(world_t *w, float dt) {
     w->clock_s += dt;
+    for (int a = 0; a < MAX_ACTORS; a++) if (w->actors[a].present) w->actors[a].anim_t += dt;
 }
 
 void world_switch_view(world_t *w) {
@@ -106,8 +112,14 @@ static void draw_prop(render8_t *r, const map_prop_t *p) {
     r8_fill(r, p->x, top + p->h, p->w, p->height, pal_ramp(p->ramp, 3));        /* front face */
 }
 
-static void draw_actor(render8_t *r, const actor_t *a) {    /* a capsule dog, its paws at (x, y) */
+static void draw_actor(render8_t *r, const actor_t *a) {    /* the sprite from the pak, or a capsule dog; its paws at (x, y) */
     int x = (int)a->x, y = (int)(a->y - a->z);
+    sprite_set_t set; sprite_frame_t fr;
+    if (s_pak && a->anim && pak_sprite_set(s_pak, a->anim, &set)) {
+        int frame = (int)(a->anim_t * set.fps);
+        if (!set.loop && frame >= set.n_frames) frame = set.n_frames - 1;
+        if (pak_frame(&set, a->dir, frame, &fr)) { pak_blit(r, &set, &fr, x, y); return; }
+    }
     r8_fill(r, x - 11, y - 13, 22, 14, PAL_OUTLINE);
     r8_fill(r, x - 10, y - 12, 20, 12, PAL_FUR + 5);
     r8_fill(r, x - 6, y - 7, 12, 7, PAL_FUR_W + 5);         /* the white chest (L3) */

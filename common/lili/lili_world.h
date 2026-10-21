@@ -7,7 +7,12 @@
 #include "map.h"
 #include "events.h"
 
+#include "pak.h"
 void     world_init(world_t *w, uint32_t seed);
+/* the asset pack the world draws from (NULL or an unopened pak = the placeholder shapes, spec 7.7);
+   the world keeps the pointer, the platform keeps the bytes */
+void     world_set_pak(const pak_t *p);
+const pak_t *world_pak(void);
 void     world_tick(world_t *w, float dt);             /* the body: physics, plans, needs (later layers) */
 void     world_switch_view(world_t *w);                /* KEY3 / Tab / an edge swipe */
 uint32_t world_rand(world_t *w);                       /* the one PRNG (xorshift32), seeded */

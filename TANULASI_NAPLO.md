@@ -178,6 +178,18 @@ Hiba: az első futás elakadt, mert az ajtón át látszó kert zöldjét "zöld
 
 Fogalmak: Oklab, k-means, horgony-szín, hue shift az árnyékban
 
+## 2026-10-21 | M3, 3. lépés: a teljes gyártósor a helyőrző kutyával
+Készült: `assets/anims.json` (katalógus), `tools/gen_palette.py` (paletta a magba), `tools/blender/lili_rig_placeholder.py` + `render_all.py` (96 kocka), `tools/pixelize.py` (B7: módusz-szín, 50 % fedés, 1 px kontúr, kézi javítás védelme), `tools/pack_assets.py` (LPAK + `asset_ids.h`), `common/lili/pak.c/h` (CRC, TOC, RLE-dekódolás közvetlenül a vászonra), `tools/build_assets.py` (egy parancs). A szimulátor betölti a pakot és a sprite-ot rajzolja; selftestek a pakra.
+
+Döntés: a sprite-ot nem csomagoljuk ki a memóriába, hanem minden képkockán az RLE-ből rajzoljuk: a dekódolás olcsóbb, mint a másolás, és 1000 kocka kicsomagolva 2,3 MB lenne a 48 x 48-as cellákkal. A pak egyetlen puffer, a világ csak egy mutatót tart rá.
+
+Hiba 1: a szimulátor összeomlott (segfault) a pak tesztjénél. Tünet: a selftest kimenet nélkül állt le. Gyökérok: a Python író 12 bájtos sprite-fejlécet ír, a C olvasó 13-at várt; a kockarekordok 1 bájttal eltolva, az RLE-mutató a semmibe mutatott. Javítás: 12 a C-ben is, és a formátum leírása a `pack_assets.py` fejlécében az egyetlen hiteles forrás. Korábbi észlelés: egy formátum két megvalósításánál a bájtszámot egy helyről kell venni; a selftest azonnal megfogta.
+
+Hiba 2 (ismét): a Python heredoc a C `
+`-t valódi sorvéggé írta. Javítás: a C stringeket tartalmazó változtatásokat csak az Edit eszközzel. Harmadszor fordult elő; mostantól szabály.
+
+Fogalmak: RLE (futamhossz-kódolás), CRC-32, tartalomjegyzék (TOC) egy bináris fájlban, módusz-szín a pixelesítésnél
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -299,3 +311,11 @@ Fogalmak: Oklab, k-means, horgony-szín, hue shift az árnyékban
 **horgony-szín:** egy kézzel megadott közelítő szín; a mért klaszterek közül azt választjuk, amelyik ehhez a legközelebb áll. Így a mérés adja a pontos értéket, de az ember mondja meg, melyik anyagról van szó.
 
 **hue shift az árnyékban:** a festők és a pixelművészek az árnyékot nem pusztán sötétebbre, hanem hidegebbre (kékebbre), a fényt melegebbre (sárgábbra) veszik. Ettől él a kép; a tiszta sötétítés szürkés, "sáros" lesz.
+
+**RLE (futamhossz-kódolás):** az egyforma, egymás utáni bájtokat (szám, érték) párként tároljuk; a sprite nagy része átlátszó (0) vagy egyszínű folt, ezért 5-szörösre tömörül. Dekódolás közben rögtön rajzolhatunk, nem kell kicsomagolt másolat.
+
+**CRC-32:** 32 bites ellenőrző összeg; bármely bájt sérülése más értéket ad. A pak betöltésekor kiszámoljuk, és ha nem egyezik a fejlécben tárolttal, a játék a helyőrző grafikával indul, nem egy sérült képpel.
+
+**tartalomjegyzék (TOC) egy bináris fájlban:** a fájl végén egy táblázat (azonosító, típus, offset, méret) minden bejegyzéshez. Az olvasó a fejlécből megtudja, hol a tábla, és onnan ugrik a kívánt adatra; nem kell végigolvasni a fájlt.
+
+**módusz-szín a pixelesítésnél:** egy 4 x 4-es blokkból nem az átlagszín lesz a pixel (az elmosódott, köztes színt adna), hanem a leggyakoribb palettaszín. Így a kontúr éles marad, és minden pixel garantáltan a paletta egyik színe.

@@ -67,7 +67,7 @@ void app_main(void) {
     s_r8 = psram(sizeof *s_r8); s_mask = psram(sizeof *s_mask); s_bg = psram(sizeof *s_bg);
     if (!s_r8 || !s_mask || !s_bg) { ESP_LOGE(TAG, "no PSRAM for the canvas"); return; }
     if (!display_port_init()) ESP_LOGE(TAG, "no display: the board was not told");
-    uint8_t pal[256][3]; pal_placeholder(pal); r8_set_palette(s_r8, pal);
+    uint8_t pal[256][3]; pal_master(pal); r8_set_palette(s_r8, pal);      /* M3.2: the approved master palette */
     mask_init(s_mask);
     world_init(&s_world, esp_random());
     ev_init(&s_q);

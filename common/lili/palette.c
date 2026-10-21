@@ -32,3 +32,5 @@ void pal_placeholder(uint8_t out[256][3]) {
     ramp(out, PAL_RUG_GREEN, 150, 176, 70);    /* from the rug photo, 2026-10-19 */
     ramp(out, PAL_RUG_GRAY,  196, 196, 190);   /* shade 7 ~ off-white, 3 ~ dark grey */
 }
+
+void pal_master(uint8_t out[256][3]) { memcpy(out, PAL_MASTER, 256 * 3); }

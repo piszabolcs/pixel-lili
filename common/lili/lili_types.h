@@ -17,6 +17,8 @@ typedef struct {
     view_t  view;              /* which place she is in; both places are always simulated (spec 8.1) */
     float   x, y, z;           /* logical px: x across, y depth (the paws' screen row), z height above the floor */
     dir8_t  dir;
+    uint16_t anim;             /* ANIM_* (common/asset_ids.h); 0 = none (the capsule placeholder) */
+    float   anim_t;            /* seconds into the animation; the frame = anim_t * fps */
 } actor_t;
 
 typedef struct {

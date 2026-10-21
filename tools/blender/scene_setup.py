@@ -7,7 +7,7 @@ camera (orthographic, 35 degrees, lili_common.py), the sun from the upper left, 
 world with no ambient (the toon ramp alone decides the tones), EEVEE with exact colours.
 Then it proves the camera numerically (world points -> the logical px the formulas promise,
 for the sprite cell and for the whole room) and, with --check-dir, renders a placeholder
-chihuahua in the eight game directions so the light, the toon bands and the scale can be
+chihuahua (lili_rig_placeholder.py) in the eight game directions so the light, the toon bands and the scale can be
 looked at (tools/contact_sheet.py puts them side by side). Exit code 1 if a check fails.
 """
 import argparse, math, os, sys
@@ -51,41 +51,11 @@ expect("room: 3 m to the right", (3.0, 0, 0), (lc.LOG, lc.LOG))
 expect(f"room: the floor's back edge ({depth_66:.2f} m)", (1.5, depth_66, 0), (120, 66))
 print(f"lili: the room is {lc.LOG * lc.PX_M:.2f} m wide and {depth_66:.2f} m deep to the wall; Lili's 40 px = {40 * lc.PX_M * 100:.0f} cm")
 
-# ---- a placeholder chihuahua (the M3.3 chain uses it until B2's model exists) ----
-def prim(kind, loc, scale, mat, parent, rot=(0, 0, 0)):
-    if kind == "s":
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, location=loc)
-    elif kind == "c":
-        bpy.ops.mesh.primitive_cylinder_add(vertices=12, location=loc)
-    else:
-        bpy.ops.mesh.primitive_cone_add(vertices=10, location=loc)
-    o = bpy.context.object
-    o.scale, o.rotation_euler = scale, rot
-    o.data.materials.append(mat)
-    bpy.ops.object.shade_smooth()
-    o.parent = parent
-    lc.link(o, "CHECK")
-    return o
-
+# ---- the placeholder chihuahua (lili_rig_placeholder.py; the M3.3 chain renders it until B2's model exists) ----
+import lili_rig_placeholder as rig
 if a.check_dir:
-    FAWN = lc.toon_material("fawn", "#9c6534", "#d99a5b", "#f2c58e")      # placeholders until M3.2's master palette
-    WHITE = lc.toon_material("white", "#b9aa9a", "#ece2d4", "#fffaf2")
-    DARK = lc.toon_material("dark", "#120c0c", "#1c1618", "#3a3034")
-    root = bpy.data.objects.new("lili_root", None)
-    lc.link(root, "CHECK")
-    prim("s", (0.00, 0, 0.17), (0.16, 0.09, 0.085), FAWN, root)             # body: ~32 cm nose to tail with the head
-    prim("s", (0.05, 0, 0.14), (0.11, 0.07, 0.06), WHITE, root)             # chest and belly
-    prim("s", (0.17, 0, 0.27), (0.075, 0.075, 0.07), FAWN, root)            # the apple head
-    prim("s", (0.23, 0, 0.245), (0.04, 0.04, 0.03), WHITE, root)            # muzzle
-    prim("s", (0.266, 0, 0.252), (0.011, 0.013, 0.01), DARK, root)          # nose
-    for y in (0.03, -0.03):
-        prim("s", (0.225, y, 0.285), (0.012, 0.012, 0.014), DARK, root)     # eyes
-    prim("k", (0.15, 0.05, 0.345), (0.032, 0.014, 0.04), FAWN, root, rot=(math.radians(-20), 0, 0))      # her left ear: up
-    prim("k", (0.15, -0.075, 0.31), (0.032, 0.014, 0.04), FAWN, root, rot=(math.radians(75), 0, 0))    # her RIGHT ear droops (D-03)
-    for x in (0.09, -0.09):
-        for y in (0.045, -0.045):
-            prim("c", (x, y, 0.06), (0.018, 0.018, 0.06), WHITE if x > 0 else FAWN, root)
-    prim("k", (-0.17, 0, 0.24), (0.018, 0.018, 0.07), FAWN, root, rot=(0, math.radians(-35), 0))       # tail, up
+    h = rig.build("CHECK")
+    root = h["root"]
     lc.camera(sc, "cell")
     os.makedirs(a.check_dir, exist_ok=True)
     for d, name in enumerate(lc.DIR_NAMES):
