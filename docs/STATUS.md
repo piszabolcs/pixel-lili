@@ -19,15 +19,18 @@ Frissítve: 2026-10-20 (reggel)
 - **M1.5** fogyasztás: ACTIVE ~80-90 mA, DIM ~40 mA, könnyű alvás 13-20 mA (stats.md); DESK türelmi idő javaslat: 8 óra, utána kikapcsolás (decisions.md). **Az M1 ezzel kész.**
 - **M2.1-M2.4 (szimulátor):** `make LILI=1` -> `lilisim`: közös `common/lili` mag, 8 bites renderelő (LUT, 2x flush), kávamaszk (72 px sarok, vignetta), szoba és udvar `assets/maps/*.json`-ból, a gazdi szőnyegével, Y-rendezés, debug réteg (M).
 
+- **M2.5:** esemény-sor (17 típus) és inspector panel a szimulátorban (`docs/img/m2_5_inspector.png`).
+- **M2.6:** a Lili-világ saját firmware-ként fut a 2.16-on (`firmware/lili`, `tools/build_lili.sh`, `flash_216.py lili`): sávos flush keretpuffer nélkül, a statikus réteg gyorsítótárból; **62,5 fps** (cél >= 25), belső heap 270 KB szabad (stats.md). Az **M2 ezzel kész.** A panel billentyűi: KEY3 = szoba/udvar, BOOT = következő évszak (az érintés az M4-ben jön).
+
 ## Folyamatban
 - **RTC drift:** `py -3.12 tools/rtc_sync.py --check` (beállítva 2026-10-19 17:23:09).
 
 ## Következő
-- M2.5 inspector panel a szimulátorban, M2.6 a panelen (statikus háttér gyorsítótár, sávos flush, >= 25 fps mérés).
-- M3 Blender gyártósor (a gazdi Blender 5.2.2 LTS-t telepített).
+- **M3 Blender gyártósor** (a gazdi Blender 5.2.2 LTS-t telepített).
 - Később (D-07): "Lili" névfelismerés.
 
 ## Próbáld ki (a gazdinak)
-- **A panelen:** menj végig az üdvözlő oldalon (érintés), nézd meg, hogy úsznak-e a halak, működik-e az érintés és a 3 gomb. Írd meg, melyik gomb mit csinált (M1.3).
+- **A Lili-világ a panelen:** `py -3.12 tools/flash_216.py lili`, utána a panel a helyőrző szobát mutatja (KEY3 = udvar, BOOT = évszak). Vissza a diagra: `flash_216.py diag`.
+- **A panelen (M1.3):** menj végig az üdvözlő oldalon (érintés), nézd meg, hogy úsznak-e a halak, működik-e az érintés és a 3 gomb. Írd meg, melyik gomb mit csinált (M1.3).
 - WSL terminálban: `cd /mnt/c/Users/kaposzta/Desktop/Project/Lili_project/pixel-lili/sim && ./fishsim-square` -> 480x480-as akvárium ablak WSLg-n. Fordítás innen: `make SQUARE=1 -j6` (51 mp /mnt/c-ről).
 - `~/dev/lili-venv/bin/python -c "import torch; print(torch.cuda.get_device_name(0))"` -> "NVIDIA GeForce RTX 5060".

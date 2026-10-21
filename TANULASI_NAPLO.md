@@ -146,6 +146,13 @@ Döntés: minden bemenet (gomb, egér, később érintés, IMU, mikrofon) ugyana
 
 Fogalmak: gyűrűs puffer (ring buffer), termelő-fogyasztó minta
 
+## 2026-10-21 | M2, 6. lépés: a Lili-világ a panelen
+Készült: `firmware/lili` (új ESP-IDF alkalmazás: a `common/lili` mag + a pocket-tank kijelző-portja), `display_port_flush_gen` (a csíkot a hívó callbackje tölti közvetlenül a DMA pufferbe, nincs keretpuffer), `world_render_bg/fg/cached` (a statikus réteg gyorsítótára), `tools/build_lili.sh`, `flash_216.py lili`. Mért: 40 fps gyorsítótár nélkül, **62,5 fps** gyorsítótárral, belső heap 270 KB szabad.
+
+Döntés: nincs 460 KB-os RGB565 keretpuffer; minden 24 soros csíkot a callback állít elő a 8 bites vászonból (LUT, 2x, maszk, bájtcsere), mert így a PSRAM nem lesz a szűk keresztmetszet, és a vászon 8-szor kisebb. A statikus réteget (padló, fal, lapos propok: szőnyeg, pelenka, tálak) nézetenként egyszer rajzoljuk, utána másoljuk vissza.
+
+Fogalmak: csíkos generálás (callback), vezetékbeli bájtsorrend, memoizálás (gyorsítótár), képkocka-költségvetés
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -235,3 +242,11 @@ Fogalmak: gyűrűs puffer (ring buffer), termelő-fogyasztó minta
 **gyűrűs puffer (ring buffer):** fix méretű tömb, amit körbe-körbe használunk: a `head` a legrégebbi elem, a `count` a benne lévők száma, az új elem a `(head + count) % N` helyre kerül. Nincs malloc, nincs mozgatás; ha tele van, vagy az újat dobjuk, vagy (itt) a legrégebbit.
 
 **termelő-fogyasztó minta:** a bemenetet adók (termelők: érintés, IMU, mikrofon, gombok) egy sorba írnak, egyetlen fogyasztó (a képkocka-ciklus) üríti. Így nincs versengés az állapoton, és a bemenet forrása elkülönül a viselkedéstől.
+
+**csíkos generálás (callback):** a kijelzőt nem egy kész képpel etetjük, hanem a kijelző-port minden 24 soros csíkhoz meghív egy általunk adott függvényt (`fill(dst, y0, n)`), ami a DMA pufferbe írja a sorokat. Közben a másik puffert már küldi a hardver (ping-pong), így a számolás és az adatküldés átlapolódik.
+
+**vezetékbeli bájtsorrend:** az RGB565 szín 16 bit; a ESP32 kisvégű (a kisebb bájt van elöl), a kijelző viszont a nagyobb bájtot várja előre. Ezért minden pixelnél fel kell cserélni a két bájtot; mi egyszerre két pixelen, egy 32 bites műveletben tesszük.
+
+**memoizálás (gyorsítótár):** amit sokszor ugyanúgy számolnánk ki, egyszer kiszámoljuk és eltesszük, majd csak másoljuk. Kulcs kell hozzá: a `world_bg_key` megmondja, mikor lenne más az eredmény (ma csak nézetváltáskor); ha a kulcs változik, újraszámol.
+
+**képkocka-költségvetés:** 60 fps = 16,7 ms egy képkockára. A mérés bontása (tick, render, kitöltés, küldés) megmutatja, hova megy az idő, és hol érdemes gyorsítani: nálunk a gyorsítótár a rendert 10,5-ről 1,75 ms-ra vitte, a maradék nagy tétel a csíkok kitöltése (9,5 ms).

@@ -236,3 +236,6 @@ A `docs/DEVICE.md` NEM sorolja fel a parancsokat (flash szabályok + folyamatban
 15. **Flash-szabály**: `docs/DEVICE.md` szerint csak `tools/flash.sh`-n át, ami előbb a `preflight.py`-t futtatja és archivál (`docs/batlog/`), mert egy reset egyszer elvitte az éjszakai akkumérést. A `flash_square.sh` ezt kihagyja ("No preflight").
 16. **Forrásbeli ellentmondások**: `common/version.h` `PT_MODEL_TAG "v3m"` vs `docs/DEVICE.md` "Model partition: v4m" és a README v4; `docs/bringup.md` az 1.8-ról szól (SH8601 + FT3168, expander, IDF export), nem a 2.16-ról; az AUDIO.md pinjei az 1.8-éi; a `memory_budget.md` régi partíciós táblát és 448x368 puffert ír. Az érvényes: `partitions.csv`, `board_pins.h`, a forrás.
 17. A `docs/bringup.md` 4. pontja szerint az I2C lábak 15/14 vagy 14/15 lehetnek (az 1.8-nál); a 2.16 doksi: SDA 15 / SCL 14.
+
+## Módosított átvett fájlok (Pixel Lili)
+1. `firmware/main/display_port.h`, `display_port_sh8601.c`: **új függvény** `display_port_flush_gen(fill, ctx)` (M2.6, 2026-10-21) a 2.16-ra: a hívó callbackje tölti a DMA csíkot (24 sor, a vezeték bájtsorrendjében), így nincs 460 KB-os RGB565 keretpuffer. A meglévő függvények nem változtak; a nem-square buildekben üres.

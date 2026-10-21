@@ -651,3 +651,23 @@ void display_port_flush(const uint16_t *fb) {
     }
 #endif
 }
+
+#if defined(TANK_SQUARE)
+/* Pixel Lili (M2.6): the square's frame without a frame buffer. The caller fills each
+ * stripe straight into the DMA buffer (rows y0 .. y0 + n of the 480 x 480 picture, the
+ * wire's byte order: high byte first), so the 460 KB RGB565 image never exists. */
+void display_port_flush_gen(display_fill_fn fill, void *ctx) {
+    if (!s_panel) return;
+    int cur = 0;
+    const int rows = (STRIPE_BYTES / (TANK_W * 2)) & ~1;
+    for (int y0 = 0; y0 < TANK_H; y0 += rows) {
+        const int n = TANK_H - y0 < rows ? TANK_H - y0 : rows;
+        stripe_take();
+        fill(s_stripe[cur], y0, n, ctx);
+        round_send(0, y0, TANK_W, n, s_stripe[cur]);
+        cur ^= 1;
+    }
+}
+#else
+void display_port_flush_gen(display_fill_fn fill, void *ctx) { (void)fill; (void)ctx; }
+#endif

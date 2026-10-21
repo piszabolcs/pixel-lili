@@ -2,6 +2,7 @@
 """Pixel Lili: flash the 2.16 panel from Windows with the Windows-side esptool.
 
     py -3.12 tools/flash_216.py diag [--port COM3]     the diag firmware (firmware/build/diag)
+    py -3.12 tools/flash_216.py lili [--port COM3]     the Pixel Lili world (firmware/build/lili)
     py -3.12 tools/flash_216.py tank [--port COM3]     the pocket-tank square set back (firmware/build/216)
     py -3.12 tools/flash_216.py <set> --dry            print the esptool command only
 
@@ -15,6 +16,7 @@ import argparse, os, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETS = {"diag": os.path.join(ROOT, "firmware", "build", "diag"),
+        "lili": os.path.join(ROOT, "firmware", "build", "lili"),
         "tank": os.path.join(ROOT, "firmware", "build", "216")}
 
 def main():

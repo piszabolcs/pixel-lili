@@ -11,6 +11,11 @@ bool display_port_init(void);
 /* push a full TANK_W x TANK_H RGB565 frame; may return before DMA completes */
 void display_port_flush(const uint16_t *fb);
 void display_port_flush_prof(int64_t *wait_us, int64_t *send_us);   /* since the last call: waiting on the wire, inside the send */
+/* Pixel Lili: a frame made stripe by stripe straight into the DMA buffer (the 2.16 only):
+ * fill(dst, y0, n, ctx) writes rows y0 .. y0 + n of the 480 x 480 picture, RGB565 with the
+ * bytes swapped (the wire's order). No frame buffer; the stripes are 24 rows, always even. */
+typedef void (*display_fill_fn)(uint16_t *dst, int y0, int n, void *ctx);
+void display_port_flush_gen(display_fill_fn fill, void *ctx);
 /* power the panel down for device sleep; display_port_wake (or a boot's
  * display_port_init) re-sequences it */
 void display_port_sleep(void);

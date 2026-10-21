@@ -115,16 +115,32 @@ static void draw_actor(render8_t *r, const actor_t *a) {    /* a capsule dog, it
     r8_fill(r, x - 8, y - 18, 8, 6, PAL_FUR + 6);           /* the head */
 }
 
-void world_render(const world_t *w, render8_t *r) {
+uint32_t world_bg_key(const world_t *w) { return (uint32_t)w->view + 1; }   /* the placeholder world's static layer depends on the view only */
+
+void world_render_bg(const world_t *w, render8_t *r) {
     const map_t *m = world_map(w, w->view);
     r8_clear(r, pal_ramp(m->floor_ramp, 5));
     r8_fill(r, 0, 0, LILI_LOG_W, m->wall_bottom, pal_ramp(m->wall_ramp, 4));
     r8_fill(r, 0, m->wall_bottom - 1, LILI_LOG_W, 1, pal_ramp(m->wall_ramp, 2));   /* the wall's foot */
-    /* the Y-sort (spec 7.2 step 3, 8.5): flat props first, then everything by its front edge,
-       so a prop in front of Lili covers her and one behind her is covered. Fixed arrays, no malloc. */
+    for (int i = 0; i < m->n_props; i++) if (m->props[i].flat) draw_prop(r, &m->props[i]);
+}
+
+void world_render_cached(const world_t *w, render8_t *r, bgcache_t *c) {
+    uint32_t k = world_bg_key(w);
+    if (!c->valid || c->key != k) { world_render_bg(w, r); memcpy(c->px, r->px, sizeof c->px); c->key = k; c->valid = 1; }
+    else memcpy(r->px, c->px, sizeof c->px);
+    world_render_fg(w, r);
+}
+
+void world_render(const world_t *w, render8_t *r) { world_render_bg(w, r); world_render_fg(w, r); }
+
+void world_render_fg(const world_t *w, render8_t *r) {
+    const map_t *m = world_map(w, w->view);
+    /* the Y-sort (spec 7.2 step 3, 8.5): the flat props are already in the static layer; everything else
+       by its front edge, so a prop in front of Lili covers her and one behind her is covered. Fixed arrays, no malloc. */
     enum { MAXD = 32 }; int16_t key[MAXD]; int8_t who[MAXD]; int n = 0;   /* who: prop index, or -1 - actor */
     for (int i = 0; i < m->n_props && n < MAXD; i++) {
-        if (m->props[i].flat) { draw_prop(r, &m->props[i]); continue; }
+        if (m->props[i].flat) continue;
         key[n] = m->props[i].sort_y; who[n++] = (int8_t)i;
     }
     for (int a = 0; a < MAX_ACTORS && n < MAXD; a++)

@@ -23,6 +23,7 @@
 
 static world_t s_world;
 static render8_t s_r8;
+static bgcache_t s_bg;                       /* the static layer, drawn once per view (M2.6) */
 static uint16_t s_fb[LILI_PHYS_W * LILI_PHYS_H];
 static mask_t s_mask;
 static bool s_debug;                                   /* M: the corner-zone debug layer */
@@ -32,7 +33,7 @@ static void canvas_init(void) {
     mask_init(&s_mask);
 }
 static void frame(void) {
-    world_render(&s_world, &s_r8);
+    world_render_cached(&s_world, &s_r8, &s_bg);
     if (s_debug) { world_debug_draw(&s_world, &s_r8); mask_debug_draw(&s_r8, PAL_DEBUG); }
     r8_flush_rows(&s_r8, s_fb, 0, LILI_PHYS_H);        /* the sim takes the whole frame; the panel takes stripes */
     mask_apply_rows(&s_mask, s_fb, 0, LILI_PHYS_H);    /* the glass's corners and edge fade, on the same rows */
@@ -154,6 +155,20 @@ static int selftest(void) {
     CHECK(s_world.daypart_force == -1, "an out-of-range daypart means from-the-clock");
     CHECK(s_world.events_seen[EV_WHISTLE] == 1 && s_world.events_seen[EV_SWITCH_VIEW] == 1, "every event is counted");
 
+    /* --- the static-layer cache (M2.6): the same picture as the plain render, on a miss and on a hit, in both views --- */
+    {
+        static render8_t ra, rb; static bgcache_t bc;
+        memset(&bc, 0, sizeof bc); world_init(&s_world, 7);
+        for (int v = 0; v < 3; v++) {
+            world_render(&s_world, &ra); world_render_cached(&s_world, &rb, &bc);
+            CHECK(!memcmp(ra.px, rb.px, sizeof ra.px), "cached render (a miss) = the plain render");
+            s_world.actors[0].x += 17; world_render(&s_world, &ra); world_render_cached(&s_world, &rb, &bc);
+            CHECK(!memcmp(ra.px, rb.px, sizeof ra.px), "cached render (a hit, Lili moved) = the plain render");
+            world_switch_view(&s_world);
+        }
+        CHECK(world_bg_key(&s_world) != bc.key, "a view switch changes the key, so the next render redraws the static layer");
+    }
+
     /* --- the world --- */
     world_init(&s_world, 1234);
     for (int i = 0; i < 600; i++) world_tick(&s_world, 1.0f / 60.0f);
@@ -179,12 +194,12 @@ static int bench(void) {
     canvas_init(); world_init(&s_world, 1);
     const int N = 2000; double t_render = 0, t_flush = 0, t_mask = 0;
     for (int i = 0; i < N; i++) {
-        double t0 = now_us(); world_render(&s_world, &s_r8);
+        double t0 = now_us(); world_render_cached(&s_world, &s_r8, &s_bg);
         double t1 = now_us(); r8_flush_rows(&s_r8, s_fb, 0, LILI_PHYS_H);
         double t2 = now_us(); mask_apply_rows(&s_mask, s_fb, 0, LILI_PHYS_H);
         double t3 = now_us(); t_render += t1 - t0; t_flush += t2 - t1; t_mask += t3 - t2;
     }
-    printf("bench (PC, %d frames): render %.1f us, flush %.1f us, mask %.1f us per frame - the panel's numbers come from M2.6\n", N, t_render / N, t_flush / N, t_mask / N);
+    printf("bench (PC, %d frames, static layer cached): render %.1f us, flush %.1f us, mask %.1f us per frame - the panel's numbers come from M2.6\n", N, t_render / N, t_flush / N, t_mask / N);
     return 0;
 }
 

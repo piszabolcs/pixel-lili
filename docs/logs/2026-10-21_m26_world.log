@@ -1,0 +1,3 @@
+--- 17:00:41 port COM3 open
+17:00:45 I (102) esp_image: segment 1: paddr=0001efe8 vaddr=3fc95a00 sizeI (10797) lili: 40.0 fps | per frame: tick 1 us, render 10478 us, flush 13968 us (fill 9227, wire wait 39, send 4644) | internal heap 270 KB, min 270 KB
+17:00:50 I (15799) lili: 40.0 fps | per frame: tick 1 us, render 10478 us, flush 13968 us (fill 9227, wire wait 39, send 4644) | internal heap 270 KB, min 270 KB
