@@ -61,7 +61,8 @@ def body_material(fur, white):
     x, y, z = sep.outputs["X"], sep.outputs["Y"], sep.outputs["Z"]
     belly = math("MULTIPLY", math("LESS_THAN", z, math("ADD", math("MULTIPLY", x, 0.36), 0.165)), math("GREATER_THAN", z, 0.075))   # the underside, above the legs
     front_legs = math("MULTIPLY", math("GREATER_THAN", x, 0.02), math("LESS_THAN", z, 0.12))        # the front legs are white (L3)
-    muzzle = math("MULTIPLY", math("GREATER_THAN", x, 0.205), math("LESS_THAN", z, 0.318))           # the short muzzle, white
+    muzzle = math("MULTIPLY", math("MULTIPLY", math("GREATER_THAN", x, 0.212), math("LESS_THAN", z, 0.318)),
+                  math("LESS_THAN", math("ABSOLUTE", y), 0.046))                                     # the short muzzle, white, only as wide as the muzzle
     blaze = math("MULTIPLY", math("MULTIPLY", math("LESS_THAN", math("ABSOLUTE", y), 0.011), math("GREATER_THAN", x, 0.17)),
                  math("GREATER_THAN", z, 0.30))                                                      # the blaze up the forehead
     paws = math("LESS_THAN", z, 0.028)
@@ -81,7 +82,7 @@ def materials():
         "white": lc.toon_material("lili_white", white[3], white[5], white[7]),
         "eye":   lc.toon_material("lili_eye", fixed["eye"], fixed["eye"], fixed["eye"]),
         "nose":  lc.toon_material("lili_nose", fixed["nose"], fixed["nose"], fixed["ear_pink"]),
-        "pink":  lc.toon_material("lili_ear_pink", fixed["nose"], fixed["ear_pink"], fixed["ear_pink"]),
+        "pink":  lc.toon_material("lili_ear_pink", "#9a5f64", "#c9898c", "#e3aeb0"),           # the inner ear: the sheet's soft pink (the palette has none)
         "gloss": lc.toon_material("lili_eye_gloss", "#fffaf2", "#fffaf2", "#fffaf2"),
     }
 
@@ -103,18 +104,32 @@ def capsule(name, loc, r, h, mat, parent, coll="LILI"):
     o.parent = parent; lc.link(o, coll)
     return o
 
-def ear(name, loc, rot, mat, inner, parent, coll="LILI", h=0.13, w=0.075, t=0.018):
-    """a big triangular chihuahua ear: a flattened cone, with a pink inner face"""
-    bpy.ops.mesh.primitive_cone_add(vertices=4, radius1=1.0, radius2=0.08, depth=2.0, location=loc)
-    o = bpy.context.object; o.name = name
-    o.scale = (w / 2, t / 2, h / 2); o.rotation_euler = rot
-    o.data.materials.append(mat); bpy.ops.object.shade_smooth()
-    o.parent = parent; lc.link(o, coll)
-    bpy.ops.mesh.primitive_cone_add(vertices=4, radius1=0.7, radius2=0.05, depth=1.6, location=(0, 0, 0))
-    p = bpy.context.object; p.name = name + "_inner"
-    p.data.materials.append(inner); bpy.ops.object.shade_smooth()
-    p.parent = o; p.location = (0, -0.55, -0.05); p.scale = (1, 0.3, 1)      # pushed to the ear's front face (its -Y side)
-    lc.link(p, coll)
+def ear(name, loc, rot, mat, inner, parent, coll="LILI", w=0.075, h=0.125, thick=0.014, inset=0.013, fold=0.0):
+    """a big chihuahua ear (the sheet, shaped in the live Blender 2026-10-21): a rounded triangle, thick, with the
+    pink inner ear inset on the front, subdivided soft; `fold` bends it (the drooping right ear, D-03).
+    Local: X across, Z up, -Y the front."""
+    import bmesh
+    bm = bmesh.new(); pts = []; n = 14
+    for i in range(n + 1):
+        t = i / n; pts.append((w / 2 * (1 - t) ** 0.85 + 0.008 * math.sin(math.pi * t), 0, h * t))
+    for i in range(1, n):
+        t = 1 - i / n; pts.append((-(w / 2 * (1 - t) ** 0.85 + 0.010 * math.sin(math.pi * t)), 0, h * t))
+    verts = [bm.verts.new(p) for p in pts]
+    face = bm.faces.new(verts)
+    res = bmesh.ops.inset_region(bm, faces=[face], thickness=inset, depth=0.0, use_boundary=True, use_even_offset=True)
+    ring = set(res["faces"])
+    for f in bm.faces:
+        f.material_index = 0 if f in ring else 1; f.smooth = True
+        if f not in ring:
+            for v in f.verts: v.co.y += 0.0025                     # the inner ear sits back a little (cupped)
+    me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free()
+    me.materials.append(mat); me.materials.append(inner)
+    o = bpy.data.objects.new(name, me); lc.link(o, coll)
+    o.parent = parent; o.location = loc; o.rotation_euler = rot; o.scale = (1.15, 1.0, 1.08)
+    sol = o.modifiers.new("thick", "SOLIDIFY"); sol.thickness = thick; sol.offset = 1.0
+    if fold:
+        b = o.modifiers.new("fold", "SIMPLE_DEFORM"); b.deform_method = "BEND"; b.angle = math.radians(fold); b.deform_axis = "X"
+    sub = o.modifiers.new("soft", "SUBSURF"); sub.levels = 2; sub.render_levels = 3
     return o
 
 def tail(parent, mat, coll="LILI"):
@@ -156,32 +171,37 @@ def build(coll="LILI"):
     E = lambda name, loc, par: lc.link(_empty(name, loc, par), coll)
     root = E("lili_root", (0, 0, 0), None)
     head = E("lili_head", (0.105, 0, 0.292), root)                                             # the neck joint: the animation handle
-    legs = [E(f"lili_leg{i}", (x, y, 0.115), root) for i, (x, y) in enumerate(((0.065, 0.050), (0.065, -0.050), (-0.085, 0.052), (-0.085, -0.052)))]
-    t = E("lili_tail", (-0.14, 0, 0.215), root)
+    legs = [E(f"lili_leg{i}", (x, y, 0.115), root) for i, (x, y) in enumerate(((0.065, 0.050), (0.065, -0.050), (-0.072, 0.052), (-0.072, -0.052)))]
+    t = E("lili_tail", (-0.125, 0, 0.212), root)
     # the fawn mass: the base object carries the family's resolution and material
     body = mball("lili_mb", root, [
-        ("ELLIPSOID", (-0.01, 0, 0.175), 0.146, (1.25, 0.95, 0.85), 0),                       # the barrel: an ELLIPSOID's size is a scale around its radius (1 = a ball)
-        ("BALL", (-0.09, 0, 0.165), 0.11, None, 0),                                          # the rump
+        ("ELLIPSOID", (-0.005, 0, 0.172), 0.146, (1.08, 0.95, 0.85), 0),                    # the barrel, compact: an ELLIPSOID's size is a scale around its radius (1 = a ball)
+        ("BALL", (-0.072, 0, 0.162), 0.105, None, 0),                                        # the rump
         ("BALL", (0.055, 0, 0.168), 0.117, None, 0),                                          # the chest mass
         ("CAPSULE", (0.08, 0, 0.225), 0.10, (0.02, 0, 0), -55),                              # the neck, short, up into the head
     ], M["body"], coll, base=True)
     mball("lili_mb.001", head, [                                                               # the head family member
         ("BALL", (0.035, 0, 0.03), 0.153, None, 0),                                           # the skull
         ("BALL", (0.045, 0, 0.075), 0.10, None, 0),                                          # the apple dome
-        ("BALL", (0.078, 0.052, -0.012), 0.061, None, 0),                                     # cheeks
-        ("BALL", (0.078, -0.052, -0.012), 0.061, None, 0),
-        ("BALL", (0.108, 0, -0.012), 0.061, None, 0),                                         # the muzzle's root
+        ("BALL", (0.06, 0.056, -0.022), 0.066, None, 0),                                      # puffy cheeks
+        ("BALL", (0.06, -0.056, -0.022), 0.066, None, 0),
+        ("BALL", (0.105, 0, -0.026), 0.060, None, 0),                                         # the short muzzle's root
     ], None, coll)
     for i, hip in enumerate(legs):
-        mball(f"lili_mb.{i + 2:03d}", hip, [("CAPSULE", (0, 0, -0.045), 0.037, (0.04, 0, 0), 90)], None, coll)   # vertical, blends into the barrel
+        mball(f"lili_mb.{i + 2:03d}", hip, [
+            ("BALL", (0, 0, 0), 0.058, None, 0),                                              # the thigh / shoulder, blending into the barrel
+            ("CAPSULE", (0, 0, -0.05), 0.036, (0.03, 0, 0), 90),                               # the leg, vertical
+            ("ELLIPSOID", (0.012, 0, -0.098), 0.046, (1.25, 1.05, 0.62), 0),                   # the paw: wide, flat
+            ("BALL", (0.036, -0.016, -0.102), 0.026, None, 0), ("BALL", (0.036, 0, -0.102), 0.026, None, 0), ("BALL", (0.036, 0.016, -0.102), 0.026, None, 0),   # three toes
+        ], None, coll)
     # the white markings as meshes that stand a little proud of the fawn surface
     # the white markings (chest, belly, muzzle, blaze, paws) are painted by the body material's mask
     sphere("lili_nose", (0.152, 0, -0.008), (0.016, 0.018, 0.013), M["nose"], head)        # the worn pinkish-brown nose (L6)
     for side, y in (("l", 0.044), ("r", -0.044)):
-        sphere(f"lili_eye_{side}", (0.096, y, 0.036), (0.026, 0.026, 0.028), M["eye"], head)   # big, round, dark, set apart (L5)
+        sphere(f"lili_eye_{side}", (0.096, y, 0.036), (0.028, 0.028, 0.030), M["eye"], head)   # big, round, dark, set apart (L5)
         sphere(f"lili_gloss_{side}", (0.118, y + (0.006 if side == "l" else -0.006), 0.047), (0.007, 0.007, 0.007), M["gloss"], head)
-    ear("lili_ear_l", (0.015, 0.068, 0.155), (math.radians(-18), math.radians(-6), math.radians(8)), M["fawn"], M["pink"], head)      # her left ear: up
-    ear("lili_ear_r", (0.015, -0.095, 0.095), (math.radians(112), math.radians(0), math.radians(-20)), M["fawn"], M["pink"], head)   # her RIGHT ear droops (D-03)
+    ear("lili_ear_l", (0.028, 0.048, 0.122), (math.radians(-16), math.radians(6), math.radians(22)), M["fawn"], M["pink"], head)      # her left ear: up, a little outward, the pink forward
+    ear("lili_ear_r", (0.028, -0.055, 0.112), (math.radians(140), math.radians(-4), math.radians(-28)), M["fawn"], M["pink"], head, fold=35)   # her RIGHT ear hangs beside the head, folded (D-03)
     tail(t, M["fawn"])
     return {"root": root, "body": body, "head": head, "legs": legs, "tail": t}
 

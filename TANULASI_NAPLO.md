@@ -219,6 +219,17 @@ Hiba 3: a test vékony volt. Gyökérok: a mező képlete szerint a felület a s
 
 Fogalmak: metaball (implicit felület), család és alapobjektum, pozíció szerinti anyagmaszk, küszöb és merevség
 
+## 2026-10-21 | M3, 4d. lépés: fülek, mancsok, arc az élő Blenderben
+Készült: kerekített, vastag, belül rózsaszín fülek (bmesh + Solidify + inset + Subdivision, a lógó fül Bend-del), comb-láb-mancs-lábujj a metaball-családban, kisebb arccsontok és rövid pofa, keskenyebb pofamaszk, rövidebb test; a módosítások az élő Blenderben, a `look` eszközzel nézegetve, majd a `lili_model.py`-ba visszavezetve; sprite-ok és pak újragenerálva, selftest zöld.
+
+Döntés: az élő Blenderben formáztam, de a végén minden a szkriptbe került, és a `lili.blend` a szkriptből épül. Így a gyors, vizuális iteráció és az újraépíthetőség is megvan; az élő fájl csak biztonsági másolat.
+
+Hiba 1: a metaball test eltűnt az élő Blenderben. Gyökérok: a család felbontása a betöltés után az alapértékre (0,4 m) állt, így semmi nem poligonizálódott. Javítás: a felbontás újra beállítva; tanulság: a `look` előtt mindig ellenőrizni a kiértékelt csúcsok számát.
+Hiba 2: a fül egyetlen lap lett, teljesen rózsaszín. Gyökérok: a `bmesh.ops.inset_region` egy magányos lapon csak `use_boundary=True`-val készít gyűrűt. Javítás: a kapcsoló beállítva, a gyűrű barna, a közép rózsaszín.
+Hiba 3: a pofa túl széles fehér. Gyökérok: a pofamaszk csak x és z szerint szűrt, az arccsontok pedig előrenyúltak a határ elé. Javítás: |y| < 4,6 cm feltétel a maszkban.
+
+Fogalmak: bmesh, inset, Solidify és Subdivision Surface, Bend (Simple Deform)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -368,3 +379,11 @@ Fogalmak: metaball (implicit felület), család és alapobjektum, pozíció szer
 **pozíció szerinti anyagmaszk:** a shader a felületi pont helyéből (a tárgy saját koordinátái) számol egy 0/1 értéket (pl. z kisebb, mint egy ferde vonal = has), és ezzel választ két színrámpa között. A jelölés így a felületen "fest", nem külön geometria.
 
 **küszöb és merevség (metaball):** a merevség (stiffness) az elem mezőjének erőssége, a küszöb (threshold) az a mezőérték, ahol a felület megjelenik. Együtt adják, hogy a látható felület a megadott sugár hányadrészénél van: s (1 - (d/r)^2)^3 = küszöb, s = 2, küszöb = 0,6 -> d = 0,575 r.
+
+**bmesh:** a Blender hálószerkesztő könyvtára Pythonból: csúcsokat, éleket, lapokat építünk kézzel (a fül körvonala 28 pontból), majd a kész hálót egy mesh-be írjuk.
+
+**inset:** egy lap belsejébe egy kisebb, azonos alakú lapot vág, körülötte gyűrűvel; itt a gyűrű a fül barna széle, a közép a rózsaszín belső fül. Magányos lapon a határéleket is engedni kell (`use_boundary`).
+
+**Solidify és Subdivision Surface:** két módosító: a Solidify a lapból vastag testet csinál (14 mm), a Subdivision minden élt lekerekít (2 szint a nézetben, 3 a renderben). Sorrendjük számít: előbb a vastagság, aztán a lekerekítés.
+
+**Bend (Simple Deform):** a hálót egy tengely körül, adott szöggel meghajlítja; a lógó fül így nem csak el van forgatva, hanem meg is van törve, mint egy valódi, lekonyuló fül.
