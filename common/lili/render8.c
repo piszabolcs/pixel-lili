@@ -31,6 +31,14 @@ void r8_blit(render8_t *r, const uint8_t *src, int w, int h, int x, int y) {
  * written as a 32-bit word holding the same RGB565 colour twice (the 2x across).
  * The second physical row of the pair is a copy of the first (the 2x down). */
 void r8_flush_rows(const render8_t *r, uint16_t *dst, int y0, int n) {
+#if LILI_SCALE == 1
+    for (int py = y0; py < y0 + n; py++) {                 /* native: one LUT look-up per pixel, two pixels a store */
+        const uint8_t *src = &r->px[py * LILI_LOG_W];
+        uint32_t *out = (uint32_t *)(dst + (size_t)(py - y0) * LILI_PHYS_W);
+        for (int x = 0; x < LILI_LOG_W; x += 2)
+            out[x >> 1] = (uint32_t)r->lut[src[x]] | ((uint32_t)r->lut[src[x + 1]] << 16);
+    }
+#else
     for (int py = y0; py < y0 + n; py++) {
         uint16_t *row = dst + (size_t)(py - y0) * LILI_PHYS_W;
         if (py > y0 && (py & 1)) {                         /* the odd row of a pair whose even row is in this call */
@@ -44,4 +52,5 @@ void r8_flush_rows(const render8_t *r, uint16_t *dst, int y0, int n) {
             out[x] = c | (c << 16);
         }
     }
+#endif
 }

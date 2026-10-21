@@ -105,7 +105,7 @@ clean:
 # /mnt/c (the repo's home, a network-like 9P mount) that took minutes per make.
 ifdef LILI
 # the maps are data: edit assets/maps/*.json, this regenerates the C (never edit maps_gen.*)
-../common/lili/maps_gen.c ../common/lili/maps_gen.h: ../tools/gen_maps.py $(wildcard ../assets/maps/*.json)
+../common/lili/maps_gen.c ../common/lili/maps_gen.h: ../tools/gen_maps.py ../common/lili/config.h $(wildcard ../assets/maps/*.json)
 	python3 ../tools/gen_maps.py
 $(BUILD)/common/lili/lili_world.o $(BUILD)/lili_main.o: ../common/lili/maps_gen.h
 -include $(filter-out $(BUILD)/lvgl/%,$(OBJS:.o=.d))

@@ -1,6 +1,6 @@
 /* lili_main.c - Pixel Lili's world on the 2.16 panel (M2.6).
  *
- * The same common/lili core the simulator runs: world_tick, world_render into the 240 x 240
+ * The same common/lili core the simulator runs: world_tick, world_render into the 480 x 480 (native since M3.4)
  * byte canvas (PSRAM), then the panel's stripes are made straight into the DMA buffer:
  * 2x LUT flush, the glass mask, the byte swap. No RGB565 frame buffer exists.
  * Keys (the stand-in for the finger until M4): KEY3 = room <-> yard, BOOT = next season. */

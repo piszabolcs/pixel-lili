@@ -19,7 +19,7 @@ void world_init(world_t *w, uint32_t seed) {
     lili->present = true;
     lili->view = VIEW_ROOM;
     lili->x = LILI_LOG_W / 2.0f;                       /* spec 8.2 spot_center */
-    lili->y = 140.0f;
+    lili->y = 140.0f * LILI_K;
     lili->dir = DIR_S;
     lili->anim = ANIM_IDLE_STAND;
 }
@@ -114,17 +114,18 @@ static void draw_prop(render8_t *r, const map_prop_t *p) {
 
 static void draw_actor(render8_t *r, const actor_t *a) {    /* the sprite from the pak, or a capsule dog; its paws at (x, y) */
     int x = (int)a->x, y = (int)(a->y - a->z);
+    const int K = LILI_K;
     sprite_set_t set; sprite_frame_t fr;
     if (s_pak && a->anim && pak_sprite_set(s_pak, a->anim, &set)) {
         int frame = (int)(a->anim_t * set.fps);
         if (!set.loop && frame >= set.n_frames) frame = set.n_frames - 1;
         if (pak_frame(&set, a->dir, frame, &fr)) { pak_blit(r, &set, &fr, x, y); return; }
     }
-    r8_fill(r, x - 11, y - 13, 22, 14, PAL_OUTLINE);
-    r8_fill(r, x - 10, y - 12, 20, 12, PAL_FUR + 5);
-    r8_fill(r, x - 6, y - 7, 12, 7, PAL_FUR_W + 5);         /* the white chest (L3) */
-    r8_fill(r, x - 9, y - 19, 10, 8, PAL_OUTLINE);
-    r8_fill(r, x - 8, y - 18, 8, 6, PAL_FUR + 6);           /* the head */
+    r8_fill(r, x - 11 * K, y - 13 * K, 22 * K, 14 * K, PAL_OUTLINE);
+    r8_fill(r, x - 10 * K, y - 12 * K, 20 * K, 12 * K, PAL_FUR + 5);
+    r8_fill(r, x - 6 * K, y - 7 * K, 12 * K, 7 * K, PAL_FUR_W + 5);     /* the white chest (L3) */
+    r8_fill(r, x - 9 * K, y - 19 * K, 10 * K, 8 * K, PAL_OUTLINE);
+    r8_fill(r, x - 8 * K, y - 18 * K, 8 * K, 6 * K, PAL_FUR + 6);       /* the head */
 }
 
 uint32_t world_bg_key(const world_t *w) { return (uint32_t)w->view + 1; }   /* the placeholder world's static layer depends on the view only */

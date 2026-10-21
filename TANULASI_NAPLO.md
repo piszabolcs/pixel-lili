@@ -199,6 +199,15 @@ Hiba: az első változaton a fülek alig látszottak. Tünet: 2 cm állt ki a fe
 
 Fogalmak: Bezier-görbe bevel-lel, fogantyú (handle) a rigben, méretellenőrzés a cellában
 
+## 2026-10-21 | M3, 4b. lépés: natív 480-as felbontás
+Készült: `LILI_SCALE 1` és `LILI_K` a `config.h`-ban, a flush natív ága, a térképek tervezőrácsról skálázása (`gen_maps.py`), a kézi rajzolás és a selftestek `K`-val, a Blender oldal 96 px-es cellával, selective outline és vektorizált pixelesítés; minden asset újragenerálva; a panelen mérve 38 fps.
+
+Döntés: a térképeket nem írtuk át 480-ra, hanem maradtak a 240-es tervezőrácson, és egy szorzó (`LILI_K`) viszi át őket. Így a spec és a térképek számai változatlanok, és ha egyszer más felbontás kell, egy szám változik.
+
+Hiba: a firmware nem fordult, mert a `config.h` megjegyzésében `*.json` szerepelt, ami a C-ben megjegyzés-nyitásnak számít (`/*` a megjegyzésen belül, -Werror). Korábbi észlelés: ugyanez már egyszer előfordult (assets/maps/*.json). Szabály: C-megjegyzésben nincs csillag-per.
+
+Fogalmak: tervezőrács és skálázó szorzó, selective outline, vektorizálás (numpy)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -334,3 +343,9 @@ Fogalmak: Bezier-görbe bevel-lel, fogantyú (handle) a rigben, méretellenőrz�
 **fogantyú (handle) a rigben:** egy üres objektum (Empty), amihez a testrészek gyermekként kapcsolódnak; az animáció csak a fogantyút forgatja vagy mozgatja, a hozzá tartozó formák követik. A helyőrző és a modell ugyanazokat a fogantyúkat adja, ezért a mozgás kódja közös.
 
 **méretellenőrzés a cellában:** a szkript a modell befoglaló dobozát a kamerán át logikai pixelbe vetíti, és kiírja; így számmal látszik, hogy belefér-e a 48 x 48-as cellába, és hol a pivot.
+
+**tervezőrács és skálázó szorzó:** a layout számait egy kényelmes rácson (240) írjuk, és a kód egy konstanssal (`LILI_K` = 2) viszi át a tényleges felbontásra. Egyetlen helyen változtatható, és a tesztek is ezzel szoroznak, ezért a felbontásváltás nem járt a térképek átírásával.
+
+**selective outline:** a kontúr nem egyetlen fekete vonal, hanem a szomszédos anyag legsötétebb árnyalata: a bunda mellett sötétbarna, a fehér mellkas mellett szürkésbarna. A hi-bit pixel art egyik ismertetőjegye; a pixelesítő a szomszéd pixel rámpájából számolja.
+
+**vektorizálás (numpy):** a pixelenkénti Python-ciklus helyett az egész képet tömbműveletekkel dolgozzuk fel (itt: egy blokk 16 pixelének gyakorisági táblája egyszerre minden blokkra). Négyszer nagyobb képen is rövidebb lett a futás.

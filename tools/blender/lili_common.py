@@ -5,10 +5,11 @@
 The numbers that make the background and Lili fit together live here and nowhere else:
     ELEVATION_DEG  the camera looks down 35 degrees, orthographic, facing +Y (north):
                    the back wall is a horizontal line on the screen, as in room.json
-    PX_M           one logical pixel = 1.25 cm at the ground; a ground depth d shows as
+    PX_M           one logical pixel = 0.625 cm at the ground (native 480 since 2026-10-21; the
+                   240 design grid of the maps is 1.25 cm/px, K = 2); a ground depth d shows as
                    d * sin(35) on the screen, a height h as h * cos(35)
-    CELL / RS      a sprite cell is 48 x 48 logical px, rendered 4x (192 x 192) for the pixelizer
-    PIVOT          the paws' centre on the ground lands on logical (24, 40) of the cell
+    CELL / RS      a sprite cell is 96 x 96 logical px, rendered 4x (384 x 384) for the pixelizer
+    PIVOT          the paws' centre on the ground lands on logical (48, 80) of the cell
 The light comes from the upper left of the picture (spec 7.1): from the left, from behind
 and above, so the tops and left sides catch it, as in hand-drawn pixel art.
 """
@@ -18,11 +19,12 @@ from mathutils import Vector
 from bpy_extras.object_utils import world_to_camera_view
 
 ELEVATION_DEG = 35.0
-PX_M = 0.0125
-CELL = 48
+LOG = 480                                   # the world's logical grid (common/lili/config.h: LILI_LOG_W)
+K = LOG // 240                              # LILI_K: the maps' 240 design grid -> logical
+PX_M = 0.0125 / K
+CELL = 48 * K
 RS = 4
-PIVOT = (24, 40)
-LOG = 240                                   # the world's logical grid (common/lili/config.h)
+PIVOT = (24 * K, 40 * K)
 SUN_AZIMUTH_DEG = 135.0                     # where the light comes FROM, seen from above: 0 = +X (east), 90 = +Y (north/back)
 SUN_ELEVATION_DEG = 50.0
 DIR_NAMES = ("S", "SW", "W", "NW", "N", "NE", "E", "SE")   # common/lili/lili_types.h dir8_t: clockwise from south (towards the viewer)

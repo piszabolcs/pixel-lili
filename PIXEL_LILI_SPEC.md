@@ -468,8 +468,8 @@ Ablak: bal oldalon a 480x480-as kijelző a kávamaszkkal (40 px sarok, fekete pe
 
 ### 7.2 Technikai vászon és renderelés
 
-- **Logikai felbontás:** 240x240, egész számú 2x nagyítással 480x480-ra. Minden világelem ebben a rácsban él.
-- **8 bites indexelt színek:** a világ puffer bájtonként egy paletta-indexet tárol. A kijelzőre küldéskor (flush) egy 256 elemű RGB565 táblázat (LUT) alakítja színné, és ugyanott történik a 2x nagyítás. Előnyök: fele akkora memória- és sávszélesség-igény, ingyenes napszak- és évszakváltás, retro hatás.
+- **Logikai felbontás (a gazdi döntése 2026-10-21, M3.4):** **natív 480x480, nagyítás nélkül** (1 logikai px = 1 fizikai px). A 2x nagyított 240-es rács túl durva volt a kívánt hi-bit képi világhoz. A térképek (`assets/maps/*.json`) és a layout-számok továbbra is a 240-es **tervezőrácson** íródnak, és a `gen_maps.py` szorozza őket `LILI_K` = 2-vel; a kézzel rajzoló kód is `LILI_K`-val szoroz.
+- **8 bites indexelt színek:** a világ puffer (230 KB, PSRAM) bájtonként egy paletta-indexet tárol. A kijelzőre küldéskor (flush) egy 256 elemű RGB565 táblázat (LUT) alakítja színné, 24 soros csíkokban, közvetlenül a DMA pufferbe. Előnyök: fele akkora memória- és sávszélesség-igény, mint az RGB565, ingyenes napszak- és évszakváltás.
 - **Paletta-szerkezet:** a 256 szín "rámpákba" rendezve (egy anyag 6-8 árnyalata egymás után). Fix helyek: 0 = átlátszó, 1-15 UI és kontúr.
 - **Napszak:** 4 előre számolt LUT (reggel, délután, este, éjszaka) évszakonként, tehát 16 LUT x 512 B = 8 KB. Átmenet: 2 LUT közötti interpoláció 60 mp alatt.
 - **Évszak:** a fű és a lombozat rámpáinak cseréje (ugyanaz a háttér, más színek), plusz évszakos díszítő sprite-ok és részecskék.
@@ -488,9 +488,9 @@ Ablak: bal oldalon a 480x480-as kijelző a kávamaszkkal (40 px sarok, fekete pe
 
 - Ortografikus kamera, **35° emelkedési szög**, a háttér és a karakter pontosan ugyanazzal a kamerával készül.
 - A 8 irányt a **karakter forgatásával** állítjuk elő (nem a kamerával), így a fény iránya minden irányban azonos marad.
-- **Méretarány:** Pokémon-szerűen a karakter a bútorokhoz képest nagyobb. Lili állva kb. 40x30 logikai px (80x60 fizikai), a sprite cella 48x48 logikai px. Ez a 2.16"-os (~38 mm-es) képernyőn kényelmesen látható és simogatható.
+- **Méretarány:** a karakter a bútorokhoz képest nagyobb (1,4x). Lili állva kb. 80x60 px, a sprite cella **96x96 px** (natív), a pivot (48, 80). 1 px = 0,625 cm a talajon. Ez a 2.16"-os (~38 mm-es) képernyőn kényelmesen látható és simogatható.
 - **Talajpont (pivot):** minden sprite cellában a mancsok közepe, ez a Y-rendezés kulcsa.
-- **Renderfelbontás:** a célméret 4-szerese (192x192), utána pixelesítés (7.5, B6).
+- **Renderfelbontás:** a célméret 4-szerese (384x384), utána pixelesítés (7.5, B6).
 
 ### 7.4 Asset lista
 
@@ -526,7 +526,7 @@ Ablak: bal oldalon a 480x480-as kijelző a kávamaszkkal (40 px sarok, fekete pe
 | A26 | pounce | 5 | 14 | 8 | nem | levél, pillangó, játék elkapása |
 | A27 | ask_pet | 6 | 8 | 3 (S, SE, SW) | igen | a képernyőhöz bújik, mancsot emel |
 
-Becsült összesen: kb. 1 000 kocka. 48x48 cellában, 8 bites RLE-vel kb. 0,9-1,2 MB.
+Becsült összesen: kb. 1 000 kocka. 96x96 cellában, 8 bites RLE-vel (mért: 1,4 KB/kocka, M3.4) kb. 1,4 MB; a pak 3 MB-os kerete tartható.
 
 **Animációs metaadatok** (a Blenderből exportálva, `assets/sprites/lili/manifest.json`): kockánkénti szájpont (a játék rögzítéséhez), hangesemények, a fej befoglaló téglalapja (a peek és a buborék helyéhez), simogatási hitbox.
 

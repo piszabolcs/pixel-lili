@@ -11,7 +11,7 @@
 #include "config.h"
 
 typedef struct {
-    uint8_t  px[LILI_LOG_W * LILI_LOG_H];   /* 57 600 bytes: the world, in palette indices */
+    uint8_t  px[LILI_LOG_W * LILI_LOG_H];   /* 230 400 bytes at native 480 (57 600 at the old 2x): the world, in palette indices */
     uint16_t lut[256];                      /* index -> RGB565, the one place colours live at run time */
 } render8_t;
 

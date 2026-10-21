@@ -25,7 +25,7 @@ uint8_t mask_att(const mask_t *m, int x, int y); /* any physical pixel, for test
 
 /* debug layer on the logical canvas (spec 5.2): the corner zones where an interactive
  * element's centre must not be (closer than 24 logical px to the arc), hatched */
-#define LILI_SAFE_MARGIN 24
+#define LILI_SAFE_MARGIN (24 * LILI_K)             /* 24 on the 240 design grid */
 void mask_debug_draw(render8_t *r, uint8_t colour);
 int  mask_point_safe(int lx, int ly);            /* 1 = a logical point may hold an interactive centre */
 /* the rule in use since 2026-10-19 (docs/decisions.md): an interactive thing's whole rectangle

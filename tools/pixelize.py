@@ -10,7 +10,9 @@ The rules, as the spec lists them:
   2. alpha: a block is opaque if more than half of it is covered, else transparent (index 0);
      no half-transparent pixels on a sprite
   3. the palette mapping has no dithering
-  4. a 1 px outline (PAL_OUTLINE, index 1) around the outside of the silhouette, 8-neighbourhood
+  4. a 1 px outline around the outside of the silhouette, 8-neighbourhood: a SELECTIVE outline
+     (spec 7.1, 2026-10-21): the darkest shade of the ramp of the body pixel it touches (dark fur
+     next to fur, dark white next to the chest); next to a fixed-slot colour (eye, nose) PAL_OUTLINE
   5. a frame that exists in assets/sprites/overrides/<anim>/ (hand-fixed) is copied, never overwritten
   6. no baked shadow: the game draws the ground ellipse (so it is right on the rug and the bench)
 Output: indexed PNGs (the master palette embedded), manifest.json copied with the cell data, and a
@@ -50,22 +52,27 @@ def pixelize(png, pal_rgb, pal_lab, ok, scale):
     idx_full = np.zeros(im.shape[:2], dtype=np.int32)
     if covered.any():
         idx_full[covered] = nearest(rgb_to_oklab(im[..., :3][covered]), pal_lab, ok)
-    idx_blk = idx_full.reshape(H, scale, W, scale)
-    cov_blk = covered.reshape(H, scale, W, scale)
-    for y in range(H):
-        for x in range(W):
-            if cover[y, x] <= 0.5:
-                continue
-            v = idx_blk[y, :, x, :][cov_blk[y, :, x, :]]
-            out[y, x] = np.bincount(v).argmax()
-    # the outline: outside the silhouette, 8-neighbourhood
+    # the mode per block, vectorised: one-hot counts of the covered source pixels (blocks x 256)
+    idx_blk = idx_full.reshape(H, scale, W, scale).transpose(0, 2, 1, 3).reshape(H * W, scale * scale)
+    cov_blk = covered.reshape(H, scale, W, scale).transpose(0, 2, 1, 3).reshape(H * W, scale * scale)
+    counts = np.zeros((H * W, 256), dtype=np.int32)
+    rows = np.repeat(np.arange(H * W), scale * scale).reshape(H * W, scale * scale)
+    np.add.at(counts, (rows[cov_blk], idx_blk[cov_blk]), 1)
+    mode = counts.argmax(1).reshape(H, W).astype(np.uint8)
+    out[cover > 0.5] = mode[cover > 0.5]
+    # the outline: outside the silhouette, 8-neighbourhood, selective (the neighbour's ramp, darkest shade)
     body = out != 0
-    grown = body.copy()
+    neighbour = np.zeros((H, W), dtype=np.uint8)
     for dy in (-1, 0, 1):
         for dx in (-1, 0, 1):
             if dy or dx:
-                grown[max(0, dy):H + min(0, dy), max(0, dx):W + min(0, dx)] |= body[max(0, -dy):H - max(0, dy), max(0, -dx):W - max(0, dx)]
-    out[grown & ~body] = PAL_OUTLINE
+                src = body[max(0, -dy):H - max(0, dy), max(0, -dx):W - max(0, dx)]
+                val = out[max(0, -dy):H - max(0, dy), max(0, -dx):W - max(0, dx)]
+                tgt = neighbour[max(0, dy):H + min(0, dy), max(0, dx):W + min(0, dx)]
+                np.copyto(tgt, val, where=src & (tgt == 0))
+    rim = (neighbour != 0) & ~body
+    ramp_dark = np.where(neighbour >= 16, 16 + ((neighbour - 16) // 8) * 8, PAL_OUTLINE).astype(np.uint8)
+    out[rim] = ramp_dark[rim]
     return out
 
 def save_indexed(path, idx, pal_rgb):

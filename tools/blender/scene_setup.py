@@ -45,11 +45,11 @@ expect("cell: 20 cm to the right", (0.2, 0, 0), (lc.PIVOT[0] + px(0.2), lc.PIVOT
 expect("cell: 20 cm deeper (x sin 35)", (0, 0.2, 0), (lc.PIVOT[0], lc.PIVOT[1] - px(0.2) * SIN))
 expect("cell: 20 cm up (x cos 35)", (0, 0, 0.2), (lc.PIVOT[0], lc.PIVOT[1] - px(0.2) * COS))
 lc.camera(sc, "room")
-depth_66 = (lc.LOG - 66) * lc.PX_M / SIN                    # room.json: the floor starts at logical y 66
+depth_66 = (lc.LOG - 66 * lc.K) * lc.PX_M / SIN             # room.json: the floor starts at design y 66 (logical 66 x K)
 expect("room: the world origin", (0, 0, 0), (0, lc.LOG))
 expect("room: 3 m to the right", (3.0, 0, 0), (lc.LOG, lc.LOG))
-expect(f"room: the floor's back edge ({depth_66:.2f} m)", (1.5, depth_66, 0), (120, 66))
-print(f"lili: the room is {lc.LOG * lc.PX_M:.2f} m wide and {depth_66:.2f} m deep to the wall; Lili's 40 px = {40 * lc.PX_M * 100:.0f} cm")
+expect(f"room: the floor's back edge ({depth_66:.2f} m)", (1.5, depth_66, 0), (lc.LOG / 2, 66 * lc.K))
+print(f"lili: the room is {lc.LOG * lc.PX_M:.2f} m wide and {depth_66:.2f} m deep to the wall; Lili's 80 px = {80 * lc.PX_M * 100:.0f} cm")
 
 # ---- the placeholder chihuahua (lili_rig_placeholder.py; the M3.3 chain renders it until B2's model exists) ----
 import lili_rig_placeholder as rig

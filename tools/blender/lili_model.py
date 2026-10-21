@@ -145,14 +145,14 @@ if __name__ == "__main__":
     for c in lc.COLLECTIONS:
         lc.collection(c).hide_render = c not in ("LILI", "CAMERA_LIGHT")
     lc.camera(sc, "cell")
-    # the size check: the standing dog must fit the 48 px cell with room for the head (spec 7.3: ~40 x 30 logical px)
+    # the size check: the standing dog must fit the 48 px cell with room for the head (spec 7.3: ~80 x 60 logical px at native 480)
     bpy.context.view_layer.update()
     xs, ys = [], []
     for o in lc.collection("LILI").objects:
         if o.type in ("MESH", "CURVE"):
             for v in o.bound_box:
                 p = lc.to_logical(sc, o.matrix_world @ Vector(v)); xs.append(p[0]); ys.append(p[1])
-    print(f"lili: the model spans logical x {min(xs):.1f}..{max(xs):.1f}, y {min(ys):.1f}..{max(ys):.1f} in the cell (facing east; pivot at (24, 40))")
+    print(f"lili: the model spans logical x {min(xs):.1f}..{max(xs):.1f}, y {min(ys):.1f}..{max(ys):.1f} in the cell (facing east; pivot at {lc.PIVOT})")
     if a.sheet:
         d = os.path.join(ROOT, "assets", "raw_renders", "_lili8")
         os.makedirs(d, exist_ok=True)

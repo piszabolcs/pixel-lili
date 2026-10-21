@@ -1,0 +1,39 @@
+--- 18:47:00 port COM3 open
+18:47:00 I (211) esp_psram: Speed: 80MHz
+18:47:00 I (214) cpu_start: Multicore app
+18:47:00 I (229) cpu_start: Pro cpu start user code
+18:47:00 I (229) cpu_start: cpu freq: 240000000 Hz
+18:47:00 I (229) app_init: Application information:
+18:47:00 I (229) app_init: Project name:     lili_world
+18:47:00 I (233) app_init: App version:      v0.3.8-36-g80102b2-dirty
+18:47:00 I (238) app_init: Compile time:     Oct 21 2026 18:45:15
+18:47:00 I (243) app_init: ELF file SHA256:  de3b0ebc7...
+18:47:00 I (248) app_init: ESP-IDF:          v5.4.1
+18:47:00 I (252) efuse_init: Min chip rev:     v0.0
+18:47:00 I (255) efuse_init: Max chip rev:     v0.99 
+18:47:00 I (259) efuse_init: Chip rev:         v0.2
+18:47:00 I (263) heap_init: Initializing. RAM available for dynamic allocation:
+18:47:00 I (270) heap_init: At 3FC99588 len 00050188 (320 KiB): RAM
+18:47:00 I (275) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+18:47:00 I (280) heap_init: At 600FE11C len 00001ECC (7 KiB): RTCRAM
+18:47:00 I (285) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator
+18:47:00 I (292) spi_flash: detected chip: generic
+18:47:00 I (295) spi_flash: flash io: qio
+18:47:00 I (298) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+18:47:00 I (305) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+18:47:00 I (311) main_task: Started on CPU0
+18:47:00 I (314) esp_psram: Reserving pool of 64K of internal memory for DMA/internal allocations
+18:47:00 I (322) main_task: Calling app_main()
+18:47:00 I (325) lili: Pixel Lili world | internal heap 320 KB, PSRAM 8189 KB free
+18:47:00 I (336) gpio: GPIO[0]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+18:47:00 I (340) gpio: GPIO[18]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+18:47:00 I (349) gpio: GPIO[40]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+18:47:00 I (427) sh8601: board: the SQUARE, 2.16 (CO5300 480x480 / CST92xx at 0x5a) - no expander, an ES7210 at 0x40, an RTC at 0x51
+18:47:00 I (428) gpio: GPIO[39]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+18:47:00 I (435) sh8601: LCD panel create success, version: 2.0.1
+18:47:01 W (720) sh8601: The 3Ah command has been used and will be overwritten by external initialization sequence
+18:47:01 W (720) sh8601: The 36h command has been used and will be overwritten by external initialization sequence
+18:47:01 I (747) sh8601: panel up: 480x480 square, the tank px for px (MADCTL a0)
+18:47:01 I (787) lili: up: world 120 B, canvas 230912 B, mask 57840 B, static-layer cache 230408 B | internal heap 270 KB free
+18:47:06 I (5800) lili: 38.1 fps | per frame: tick 2 us, render 8274 us, flush 17145 us (fill 14943, wire wait 39, send 2106) | internal heap 270 KB, min 270 KB
+18:47:11 I (10820) lili: 38.4 fps | per frame: tick 2 us, render 8029 us, flush 17145 us (fill 14943, wire wait 39, send 2106) | internal heap 270 KB, min 270 KB

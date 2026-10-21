@@ -67,15 +67,16 @@ static void write_ppm(const char *path, const uint16_t *fb) {
 static uint16_t px(int lx, int ly) { return s_fb[(ly * LILI_SCALE) * LILI_PHYS_W + lx * LILI_SCALE]; }
 
 static int selftest(void) {
+    const int K = LILI_K;                               /* the tests below were written on the 240 design grid */
     canvas_init();
     /* --- render8: the LUT, the 2x, the stripes, the transparency --- */
     CHECK(s_r8.lut[PAL_WHITE] == 0xFFFF || s_r8.lut[PAL_WHITE] == 0xFFDE, "white maps to RGB565 white");
     CHECK(s_r8.lut[PAL_OUTLINE] == (uint16_t)(((PAL_MASTER[1][0] & 0xF8) << 8) | ((PAL_MASTER[1][1] & 0xFC) << 3) | (PAL_MASTER[1][2] >> 3)), "the outline's RGB565 is exact (the master palette's slot 1)");
     r8_clear(&s_r8, PAL_FLOOR + 5); r8_fill(&s_r8, 10, 20, 1, 1, PAL_DEBUG);
     r8_flush_rows(&s_r8, s_fb, 0, LILI_PHYS_H);
-    for (int dy = 0; dy < 2; dy++) for (int dx = 0; dx < 2; dx++)
-        CHECK(s_fb[(40 + dy) * LILI_PHYS_W + 20 + dx] == s_r8.lut[PAL_DEBUG], "one logical pixel = 2 x 2 physical ones");
-    CHECK(s_fb[42 * LILI_PHYS_W + 20] == s_r8.lut[PAL_FLOOR + 5] && s_fb[40 * LILI_PHYS_W + 22] == s_r8.lut[PAL_FLOOR + 5], "and no more");
+    for (int dy = 0; dy < LILI_SCALE; dy++) for (int dx = 0; dx < LILI_SCALE; dx++)
+        CHECK(s_fb[(20 * LILI_SCALE + dy) * LILI_PHYS_W + 10 * LILI_SCALE + dx] == s_r8.lut[PAL_DEBUG], "one logical pixel = LILI_SCALE^2 physical ones");
+    CHECK(s_fb[(20 * LILI_SCALE + LILI_SCALE) * LILI_PHYS_W + 10 * LILI_SCALE] == s_r8.lut[PAL_FLOOR + 5] && s_fb[20 * LILI_SCALE * LILI_PHYS_W + 11 * LILI_SCALE] == s_r8.lut[PAL_FLOOR + 5], "and no more");
     static uint16_t stripe[24 * LILI_PHYS_W];
     for (int y0 = 0; y0 < LILI_PHYS_H; y0 += 24) {     /* the panel's 24-row stripes give the same picture */
         r8_flush_rows(&s_r8, stripe, y0, 24);
@@ -86,7 +87,7 @@ static int selftest(void) {
     const uint8_t spr[4] = { PAL_WHITE, PAL_CLEAR, PAL_CLEAR, PAL_WHITE };
     r8_clear(&s_r8, PAL_FLOOR); r8_blit(&s_r8, spr, 2, 2, 5, 5);
     CHECK(s_r8.px[5 * LILI_LOG_W + 5] == PAL_WHITE && s_r8.px[5 * LILI_LOG_W + 6] == PAL_FLOOR, "index 0 is transparent in a blit");
-    r8_fill(&s_r8, -5, -5, 10, 10, PAL_WHITE); r8_fill(&s_r8, 235, 235, 20, 20, PAL_WHITE);
+    r8_fill(&s_r8, -5, -5, 10, 10, PAL_WHITE); r8_fill(&s_r8, LILI_LOG_W - 5, LILI_LOG_H - 5, 20, 20, PAL_WHITE);
     CHECK(s_r8.px[0] == PAL_WHITE && s_r8.px[LILI_LOG_W * LILI_LOG_H - 1] == PAL_WHITE, "fills clip at the edges");
 
     /* --- the glass mask (M1.7: the 72 px corner) --- */
@@ -117,12 +118,12 @@ static int selftest(void) {
         }
     }
     const map_t *room = &MAPS[VIEW_ROOM], *yard = &MAPS[VIEW_YARD];
-    CHECK(map_walkable(room, 52, 126) && room->points[SPOT_RUG].z == 0, "the rug is walkable: she plays and sleeps on it (owner, 2026-10-19)");
+    CHECK(map_walkable(room, 52 * K, 126 * K) && room->points[SPOT_RUG].z == 0, "the rug is walkable: she plays and sleeps on it (owner, 2026-10-19)");
     CHECK(room->points[SPOT_PAD].x < LILI_LOG_W / 3 && room->points[SPOT_BOWL_FOOD].x >= 2 * LILI_LOG_W / 3 && room->points[SPOT_BOWL_WATER].x >= 2 * LILI_LOG_W / 3,
           "the pad in the left third, food and water in the right third (owner, 2026-10-19)");
     CHECK(room->points[SPOT_DECO].x >= LILI_LOG_W / 3 && room->points[SPOT_DECO].x < 2 * LILI_LOG_W / 3, "the season's decoration in the middle third");
-    CHECK(map_walkable(room, 208, 150), "the nook under the bench is walkable (H10, H11)");
-    CHECK(!map_walkable(yard, 50, 62) && !map_walkable(yard, 120, 10), "the yard: a tree trunk and the hedge block");
+    CHECK(map_walkable(room, 208 * K, 150 * K), "the nook under the bench is walkable (H10, H11)");
+    CHECK(!map_walkable(yard, 50 * K, 62 * K) && !map_walkable(yard, 120 * K, 10 * K), "the yard: a tree trunk and the hedge block");
     for (int i = 0; i < room->n_props; i++) {                /* every interactive thing is wholly on the glass, 2 px in */
         const map_prop_t *p = &room->props[i];
         if (strcmp(p->name, "pad") && strcmp(p->name, "bowl_food") && strcmp(p->name, "bowl_water")) continue;
@@ -130,27 +131,27 @@ static int selftest(void) {
     }
     CHECK(room->props[0].x >= 0, "props exist");
     const map_prop_t *side = NULL; for (int i = 0; i < room->n_props; i++) if (!strcmp(room->props[i].name, "bench_side")) side = &room->props[i];
-    CHECK(side && LILI_LOG_W - (side->x + side->w) <= 5, "the bench stands at the right wall (owner, 2026-10-19)");
-    CHECK(side->y + side->h <= 180 && mask_rect_visible(side->x, side->y - side->height, side->w, side->h + side->height, 2),
+    CHECK(side && LILI_LOG_W - (side->x + side->w) <= 5 * K, "the bench stands at the right wall (owner, 2026-10-19)");
+    CHECK(side->y + side->h <= 180 * K && mask_rect_visible(side->x, side->y - side->height, side->w, side->h + side->height, 2),
           "the bench keeps its length and stays clear of the bottom-right corner arc");
     const map_prop_t *rug = NULL; for (int i = 0; i < room->n_props; i++) if (!strcmp(room->props[i].name, "rug")) rug = &room->props[i];
     CHECK(rug && rug->h * 2 == rug->w * 3, "the rug is 3:2 like the real 300 x 200 cm one, lengthwise");
     /* the Y-sort, in the yard (H13): behind a bush Lili is covered by it, in front of it she covers it */
     world_init(&s_world, 1); actor_t *l = &s_world.actors[0];
     s_world.view = VIEW_YARD; l->view = VIEW_YARD;
-    l->x = 40; l->y = 112; frame();                    /* bush_1: footprint y 120-134, raised 18: its top face hides her */
-    uint16_t behind = px(40, 106);
-    l->y = 170; frame();
+    l->x = 40 * K; l->y = 112 * K; frame();            /* bush_1: footprint y 120-134, raised 18 (design px): its top face hides her */
+    uint16_t behind = px(40 * K, 106 * K);
+    l->y = 170 * K; frame();
     int front_dog = 0;                                  /* the sprite (or the capsule) above the pivot: anything that is not grass */
-    for (int yy = 150; yy < 170; yy++) for (int xx = 36; xx < 44; xx++) {
+    for (int yy = 150 * K; yy < 170 * K; yy++) for (int xx = 36 * K; xx < 44 * K; xx++) {
         uint16_t c = px(xx, yy); int grass = 0;
         for (int sh = 0; sh < 8; sh++) grass |= c == s_r8.lut[pal_ramp(RAMP_ID_GRASS, sh)];
         front_dog += !grass;
     }
     CHECK(behind == s_r8.lut[pal_ramp(RAMP_ID_HEDGE, 6)], "behind a bush, the bush covers Lili (H13)");
-    CHECK(front_dog > 60, "in front of a bush, Lili is drawn over the grass");
+    CHECK(front_dog > 60 * K * K, "in front of a bush, Lili is drawn over the grass");
     world_init(&s_world, 1); frame();
-    uint16_t rugpx = px(30, 100);
+    uint16_t rugpx = px(30 * K, 100 * K);
     int on_rug = 0; for (int sh = 0; sh < 8; sh++) on_rug |= rugpx == s_r8.lut[pal_ramp(RAMP_ID_RUG_GRAY, sh)] || rugpx == s_r8.lut[pal_ramp(RAMP_ID_RUG_GREEN, sh)];
     CHECK(on_rug, "the rug is drawn where the bed was");
 
@@ -178,16 +179,18 @@ static int selftest(void) {
         pak_t t; CHECK(!pak_open(&t, bad, sizeof bad) && !pak_open(&t, NULL, 0), "a bad or missing pack is refused (placeholder graphics then)");
         if (s_pak.data) {
             sprite_set_t set; sprite_frame_t fr;
-            CHECK(pak_sprite_set(&s_pak, ANIM_IDLE_STAND, &set) && set.cell_w == 48 && set.pivot_x == 24 && set.pivot_y == 40 && set.n_frames == 6, "idle_stand: 48 px cell, pivot (24, 40), 6 frames");
+            CHECK(pak_sprite_set(&s_pak, ANIM_IDLE_STAND, &set) && set.cell_w == 48 * K && set.pivot_x == 24 * K && set.pivot_y == 40 * K && set.n_frames == 6, "idle_stand: a 48 x K px cell, pivot (24, 40) x K, 6 frames");
             CHECK(pak_frame(&set, DIR_S, 0, &fr) && fr.rle_len > 0, "frame S/0 exists");
-            r8_clear(&s_r8, PAL_FLOOR + 5); pak_blit(&s_r8, &set, &fr, 120, 140);
+            const int cx = 120 * K, cy = 140 * K;
+            r8_clear(&s_r8, PAL_FLOOR + 5); pak_blit(&s_r8, &set, &fr, cx, cy);
             int painted = 0, out_of_cell = 0;
             for (int y = 0; y < LILI_LOG_H; y++) for (int x = 0; x < LILI_LOG_W; x++) if (s_r8.px[y * LILI_LOG_W + x] != PAL_FLOOR + 5) {
-                painted++; if (x < 120 - 24 || x >= 120 + 24 || y < 140 - 40 || y >= 140 + 8) out_of_cell++;
+                painted++; if (x < cx - set.pivot_x || x >= cx - set.pivot_x + set.cell_w || y < cy - set.pivot_y || y >= cy - set.pivot_y + set.cell_h) out_of_cell++;
             }
-            CHECK(painted > 200 && !out_of_cell, "the sprite paints inside its cell around the pivot");
-            CHECK(s_r8.px[(140 - 1) * LILI_LOG_W + 120] != PAL_FLOOR + 5 || s_r8.px[(140 - 2) * LILI_LOG_W + 120] != PAL_FLOOR + 5, "the paws stand on the pivot row");
-            r8_clear(&s_r8, 0); pak_blit(&s_r8, &set, &fr, 2, 2); pak_blit(&s_r8, &set, &fr, 238, 238);   /* clipped at both corners: no crash */
+            CHECK(painted > 200 * K * K && !out_of_cell, "the sprite paints inside its cell around the pivot");
+            int paws = 0; for (int dy = 1; dy <= 3 * K; dy++) paws |= s_r8.px[(cy - dy) * LILI_LOG_W + cx] != PAL_FLOOR + 5;
+            CHECK(paws, "the paws stand on the pivot row");
+            r8_clear(&s_r8, 0); pak_blit(&s_r8, &set, &fr, 2, 2); pak_blit(&s_r8, &set, &fr, LILI_LOG_W - 2, LILI_LOG_H - 2);   /* clipped at both corners: no crash */
             CHECK(pak_frame(&set, DIR_NE, 7, &fr), "a frame index wraps, a missing direction falls back");
         } else printf("note: no pak loaded, the sprite tests were skipped\n");
     }
