@@ -39,8 +39,8 @@ def body_material(fur, white):
     nt = m.node_tree; nt.nodes.clear()
     N = lambda t: nt.nodes.new(t)
     L = nt.links.new
-    def ramp(cols, lo=0.12, hi=0.45):
-        r = N("ShaderNodeValToRGB"); cr = r.color_ramp; cr.interpolation = "CONSTANT"
+    def ramp(cols, lo=0.18, hi=0.55):
+        r = N("ShaderNodeValToRGB"); cr = r.color_ramp; cr.interpolation = "EASE"      # soft shading (the owner: no hard edges)
         cr.elements[0].position, cr.elements[0].color = 0.0, lc.hex_linear(cols[0])
         cr.elements[1].position, cr.elements[1].color = lo, lc.hex_linear(cols[1])
         e = cr.elements.new(hi); e.color = lc.hex_linear(cols[2])
@@ -78,11 +78,11 @@ def materials():
     white, _ = ramp_hex("fur_w")
     return {
         "body":  body_material((fur[2], fur[4], fur[6]), (white[3], white[5], white[7])),
-        "fawn":  lc.toon_material("lili_fawn", fur[2], fur[4], fur[6]),
-        "white": lc.toon_material("lili_white", white[3], white[5], white[7]),
+        "fawn":  lc.toon_material("lili_fawn", fur[2], fur[4], fur[6], soft=True),
+        "white": lc.toon_material("lili_white", white[3], white[5], white[7], soft=True),
         "eye":   lc.toon_material("lili_eye", fixed["eye"], fixed["eye"], fixed["eye"]),
         "nose":  lc.toon_material("lili_nose", fixed["nose"], fixed["nose"], fixed["ear_pink"]),
-        "pink":  lc.toon_material("lili_ear_pink", "#9a5f64", "#c9898c", "#e3aeb0"),           # the inner ear: the sheet's soft pink (the palette has none)
+        "pink":  lc.toon_material("lili_ear_pink", "#9a5f64", "#c9898c", "#e3aeb0", soft=True),           # the inner ear: the sheet's soft pink (the palette has none)
         "gloss": lc.toon_material("lili_eye_gloss", "#fffaf2", "#fffaf2", "#fffaf2"),
     }
 
@@ -110,10 +110,13 @@ def ear(name, loc, rot, mat, inner, parent, coll="LILI", w=0.075, h=0.125, thick
     Local: X across, Z up, -Y the front."""
     import bmesh
     bm = bmesh.new(); pts = []; n = 14
+    tip = 0.012                                                   # the tip is a small arc, not a point (soft)
     for i in range(n + 1):
-        t = i / n; pts.append((w / 2 * (1 - t) ** 0.85 + 0.008 * math.sin(math.pi * t), 0, h * t))
+        t = i / n; pts.append((tip + (w / 2 - tip) * (1 - t) ** 0.85 + 0.008 * math.sin(math.pi * t), 0, (h - tip) * t))
+    for k in range(1, 6):                                         # the arc over the tip
+        a = math.pi * k / 6; pts.append((tip * math.cos(a), 0, (h - tip) + tip * math.sin(a)))
     for i in range(1, n):
-        t = 1 - i / n; pts.append((-(w / 2 * (1 - t) ** 0.85 + 0.010 * math.sin(math.pi * t)), 0, h * t))
+        t = 1 - i / n; pts.append((-(tip + (w / 2 - tip) * (1 - t) ** 0.85 + 0.010 * math.sin(math.pi * t)), 0, (h - tip) * t))
     verts = [bm.verts.new(p) for p in pts]
     face = bm.faces.new(verts)
     res = bmesh.ops.inset_region(bm, faces=[face], thickness=inset, depth=0.0, use_boundary=True, use_even_offset=True)
@@ -135,9 +138,9 @@ def ear(name, loc, rot, mat, inner, parent, coll="LILI", w=0.075, h=0.125, thick
 def tail(parent, mat, coll="LILI"):
     """the tail curled high over the back (L8): a bevelled Bezier curve, thinner towards the tip"""
     cu = bpy.data.curves.new("lili_tail_curve", "CURVE")
-    cu.dimensions = "3D"; cu.bevel_depth = 0.021; cu.bevel_resolution = 4; cu.fill_mode = "FULL"; cu.use_fill_caps = True
+    cu.dimensions = "3D"; cu.bevel_depth = 0.021; cu.bevel_resolution = 6; cu.fill_mode = "FULL"; cu.use_fill_caps = True
     sp = cu.splines.new("BEZIER"); sp.bezier_points.add(3)
-    pts = [((0.0, 0.0, 0.0), 1.0), ((-0.05, 0.0, 0.08), 0.9), ((-0.01, 0.015, 0.15), 0.7), ((0.07, 0.03, 0.13), 0.45)]
+    pts = [((0.0, 0.0, 0.0), 1.0), ((-0.05, 0.0, 0.08), 0.9), ((-0.01, 0.015, 0.15), 0.7), ((0.07, 0.03, 0.13), 0.6)]
     for bp, (co, r) in zip(sp.bezier_points, pts):
         bp.co = co; bp.radius = r; bp.handle_left_type = bp.handle_right_type = "AUTO"
     o = bpy.data.objects.new("lili_tail_mesh", cu)
@@ -153,7 +156,7 @@ def mball(name, parent, elements, mat=None, coll="LILI", base=False):
     (field s (1 - (d/r)^2)^3 = threshold: 2 (1 - x^2)^3 = 0.6 -> x = 0.575), so radii here are 1.74 x the size wanted. elements: (type, co, radius, size, rot_y_deg)"""
     mb = bpy.data.metaballs.new(name)
     if base:
-        mb.resolution = 0.010; mb.render_resolution = 0.0045; mb.threshold = 0.6
+        mb.resolution = 0.010; mb.render_resolution = 0.003; mb.threshold = 0.6     # a fine surface: no facets on the render
     for typ, co, r, size, ry in elements:
         e = mb.elements.new(); e.type = typ; e.co = co; e.radius = r; e.stiffness = 2.0
         if size: e.size_x, e.size_y, e.size_z = size

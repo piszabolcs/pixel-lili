@@ -230,6 +230,13 @@ Hiba 3: a pofa túl széles fehér. Gyökérok: a pofamaszk csak x és z szerint
 
 Fogalmak: bmesh, inset, Solidify és Subdivision Surface, Bend (Simple Deform)
 
+## 2026-10-21 | M3, 4e. lépés: lágy árnyalás
+Készült: a toon rámpák EASE átmenettel (`soft=True`), a test maszkos anyaga is; a fül hegye ívelt, a farok vége teltebb, finomabb metaball felbontás; újragenerálva, selftest zöld.
+
+Döntés: a kemény 3 sávot lágy átmenet váltja, mert a pixelesítő úgyis a paletta 8 árnyalatára képez; a folyamatos átmenetből így finom lépcsők lesznek, a kemény sávokból viszont csak 3 szín. A mintakép lágy árnyalása pont ez.
+
+Fogalmak: színrámpa interpolációja (CONSTANT, LINEAR, EASE), kvantálás rámpára
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -387,3 +394,7 @@ Fogalmak: bmesh, inset, Solidify és Subdivision Surface, Bend (Simple Deform)
 **Solidify és Subdivision Surface:** két módosító: a Solidify a lapból vastag testet csinál (14 mm), a Subdivision minden élt lekerekít (2 szint a nézetben, 3 a renderben). Sorrendjük számít: előbb a vastagság, aztán a lekerekítés.
 
 **Bend (Simple Deform):** a hálót egy tengely körül, adott szöggel meghajlítja; a lógó fül így nem csak el van forgatva, hanem meg is van törve, mint egy valódi, lekonyuló fül.
+
+**színrámpa interpolációja:** a Color Ramp két pont között CONSTANT módban ugrik (kemény sáv), LINEAR módban egyenletesen, EASE módban S-görbével megy át. A lágy árnyaláshoz EASE: a fény-árnyék határ elmosódik, de a két végén tartja a palettaszínt.
+
+**kvantálás rámpára:** a pixelesítő minden renderelt pixelhez a paletta legközelebbi színét választja; a rámpa 8 árnyalata között a folyamatos átmenet 5-8 fokozatú lépcsővé válik. Ezért a lágy render pixelesen is lágy, a kemény sáv viszont pixelesen is kemény.

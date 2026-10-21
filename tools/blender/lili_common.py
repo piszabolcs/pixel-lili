@@ -139,9 +139,11 @@ def world_black(scene):
         bg.inputs[0].default_value = (0, 0, 0, 1)
         bg.inputs[1].default_value = 0.0                    # no ambient: the ramp alone decides the tones
 
-def toon_material(name, shadow, mid, light, lo=0.12, hi=0.45):
-    """the 3-band toon of spec 7.1 / B4: the lit diffuse value -> a constant ramp of three palette
-    colours (hex sRGB) -> emission, so the rendered pixel IS the palette colour (no lighting on top)"""
+def toon_material(name, shadow, mid, light, lo=0.12, hi=0.45, soft=False):
+    """the toon of spec 7.1 / B4: the lit diffuse value -> a ramp of three palette colours (hex sRGB)
+    -> emission, so the rendered pixel IS the palette colour (no lighting on top). soft=True (Lili,
+    2026-10-21: "no hard edges") eases between the colours; the pixelizer then steps the gradient onto
+    the material's 8-shade ramp, which reads as soft shading instead of three cut bands."""
     m = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     if hasattr(m, "use_nodes"):
         try:
@@ -155,7 +157,7 @@ def toon_material(name, shadow, mid, light, lo=0.12, hi=0.45):
     s2r = nt.nodes.new("ShaderNodeShaderToRGB")
     ramp = nt.nodes.new("ShaderNodeValToRGB")
     cr = ramp.color_ramp
-    cr.interpolation = "CONSTANT"
+    cr.interpolation = "EASE" if soft else "CONSTANT"
     cr.elements[0].position, cr.elements[0].color = 0.0, hex_linear(shadow)
     cr.elements[1].position, cr.elements[1].color = lo, hex_linear(mid)
     e = cr.elements.new(hi)
