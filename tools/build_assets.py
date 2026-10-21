@@ -2,7 +2,7 @@
 """Pixel Lili: the whole asset line in one command (spec 7.5, M3.3). Windows side (Blender lives here).
 
     py -3.12 tools/build_assets.py              everything: palette -> palette_gen.c -> scene -> renders -> sprites -> sheets -> pak
-    py -3.12 tools/build_assets.py --from pixelize    start at a step: palette | scene | render | pixelize | pack
+    py -3.12 tools/build_assets.py --from pixelize    start at a step: palette | scene | model | render | pixelize | pack
     py -3.12 tools/build_assets.py --anim walk        only one animation through render and pixelize
 
 Then build and check the simulator in WSL (`make LILI=1 check` in sim/): it loads assets/build/assets.pak.
@@ -12,7 +12,7 @@ import argparse, os, subprocess, sys, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PY = sys.executable
-STEPS = ["palette", "scene", "render", "pixelize", "pack"]
+STEPS = ["palette", "scene", "model", "render", "pixelize", "pack"]
 
 def run(label, cmd):
     t = time.time()
@@ -31,8 +31,13 @@ def main():
         run("palette_gen.c", [PY, "tools/gen_palette.py"])
     if "scene" in todo:
         run("Blender scene", [PY, "tools/blender_run.py", "tools/blender/scene_setup.py", "--", "--out", "assets/blender/scene.blend"])
+    if "model" in todo:
+        run("Lili's model (lili.blend + the 8-direction sheet)", [PY, "tools/blender_run.py", "--blend", "assets/blender/scene.blend", "tools/blender/lili_model.py", "--",
+                                                                   "--out", "assets/blender/lili.blend", "--sheet", "docs/img/m3_4_lili_8dir.png"])
+        run("the 8-direction sheet", [PY, "tools/contact_sheet.py", "assets/raw_renders/_lili8", "docs/img/m3_4_lili_8dir.png", "--cols", "4"])
     if "render" in todo:
-        run("render", [PY, "tools/blender_run.py", "--blend", "assets/blender/scene.blend", "tools/blender/render_all.py", "--", "--anim", a.anim])
+        blend = "assets/blender/lili.blend" if os.path.exists(os.path.join(ROOT, "assets", "blender", "lili.blend")) else "assets/blender/scene.blend"
+        run(f"render from {blend}", [PY, "tools/blender_run.py", "--blend", blend, "tools/blender/render_all.py", "--", "--anim", a.anim])
     if "pixelize" in todo:
         run("pixelize + contact sheets", [PY, "tools/pixelize.py", "--anim", a.anim])
     if "pack" in todo:

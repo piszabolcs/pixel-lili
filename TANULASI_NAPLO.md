@@ -190,6 +190,15 @@ Hiba 2 (ismét): a Python heredoc a C `
 
 Fogalmak: RLE (futamhossz-kódolás), CRC-32, tartalomjegyzék (TOC) egy bináris fájlban, módusz-szín a pixelesítésnél
 
+## 2026-10-21 | M3, 4. lépés: Lili modellje
+Készült: `tools/blender/lili_model.py` (a modell szkriptből: test, fej, pofa, orr, homlokcsík, szemek fénnyel, két különböző fül, lábak mancsokkal, kunkorodó farok Bezier-görbéből), `assets/blender/lili.blend`; a `render_all.py` és a `build_assets.py` felismeri a modellt (új `model` lépés). Képek: `docs/img/m3_4_lili_8dir.png`, `docs/img/sheets/idle_stand.png`.
+
+Döntés: a modell nem kézzel, hanem szkriptből épül, mert így bármikor újraépíthető, a módosítás egy szám átírása, és a .blend-et a gazdi a Blenderben megnézheti. A fogantyúk (root, head, leg0-3, tail) ugyanazok, mint a helyőrzőnél: az animációk kódja egy sort sem változott.
+
+Hiba: az első változaton a fülek alig látszottak. Tünet: 2 cm állt ki a fejből. Gyökérok: a fül talpát a koponya közepéhez képest adtam meg, és az a gömb belsejébe esett. Javítás: a talp a koponya felső élére, a fül 13 cm. A kontaktlap mutatta meg; ezért van jóváhagyási kapu minden vizuális lépésnél.
+
+Fogalmak: Bezier-görbe bevel-lel, fogantyú (handle) a rigben, méretellenőrzés a cellában
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -319,3 +328,9 @@ Fogalmak: RLE (futamhossz-kódolás), CRC-32, tartalomjegyzék (TOC) egy binári
 **tartalomjegyzék (TOC) egy bináris fájlban:** a fájl végén egy táblázat (azonosító, típus, offset, méret) minden bejegyzéshez. Az olvasó a fejlécből megtudja, hol a tábla, és onnan ugrik a kívánt adatra; nem kell végigolvasni a fájlt.
 
 **módusz-szín a pixelesítésnél:** egy 4 x 4-es blokkból nem az átlagszín lesz a pixel (az elmosódott, köztes színt adna), hanem a leggyakoribb palettaszín. Így a kontúr éles marad, és minden pixel garantáltan a paletta egyik színe.
+
+**Bezier-görbe bevel-lel:** a farok nem gömbökből áll, hanem egy görbe (4 vezérlőpont), amire a Blender csövet "húz" (bevel depth), a pontonkénti sugár pedig a vége felé vékonyít. Az alakja két szám átírásával hangolható.
+
+**fogantyú (handle) a rigben:** egy üres objektum (Empty), amihez a testrészek gyermekként kapcsolódnak; az animáció csak a fogantyút forgatja vagy mozgatja, a hozzá tartozó formák követik. A helyőrző és a modell ugyanazokat a fogantyúkat adja, ezért a mozgás kódja közös.
+
+**méretellenőrzés a cellában:** a szkript a modell befoglaló dobozát a kamerán át logikai pixelbe vetíti, és kiírja; így számmal látszik, hogy belefér-e a 48 x 48-as cellába, és hol a pivot.

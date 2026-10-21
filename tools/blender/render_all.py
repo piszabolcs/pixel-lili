@@ -3,8 +3,8 @@ direction, RGBA, 4x (192 x 192), to assets/raw_renders/<anim>/d<dir>_f<frame>.pn
 
     py -3.12 tools/blender_run.py --blend assets/blender/scene.blend tools/blender/render_all.py -- [--anim walk] [--out assets/raw_renders]
 
-The catalogue is assets/anims.json. The dog: the real rig (assets/blender/lili.blend, M3.4) when
-it exists, else the placeholder (lili_rig_placeholder.py). Directions are the game's dir8_t
+The catalogue is assets/anims.json. The dog: whatever stands in the LILI collection of the .blend given (assets/blender/lili.blend
+from lili_model.py, M3.4), else the placeholder (lili_rig_placeholder.py) is built into scene.blend. Directions are the game's dir8_t
 (S first, clockwise), made by turning the dog, never the camera or the light (spec 7.3).
 A manifest.json per animation records what was rendered (the pixelizer and the packer read it).
 """
@@ -32,12 +32,14 @@ lc.camera(sc, "cell")
 
 # the dog: whatever is in the LILI collection, else the placeholder
 lili_coll = lc.collection("LILI")
+import lili_model
 if not lili_coll.objects:
     h = rig.build("LILI")
-    anims = rig.ANIMS
     print("lili: placeholder dog (no model in the LILI collection yet)")
 else:
-    sys.exit("lili: a real rig is present but render_all.py does not drive it yet (M3.4/M3.5)")
+    h = lili_model.handles_from_scene()                                     # lili.blend (M3.4): the same handle names
+    print("lili: Lili's model from the LILI collection")
+anims = rig.ANIMS
 for c in lc.COLLECTIONS:                                                   # only the dog renders in a sprite cell
     lc.collection(c).hide_render = c not in ("LILI", "CAMERA_LIGHT")
 
