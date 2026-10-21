@@ -245,7 +245,7 @@ Fogalmak: csíkos generálás (callback), vezetékbeli bájtsorrend, memoizálá
 
 **csíkos generálás (callback):** a kijelzőt nem egy kész képpel etetjük, hanem a kijelző-port minden 24 soros csíkhoz meghív egy általunk adott függvényt (`fill(dst, y0, n)`), ami a DMA pufferbe írja a sorokat. Közben a másik puffert már küldi a hardver (ping-pong), így a számolás és az adatküldés átlapolódik.
 
-**vezetékbeli bájtsorrend:** az RGB565 szín 16 bit; a ESP32 kisvégű (a kisebb bájt van elöl), a kijelző viszont a nagyobb bájtot várja előre. Ezért minden pixelnél fel kell cserélni a két bájtot; mi egyszerre két pixelen, egy 32 bites műveletben tesszük.
+**vezetékbeli bájtsorrend:** az RGB565 szín 16 bit; az ESP32 kisvégű (a kisebb bájt van elöl), a kijelző viszont a nagyobb bájtot várja előre. Ezért minden pixelnél fel kell cserélni a két bájtot; mi egyszerre két pixelen, egy 32 bites műveletben tesszük.
 
 **memoizálás (gyorsítótár):** amit sokszor ugyanúgy számolnánk ki, egyszer kiszámoljuk és eltesszük, majd csak másoljuk. Kulcs kell hozzá: a `world_bg_key` megmondja, mikor lenne más az eredmény (ma csak nézetváltáskor); ha a kulcs változik, újraszámol.
 
