@@ -1,6 +1,8 @@
 """lili_model.py - B2-B4: Lili's model (spec 3.1 L1-L9, the approved character sheet
 reference/concept/lili_sheet_approved_2026-10-21.jpg). Built by script so it is reproducible and
-the owner can still open the .blend in Blender and look around.
+the owner can still open the .blend in Blender and look around. The fawn body is ONE metaball
+family (2026-10-21, the owner: "not balls, one continuous body"): body, neck, head, cheeks, muzzle
+and legs blend into a single smooth surface; the white markings, eyes, nose, ears and tail sit on it.
 
     py -3.12 tools/blender_run.py --blend assets/blender/scene.blend tools/blender/lili_model.py -- --out assets/blender/lili.blend [--sheet docs/img/m3_4_lili_8dir.png]
 
@@ -27,10 +29,54 @@ def ramp_hex(name):
     i = m["ramps"].index(name)
     return ["#%02x%02x%02x" % tuple(m["rgb"][16 + i * 8 + s]) for s in range(8)], m["fixed"]
 
+def body_material(fur, white):
+    """the fawn body with its white markings painted ON the surface (chest, belly, muzzle, blaze, paws):
+    one toon material whose colour ramp is chosen by the surface point's position in the dog's own
+    space (Object coordinates of the metaball base = root space, the dog facing +X). So the markings
+    follow the smooth metaball surface instead of being separate shapes (the owner, 2026-10-21)."""
+    m = bpy.data.materials.get("lili_body") or bpy.data.materials.new("lili_body")
+    m.use_nodes = True
+    nt = m.node_tree; nt.nodes.clear()
+    N = lambda t: nt.nodes.new(t)
+    L = nt.links.new
+    def ramp(cols, lo=0.12, hi=0.45):
+        r = N("ShaderNodeValToRGB"); cr = r.color_ramp; cr.interpolation = "CONSTANT"
+        cr.elements[0].position, cr.elements[0].color = 0.0, lc.hex_linear(cols[0])
+        cr.elements[1].position, cr.elements[1].color = lo, lc.hex_linear(cols[1])
+        e = cr.elements.new(hi); e.color = lc.hex_linear(cols[2])
+        return r
+    def math(op, a, b=None, v=None):
+        n = N("ShaderNodeMath"); n.operation = op
+        if isinstance(a, float): n.inputs[0].default_value = a
+        else: L(a, n.inputs[0])
+        if b is not None:
+            if isinstance(b, float): n.inputs[1].default_value = b
+            else: L(b, n.inputs[1])
+        return n.outputs[0]
+    diff = N("ShaderNodeBsdfDiffuse"); diff.inputs["Color"].default_value = (1, 1, 1, 1)
+    s2r = N("ShaderNodeShaderToRGB"); L(diff.outputs[0], s2r.inputs[0])
+    rf, rw = ramp(fur), ramp(white)
+    L(s2r.outputs["Color"], rf.inputs["Fac"]); L(s2r.outputs["Color"], rw.inputs["Fac"])
+    tc = N("ShaderNodeTexCoord"); sep = N("ShaderNodeSeparateXYZ"); L(tc.outputs["Object"], sep.inputs[0])
+    x, y, z = sep.outputs["X"], sep.outputs["Y"], sep.outputs["Z"]
+    belly = math("MULTIPLY", math("LESS_THAN", z, math("ADD", math("MULTIPLY", x, 0.36), 0.165)), math("GREATER_THAN", z, 0.075))   # the underside, above the legs
+    front_legs = math("MULTIPLY", math("GREATER_THAN", x, 0.02), math("LESS_THAN", z, 0.12))        # the front legs are white (L3)
+    muzzle = math("MULTIPLY", math("GREATER_THAN", x, 0.205), math("LESS_THAN", z, 0.318))           # the short muzzle, white
+    blaze = math("MULTIPLY", math("MULTIPLY", math("LESS_THAN", math("ABSOLUTE", y), 0.011), math("GREATER_THAN", x, 0.17)),
+                 math("GREATER_THAN", z, 0.30))                                                      # the blaze up the forehead
+    paws = math("LESS_THAN", z, 0.028)
+    mask = math("MAXIMUM", math("MAXIMUM", belly, muzzle), math("MAXIMUM", math("MAXIMUM", blaze, paws), front_legs))
+    mix = N("ShaderNodeMixRGB"); mix.blend_type = "MIX"
+    L(mask, mix.inputs["Fac"]); L(rf.outputs["Color"], mix.inputs["Color1"]); L(rw.outputs["Color"], mix.inputs["Color2"])
+    emit = N("ShaderNodeEmission"); L(mix.outputs["Color"], emit.inputs["Color"])
+    out = N("ShaderNodeOutputMaterial"); L(emit.outputs[0], out.inputs["Surface"])
+    return m
+
 def materials():
     fur, fixed = ramp_hex("fur")
     white, _ = ramp_hex("fur_w")
     return {
+        "body":  body_material((fur[2], fur[4], fur[6]), (white[3], white[5], white[7])),
         "fawn":  lc.toon_material("lili_fawn", fur[2], fur[4], fur[6]),
         "white": lc.toon_material("lili_white", white[3], white[5], white[7]),
         "eye":   lc.toon_material("lili_eye", fixed["eye"], fixed["eye"], fixed["eye"]),
@@ -85,37 +131,57 @@ def tail(parent, mat, coll="LILI"):
     lc.link(o, coll)
     return o
 
+def mball(name, parent, elements, mat=None, coll="LILI", base=False):
+    """one metaball object of the "lili_mb" family: Blender blends "lili_mb", "lili_mb.001", "lili_mb.002"... (a
+    NUMERIC suffix only: "lili_mb.head" would be its own family) into one smooth surface, whatever each is parented
+    to; the base (no suffix) carries the resolution and the material. The visible surface sits at 0.575 x radius
+    (field s (1 - (d/r)^2)^3 = threshold: 2 (1 - x^2)^3 = 0.6 -> x = 0.575), so radii here are 1.74 x the size wanted. elements: (type, co, radius, size, rot_y_deg)"""
+    mb = bpy.data.metaballs.new(name)
+    if base:
+        mb.resolution = 0.010; mb.render_resolution = 0.0045; mb.threshold = 0.6
+    for typ, co, r, size, ry in elements:
+        e = mb.elements.new(); e.type = typ; e.co = co; e.radius = r; e.stiffness = 2.0
+        if size: e.size_x, e.size_y, e.size_z = size
+        if ry: e.rotation = (math.cos(math.radians(ry) / 2), 0.0, math.sin(math.radians(ry) / 2), 0.0)   # about Y
+    if mat: mb.materials.append(mat)
+    o = bpy.data.objects.new(name, mb)
+    o.parent = parent
+    lc.link(o, coll)
+    return o
+
 def build(coll="LILI"):
+    """one continuous fawn body (metaballs: body, neck, head, cheeks, muzzle, legs blend into a single
+    surface, as on the approved sheet), the white markings, eyes, nose and ears as meshes on it"""
     M = materials()
     E = lambda name, loc, par: lc.link(_empty(name, loc, par), coll)
     root = E("lili_root", (0, 0, 0), None)
-    # the body: an egg, fuller at the chest, tapering to the rump; low to the ground (short legs)
-    body = sphere("lili_body", (-0.01, 0, 0.175), (0.125, 0.092, 0.082), M["fawn"], root)
-    sphere("lili_rump", (-0.085, 0, 0.172), (0.080, 0.082, 0.072), M["fawn"], root)
-    sphere("lili_chest", (0.05, 0, 0.145), (0.095, 0.078, 0.066), M["white"], root)        # white chest and belly (L3)
-    sphere("lili_belly", (-0.04, 0, 0.125), (0.10, 0.070, 0.045), M["white"], root)
-    # the head: big, round, forward and up; the neck joint is the animation handle
-    head = E("lili_head", (0.11, 0, 0.305), root)
-    sphere("lili_skull", (0.035, 0, 0.03), (0.105, 0.100, 0.098), M["fawn"], head)
-    sphere("lili_cheek_l", (0.08, 0.055, -0.01), (0.045, 0.040, 0.040), M["fawn"], head)
-    sphere("lili_cheek_r", (0.08, -0.055, -0.01), (0.045, 0.040, 0.040), M["fawn"], head)
-    sphere("lili_muzzle", (0.115, 0, -0.015), (0.052, 0.046, 0.036), M["white"], head)      # the short muzzle, white
-    sphere("lili_chin", (0.10, 0, -0.045), (0.035, 0.035, 0.022), M["white"], head)
-    sphere("lili_nose", (0.163, 0, -0.002), (0.016, 0.018, 0.013), M["nose"], head)         # the worn pinkish-brown nose (L6)
-    sphere("lili_blaze", (0.108, 0, 0.055), (0.034, 0.016, 0.070), M["white"], head, rot=(0, math.radians(-38), 0))   # the white blaze (L4)
-    for side, y in (("l", 0.047), ("r", -0.047)):
-        sphere(f"lili_eye_{side}", (0.112, y, 0.035), (0.026, 0.026, 0.028), M["eye"], head)   # big, round, dark, set apart (L5)
-        sphere(f"lili_gloss_{side}", (0.133, y + (0.006 if side == "l" else -0.006), 0.046), (0.007, 0.007, 0.007), M["gloss"], head)
-    ear("lili_ear_l", (0.015, 0.068, 0.155), (math.radians(-18), math.radians(-6), math.radians(8)), M["fawn"], M["pink"], head)      # her left ear: up, planted on the skull's top edge
-    ear("lili_ear_r", (0.015, -0.095, 0.095), (math.radians(112), math.radians(0), math.radians(-20)), M["fawn"], M["pink"], head)   # her RIGHT ear droops outwards (D-03)
-    # the legs: short; the fronts white, the backs fawn with white paws
-    legs = []
-    for i, (x, y) in enumerate(((0.065, 0.050), (0.065, -0.050), (-0.085, 0.052), (-0.085, -0.052))):
-        hip = E(f"lili_leg{i}", (x, y, 0.115), root)
-        capsule(f"lili_leg{i}_mesh", (0, 0, 0.01), 0.022, 0.11, M["white"] if x > 0 else M["fawn"], hip)
-        sphere(f"lili_paw{i}", (0.012, 0, -0.098), (0.030, 0.025, 0.016), M["white"], hip, seg=16)
-        legs.append(hip)
+    head = E("lili_head", (0.105, 0, 0.292), root)                                             # the neck joint: the animation handle
+    legs = [E(f"lili_leg{i}", (x, y, 0.115), root) for i, (x, y) in enumerate(((0.065, 0.050), (0.065, -0.050), (-0.085, 0.052), (-0.085, -0.052)))]
     t = E("lili_tail", (-0.14, 0, 0.215), root)
+    # the fawn mass: the base object carries the family's resolution and material
+    body = mball("lili_mb", root, [
+        ("ELLIPSOID", (-0.01, 0, 0.175), 0.146, (1.25, 0.95, 0.85), 0),                       # the barrel: an ELLIPSOID's size is a scale around its radius (1 = a ball)
+        ("BALL", (-0.09, 0, 0.165), 0.11, None, 0),                                          # the rump
+        ("BALL", (0.055, 0, 0.168), 0.117, None, 0),                                          # the chest mass
+        ("CAPSULE", (0.08, 0, 0.225), 0.10, (0.02, 0, 0), -55),                              # the neck, short, up into the head
+    ], M["body"], coll, base=True)
+    mball("lili_mb.001", head, [                                                               # the head family member
+        ("BALL", (0.035, 0, 0.03), 0.153, None, 0),                                           # the skull
+        ("BALL", (0.045, 0, 0.075), 0.10, None, 0),                                          # the apple dome
+        ("BALL", (0.078, 0.052, -0.012), 0.061, None, 0),                                     # cheeks
+        ("BALL", (0.078, -0.052, -0.012), 0.061, None, 0),
+        ("BALL", (0.108, 0, -0.012), 0.061, None, 0),                                         # the muzzle's root
+    ], None, coll)
+    for i, hip in enumerate(legs):
+        mball(f"lili_mb.{i + 2:03d}", hip, [("CAPSULE", (0, 0, -0.045), 0.037, (0.04, 0, 0), 90)], None, coll)   # vertical, blends into the barrel
+    # the white markings as meshes that stand a little proud of the fawn surface
+    # the white markings (chest, belly, muzzle, blaze, paws) are painted by the body material's mask
+    sphere("lili_nose", (0.152, 0, -0.008), (0.016, 0.018, 0.013), M["nose"], head)        # the worn pinkish-brown nose (L6)
+    for side, y in (("l", 0.044), ("r", -0.044)):
+        sphere(f"lili_eye_{side}", (0.096, y, 0.036), (0.026, 0.026, 0.028), M["eye"], head)   # big, round, dark, set apart (L5)
+        sphere(f"lili_gloss_{side}", (0.118, y + (0.006 if side == "l" else -0.006), 0.047), (0.007, 0.007, 0.007), M["gloss"], head)
+    ear("lili_ear_l", (0.015, 0.068, 0.155), (math.radians(-18), math.radians(-6), math.radians(8)), M["fawn"], M["pink"], head)      # her left ear: up
+    ear("lili_ear_r", (0.015, -0.095, 0.095), (math.radians(112), math.radians(0), math.radians(-20)), M["fawn"], M["pink"], head)   # her RIGHT ear droops (D-03)
     tail(t, M["fawn"])
     return {"root": root, "body": body, "head": head, "legs": legs, "tail": t}
 
@@ -149,7 +215,7 @@ if __name__ == "__main__":
     bpy.context.view_layer.update()
     xs, ys = [], []
     for o in lc.collection("LILI").objects:
-        if o.type in ("MESH", "CURVE"):
+        if o.type in ("MESH", "CURVE", "META"):
             for v in o.bound_box:
                 p = lc.to_logical(sc, o.matrix_world @ Vector(v)); xs.append(p[0]); ys.append(p[1])
     print(f"lili: the model spans logical x {min(xs):.1f}..{max(xs):.1f}, y {min(ys):.1f}..{max(ys):.1f} in the cell (facing east; pivot at {lc.PIVOT})")

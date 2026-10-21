@@ -208,6 +208,17 @@ Hiba: a firmware nem fordult, mert a `config.h` megjegyzésében `*.json` szerep
 
 Fogalmak: tervezőrács és skálázó szorzó, selective outline, vektorizálás (numpy)
 
+## 2026-10-21 | M3, 4c. lépés: egybefüggő test metaballból
+Készült: a bundás test egyetlen metaball-család (törzs, nyak, fej, pofa, lábak összeolvadva), a fehér jelölések az anyagban pozíció szerinti maszkkal (shader-csomópontok: Texture Coordinate, Separate XYZ, Math, Mix), a fogantyúk megmaradtak. Három próbakör a kontaktlapon.
+
+Döntés: a jelölések festve vannak, nem külön testek, mert a külön gömbök vagy elnyelik a testet, vagy kilógnak; a maszk a sima felületen fut, mint a mintaképen.
+
+Hiba 1: a fej nem olvadt össze. Gyökérok: a Blender metaball-család csak számjegyes utótagot ismer (`lili_mb.001`), a `lili_mb.head` saját család lett, a saját alapértelmezett felbontásával (0,4 m) semmit nem rajzolt. Javítás: számozott nevek.
+Hiba 2: a törzs hiányzott. Gyökérok: az ELLIPSOID elem mérete nem méter, hanem a sugár körüli arány; 0,125-ös "méret" a 0,1-es sugarat 1,25 cm-re zsugorította. Javítás: arányok (1,25; 0,95; 0,85).
+Hiba 3: a test vékony volt. Gyökérok: a mező képlete szerint a felület a sugár 0,575-szeresénél van, nem 0,84-nél, ahogy becsültem. Javítás: számolás a képletből, a sugarak 1,74-szeresek. Korábbi észlelés: a képletet az elején kellett volna kikeresni, nem becsülni (CLAUDE.md 6: mérj, ne becsülj).
+
+Fogalmak: metaball (implicit felület), család és alapobjektum, pozíció szerinti anyagmaszk, küszöb és merevség
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -349,3 +360,11 @@ Fogalmak: tervezőrács és skálázó szorzó, selective outline, vektorizálá
 **selective outline:** a kontúr nem egyetlen fekete vonal, hanem a szomszédos anyag legsötétebb árnyalata: a bunda mellett sötétbarna, a fehér mellkas mellett szürkésbarna. A hi-bit pixel art egyik ismertetőjegye; a pixelesítő a szomszéd pixel rámpájából számolja.
 
 **vektorizálás (numpy):** a pixelenkénti Python-ciklus helyett az egész képet tömbműveletekkel dolgozzuk fel (itt: egy blokk 16 pixelének gyakorisági táblája egyszerre minden blokkra). Négyszer nagyobb képen is rövidebb lett a futás.
+
+**metaball (implicit felület):** nem háromszögekből álló felület, hanem egy mező: minden elem (gömb, kapszula, ellipszoid) a tér pontjaihoz egy értéket ad, az értékek összeadódnak, és ahol az összeg eléri a küszöböt, ott a felület. Két közeli elem mezője összefolyik, ezért a nyak sima átmenettel megy a fejbe.
+
+**család és alapobjektum (metaball):** az azonos nevű, csak számmal különböző metaball-objektumok (`lili_mb`, `lili_mb.001`) egy mezőt alkotnak; az alapobjektum (utótag nélkül) adja a felbontást és az anyagot. Így a fej a nyak-fogantyúhoz, a lábak a csípőkhöz kötve mozoghatnak, mégis egy test marad.
+
+**pozíció szerinti anyagmaszk:** a shader a felületi pont helyéből (a tárgy saját koordinátái) számol egy 0/1 értéket (pl. z kisebb, mint egy ferde vonal = has), és ezzel választ két színrámpa között. A jelölés így a felületen "fest", nem külön geometria.
+
+**küszöb és merevség (metaball):** a merevség (stiffness) az elem mezőjének erőssége, a küszöb (threshold) az a mezőérték, ahol a felület megjelenik. Együtt adják, hogy a látható felület a megadott sugár hányadrészénél van: s (1 - (d/r)^2)^3 = küszöb, s = 2, küszöb = 0,6 -> d = 0,575 r.
