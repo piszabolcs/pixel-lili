@@ -38,7 +38,7 @@ Frissítve: 2026-10-23 (délután)
 - Később (D-07): "Lili" névfelismerés.
 
 ## Próbáld ki (a gazdinak)
-- **A demó a panelen (2026-10-23):** bekapcsolás után magától fut a bemutató kör (szoba, évszakok, udvar). BOOT = demó megállítása / újraindítása, KEY3 = szoba/udvar váltás (ez megállítja a demót). Újraflashelés: `py -3.12 tools/flash_216.py lili`. A kép 90 fokkal el van forgatva az óramutatóval ellentétesen (a kábel oldalt jön ki): ha fordítva sikerült, a `firmware/lili/main/lili_main.c` LILI_MADCTL értéke 0x00-ra cserélendő.
+- **A demó a panelen (2026-10-23):** bekapcsolás után magától fut a bemutató kör (szoba, évszakok, udvar). BOOT = demó megállítása / újraindítása, KEY3 = szoba/udvar váltás (ez megállítja a demót). Újraflashelés: `py -3.12 tools/flash_216.py lili`. A kép 90 fokkal el van forgatva az óramutatóval ellentétesen (a kábel oldalt jön ki; a gazdi megerősítette, hogy jó irányba fordult).
 - **Kezdőkockák (2026-10-23):** `docs/art/startframes/PROMPTS.md`: 7 Gemini-kép (6 lap, mindegyiken 8 póz, és egy kellékes lap), a kész képek ugyanebbe a mappába kerülnek `01.png` ... `07.png` néven.
 - **A Lili-világ a panelen:** `py -3.12 tools/flash_216.py lili`, utána a panel a helyőrző szobát mutatja (KEY3 = udvar, BOOT = évszak). Vissza a diagra: `flash_216.py diag`.
 - **A panelen (M1.3):** menj végig az üdvözlő oldalon (érintés), nézd meg, hogy úsznak-e a halak, működik-e az érintés és a 3 gomb. Írd meg, melyik gomb mit csinált (M1.3).
