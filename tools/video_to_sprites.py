@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Pixel Lili: the video model's frames back onto Lili's 96 px grid (2026-10-23, the 2D line).
+"""Pixel Lili: generated frames (FLUX.2 klein keyframes, tools/keyframes.py) back onto Lili's 96 px grid (2026-10-23).
+(Written for the Wan video model test, which was dropped and deleted the same day: docs/decisions.md.)
 
     py -3.12 tools/video_to_sprites.py --tag walk_SE --anim walk --dir SE [--n 6 --fps 10]
 
-assets/raw_renders/video/<tag>/f*.png (the sprite 5x on green, from tools/video_anim.py) ->
-  1. the green screen keyed out (green clearly above red and blue), the result resampled 5:1 onto the 96 grid
+assets/raw_renders/video/<tag>/f*.png (the sprite on green, scale.txt says how big) ->
+  1. the green screen keyed out (green clearly above red and blue), the result resampled back onto the 96 grid (scale.txt)
      with the same rules as tools/sprite_clean.py (mode colour, > 50 % coverage, Lili's 40 colours, outline)
   2. every frame aligned to frame 0 by the paws (the bottom row and its centre), so the model's drift does
      not make her slide
@@ -26,21 +27,25 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True); ap.add_argument("--anim", required=True); ap.add_argument("--dir", required=True)
     ap.add_argument("--n", type=int, default=6); ap.add_argument("--fps", type=int, default=10); ap.add_argument("--min-loop", type=int, default=8)
+    ap.add_argument("--preview", action="store_true", help="only docs/img/anim/<tag>.gif: a candidate, the game's folder untouched")
     a = ap.parse_args()
     raw = sorted(glob.glob(os.path.join(ROOT, "assets", "raw_renders", "video", a.tag, "f*.png")))
     ref = Image.open(os.path.join(ROOT, "assets", "sprites", "lili_src", "stand_S.png"))
     pal = np.array(ref.getpalette()[:768], dtype=np.uint8).reshape(256, 3)
     pal_lab = rgb_to_oklab(pal)
     slots = np.arange(sc.SPRITE_SLOT, sc.SPRITE_SLOT + sc.SPRITE_K)
-    L = pal_lab[:, 0]
-    outline = int(json.load(open(os.path.join(ROOT, "assets", "palettes", "lili_sprites.json")))["slots"][0])
-    first = np.asarray(Image.open(os.path.join(ROOT, "assets", "sprites", "lili_src", "stand_S.png")))
+    # the outline colour the cleaned sprites use: the most common index on a source sprite's silhouette edge
+    first = np.asarray(ref); body = first != 0; pad = np.pad(body, 1)
+    edge = body & ~(pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:])
+    outline = int(np.bincount(first[edge]).argmax())
+    sf = os.path.join(ROOT, "assets", "raw_renders", "video", a.tag, "scale.txt")
+    scale = float(open(sf).read()) if os.path.exists(sf) else 4.0
     out_frames = []
     for f in raw:
         rgb = np.asarray(Image.open(f).convert("RGB")).astype(int)
         green = (rgb[..., 1] > rgb[..., 0] + 40) & (rgb[..., 1] > rgb[..., 2] + 40)
         rgba = np.dstack([rgb.astype(np.uint8), np.where(green, 0, 255).astype(np.uint8)])
-        img = sc.resample(rgba, 5.0, pal_lab, slots)
+        img = sc.resample(rgba, scale, pal_lab, slots)
         img = sc.drop_specks(img)
         img = sc.clean_outline(img, pal_lab, outline)
         out_frames.append(img)
@@ -68,6 +73,11 @@ def main():
     end = min(cands, key=lambda k: diff(aligned[0], aligned[k])) if len(aligned) > a.min_loop else len(aligned)
     picks = [int(round(i * end / a.n)) for i in range(a.n)]
     seq = [aligned[i] for i in picks]
+    if a.preview:
+        an.gif(os.path.join(ROOT, "docs", "img", "anim", f"{a.tag}.gif"), {a.dir: seq}, pal, a.fps)
+        an.gif(os.path.join(ROOT, "docs", "img", "anim", f"{a.tag}_raw.gif"), {a.dir: aligned}, pal, 16)
+        print(f"{a.tag}: {len(raw)} frames, loop at {end}, picked {picks} -> docs/img/anim/{a.tag}.gif (preview)")
+        return
     print(f"{len(raw)} frames, loop closes at {end} (diff {diff(aligned[0], aligned[end]) if end < len(aligned) else 0:.0f}), picked {picks}")
     # write into the animation folder, other directions kept
     di = an.DIRS.index(a.dir)
