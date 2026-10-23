@@ -188,7 +188,18 @@ static void painted_bg(const world_t *w, render8_t *r) {
    then one table look-up each; nothing above the room's wall line. */
 enum { SH_W = 200, SH_H = 72, SH_UP = 12 };
 static uint8_t s_cell[96 * 96];                   /* one decoded frame */
-static uint8_t s_shade[SH_W * SH_H];              /* 1 contact edge, 2 cast, 3 contact core */
+static uint8_t s_shade[SH_W * SH_H];              /* 1 contact edge, 2 cast far, 3 cast near, 4 contact core */
+/* how high she really is in a pose: the 3/4 camera shows a curled-up dog's back as depth, not height, so
+   counting every sprite row as height threw a long flat slab under her that looked like a glass plate
+   (the owner, 2026-10-23). Lying is a hand high, sitting and the play bow in between, standing the most. */
+static int shadow_hmax(uint16_t anim) {
+    switch (anim) {
+    case ANIM_SLEEP_CURL: return 10;
+    case ANIM_PLAY_BOW: case ANIM_EAT_DRINK: case ANIM_DRINK: return 28;
+    case ANIM_IDLE_SIT_BLINK: case ANIM_PANT_SMILE: case ANIM_LOOK_AROUND: case ANIM_BARK_HEAD_FLIP: return 42;
+    default: return LILI_SHADOW_HMAX;
+    }
+}
 static void actor_shadow(const world_t *w, render8_t *r, const actor_t *a, const sprite_set_t *set, const sprite_frame_t *fr) {
     if (set->cell_w * set->cell_h > (int)sizeof s_cell) return;
     pak_frame_decode(set, fr, s_cell);
@@ -202,24 +213,29 @@ static void actor_shadow(const world_t *w, render8_t *r, const actor_t *a, const
         const float cx = ox + (fx0 + fx1) / 2.0f, rx = (fx1 - fx0) / 2.0f + 3, ry = 3 + (fx1 - fx0) / 16.0f;
         for (int y = 0; y < SH_H; y++) for (int x = 0; x < SH_W; x++) {
             float dx = (rx0 + x - cx) / rx, dy = (ry0 + y - (py - 1)) / ry, d = dx * dx + dy * dy;
-            if (d <= 0.55f) s_shade[y * SH_W + x] = 3; else if (d <= 1.0f) s_shade[y * SH_W + x] = 1;
+            if (d <= 0.55f) s_shade[y * SH_W + x] = 4; else if (d <= 1.0f) s_shade[y * SH_W + x] = 1;
         }
     }
     const int dp = world_daypart(w);
     if (DAYPART[dp].cast >= 0) {
         const float s = w->view == VIEW_ROOM ? 0.6f : 0.35f;
+        const int hmax = shadow_hmax(a->anim);
         for (int y = 0; y < set->pivot_y && y < H; y++) for (int x = 0; x < W; x++) {
             if (!s_cell[y * W + x]) continue;
-            int h = set->pivot_y - y; if (h > LILI_SHADOW_HMAX) h = LILI_SHADOW_HMAX;
+            int h = set->pivot_y - y; if (h > hmax) h = hmax;
             float k = w->view == VIEW_ROOM ? (ox + x - LILI_ROOM_LIGHT_X) / (float)(py - LILI_ROOM_LIGHT_Y > 8 ? py - LILI_ROOM_LIGHT_Y : 8) : 0.45f;
             int sx = (int)(ox + x + h * s * k + 0.5f) - rx0, sy = (int)(py + h * s + 0.5f) - ry0;
+            const uint8_t lv = h * 2 <= hmax ? 3 : 2;                 /* the half next to her darker, the far half lighter */
             for (int dy = 0; dy < 2; dy++) for (int dx = 0; dx < 2; dx++) {     /* a 2 x 2 splat: no gaps between the rows */
                 int qx = sx + dx, qy = sy + dy;
-                if (qx >= 0 && qy >= 0 && qx < SH_W && qy < SH_H && s_shade[qy * SH_W + qx] < 2) s_shade[qy * SH_W + qx] = 2;
+                if (qx >= 0 && qy >= 0 && qx < SH_W && qy < SH_H && s_shade[qy * SH_W + qx] < lv) s_shade[qy * SH_W + qx] = lv;
             }
         }
     }
-    const uint8_t *lut[4] = { NULL, bg_lut(w, LUT_SHADE_OUT), bg_lut(w, DAYPART[dp].cast), bg_lut(w, LUT_SHADE_IN) };
+    /* by day the near half is the full cast shadow and the far half the evening's lighter one; in the
+       evening the near half is the lighter one and the far half fades out */
+    const int8_t near_t = DAYPART[dp].cast, far_t = DAYPART[dp].cast == LUT_CAST_DAY ? LUT_CAST_EVE : -1;
+    const uint8_t *lut[5] = { NULL, bg_lut(w, LUT_SHADE_OUT), bg_lut(w, far_t), bg_lut(w, near_t), bg_lut(w, LUT_SHADE_IN) };
     const int top = w->view == VIEW_ROOM ? LILI_ROOM_FLOOR_Y : 0;
     for (int y = 0; y < SH_H; y++) {
         int cy = ry0 + y; if (cy < top || cy < 0 || cy >= LILI_LOG_H) continue;
