@@ -28,6 +28,8 @@ def main():
     ap.add_argument("--tag", required=True); ap.add_argument("--anim", required=True); ap.add_argument("--dir", required=True)
     ap.add_argument("--n", type=int, default=6); ap.add_argument("--fps", type=int, default=10); ap.add_argument("--min-loop", type=int, default=8)
     ap.add_argument("--preview", action="store_true", help="only docs/img/anim/<tag>.gif: a candidate, the game's folder untouched")
+    ap.add_argument("--ref", help="the source pose (lili_src): frames are aligned to ITS paws, and --pin copies from it")
+    ap.add_argument("--pin", help="x0,y0,x1,y1[;...] boxes copied from --ref into every frame (the head: her face and the folded ear never change)")
     a = ap.parse_args()
     raw = sorted(glob.glob(os.path.join(ROOT, "assets", "raw_renders", "video", a.tag, "f*.png")))
     ref = Image.open(os.path.join(ROOT, "assets", "sprites", "lili_src", "stand_S.png"))
@@ -55,7 +57,8 @@ def main():
         if not len(ys): return None
         b = ys.max(); sel = ys >= b - 5
         return b, int(round(xs[sel].mean()))
-    b0, c0 = foot(out_frames[0])
+    refimg = np.asarray(Image.open(os.path.join(ROOT, "assets", "sprites", "lili_src", a.ref + ".png"))) if a.ref else None
+    b0, c0 = foot(refimg if refimg is not None else out_frames[0])
     aligned = []
     for img in out_frames:
         fb = foot(img)
@@ -67,6 +70,27 @@ def main():
         ok = (ny >= 0) & (ny < img.shape[0]) & (nx >= 0) & (nx < img.shape[1])
         sh[ny[ok], nx[ok]] = img[ys[ok], xs[ok]]
         aligned.append(sh)
+    if a.pin and refimg is not None:                 # the ears from the approved sprite: the model only moves the body
+        boxes = [tuple(map(int, box.split(","))) for box in a.pin.split(";")]
+        def head_fit(fr):
+            """re-align a frame to the reference by the pinned boxes' surroundings (the head), not the paws: the
+            model keeps the head in place, and a lifted paw would shift the whole frame"""
+            best = (10**9, 0, 0)
+            for dy in range(-6, 7):
+                for dx in range(-6, 7):
+                    sh = np.roll(np.roll(fr, dy, 0), dx, 1)
+                    err = 0
+                    for x0, y0, x1, y1 in boxes:
+                        X0, Y0, X1, Y1 = max(0, x0 - 6), max(0, y0), min(96, x1 + 10), min(96, y1 + 14)
+                        err += ((sh[Y0:Y1, X0:X1] != 0) != (refimg[Y0:Y1, X0:X1] != 0)).sum()
+                    if err < best[0]: best = (err, dy, dx)
+            return np.roll(np.roll(fr, best[1], 0), best[2], 1)
+        aligned = [head_fit(fr) for fr in out_frames]
+        for fr in aligned:
+            for box in a.pin.split(";"):
+                x0, y0, x1, y1 = map(int, box.split(","))
+                fr[y0:y1, x0:x1] = refimg[y0:y1, x0:x1]
+        aligned = [sc.clean_outline(sc.drop_specks(fr), pal_lab, outline) for fr in aligned]
     # the loop: the frame most like frame 0 after min-loop frames
     def diff(p, q): return ((p != 0) != (q != 0)).sum() + (p != q).sum() * 0.25
     cands = range(a.min_loop, len(aligned))
