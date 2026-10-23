@@ -1,6 +1,6 @@
 # Állapot
 
-Frissítve: 2026-10-20 (reggel)
+Frissítve: 2026-10-23 (délután)
 
 ## Kész
 - **M0.1** Fejlesztői környezet: WSL2 Ubuntu 24.04.5 a `D:\WSL\Ubuntu-24.04`-en (tükrözött hálózat, systemd), build-essential (gcc 13.3), SDL2 2.30, cmake 3.28, ninja 1.11, ffmpeg 6.1, uv 0.13; ESP-IDF **v5.4.1** (`~/esp/esp-idf`, `install.sh esp32s3`, `idf.py --version` OK); `nvidia-smi` a WSL-ben látja az RTX 5060-at (driver 617.14); `.venv` Python 3.11 + **torch 2.11.0+cu128**, `torch.cuda.is_available()` = True, sm 12.0. Windowson: usbipd-win 5.3, uv, VS Code WSL bővítmény.
@@ -32,6 +32,7 @@ Frissítve: 2026-10-20 (reggel)
 - **M3.3 kész:** egy parancs (`py -3.12 tools/build_assets.py`) végigviszi: paletta -> Blender jelenet -> 96 kocka render (helyőrző kutya, idle_stand + walk) -> pixelesítés (`tools/pixelize.py`, B7 szabályok) -> kontaktlapok (`docs/img/sheets/`) -> `assets/build/assets.pak` (42,6 KB) + `common/asset_ids.h`. A szimulátor betölti a pakot, Lili a sprite (`docs/img/m3_3_sim_sprite.png`); A = animáció, R = irány. A firmware a pak olvasóval fordul, a pak betöltése a panelen később (partíció, M4 után).
 - **Natív 480 (2026-10-21):** a gazdi kérésére a 2x nagyítás megszűnt, a világ natív 480x480-ban rajzol (spec 7.2 és 7.3 frissítve); a panelen 38 fps. A térképek a 240-es tervezőrácson maradtak (`LILI_K`).
 - **M3.4 elkészült, jóváhagyásra vár (natív 96 px-es cellával újragenerálva):** `tools/blender/lili_model.py` -> `assets/blender/lili.blend`; `docs/img/m3_4_lili_8dir.png` (8 irány, 4x) és `docs/img/sheets/idle_stand.png` (pixeles). A lánc már a modellből gyárt (pak 57,7 KB).
+- **2D vonal (2026-10-23):** a Blender-modell helyett a jóváhagyott Lili-képekből tisztított 96 px-es sprite-ok (`tools/sprite_clean.py`, `assets/sprites/lili_src/`). **Animáció: PixelLab** (a gazdi döntése, decisions.md "animáció / PixelLab"): a szerkesztőből exportált sheetek `assets/pixellab/` (17 db), előnézetek `docs/img/anim/pixellab_*.gif` (`tools/pixellab_import.py`). Kész előnézetként: járás 6 irányból (S, SW, W, N, NE, SE), álló idle (SW), ülő idle (S), lihegő mosoly (S), körülnézés (S), alvás (2. változat), meghajlás (SW), evés és ivás (W, a tál a sprite része), ügetés (SE, a "futás" leírásra), ugatás (S, gyenge, újra kell). **A pakba még semmi nem került, a gazdi jóváhagyására vár.** Hiányzó irányok: NW, E (PixelLab Rotate-tel pótolható).
 - **M3.5 [G]** animációk 1. köre (A01-A09) a modellen, `--anim-viewer` a szimulátorban.
 - **M3 Blender gyártósor** (a gazdi Blender 5.2.2 LTS-t telepített).
 - Később (D-07): "Lili" névfelismerés.

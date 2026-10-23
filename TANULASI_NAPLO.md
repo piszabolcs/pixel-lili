@@ -253,6 +253,15 @@ Hiba: az első kör színei fakók és rózsaszínesek lettek. Gyökérok: a já
 
 Fogalmak: periódusmérés Fourier-transzformációval, elárasztásos háttérleválasztás (flood fill), indexelt PNG
 
+## 2026-10-23 | 2D vonal, 1. lépés: animáció a PixelLabbal
+Készült: járás 6 irányból (S, SW, W, N, NE, SE), ülő idle, lihegő mosoly, alvás, meghajlás; a PixelLab szerkesztőjében (Pixelorama), "Animate with Text (New)", 96 px, 8 kocka = 2 generálás. Előnézetek: `tools/pixellab_import.py` -> `docs/img/anim/pixellab_*.gif`. A pakba még semmi nem került.
+
+Döntés: a PixelLab azért jobb a saját próbáinknál (videómodell, FLUX.2 kulcskockák), mert pixel artra tanított modell, és az egész mozgást egyben generálja a mi kockánkból, így a stílus nem csúszik el. A járásnál felálló fület a gazdi elfogadta.
+
+Hiba: a megnyitás és a mentés a Windows fájlablakát dobta fel, amit innen nem lehet bezárni. Gyökérok: a Pixelorama a böngészőben egy rejtett `<input type=file>`-t kattint meg, az export pedig letöltést indít, amire a Chrome mentési ablakot nyit. Javítás: a kattintást elfogom, és a fájlt közvetlenül az inputba töltöm; az exportot a letöltés helyett egy helyi fogadóoldalra küldöm (postMessage, majd POST a 127.0.0.1-re), ami a repóba írja.
+
+Fogalmak: postMessage (ablakok közti üzenet), egyidejű feladatkorlát (queue)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
