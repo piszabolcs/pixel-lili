@@ -42,6 +42,28 @@ SEASONS = bp.SEASONS
 # of floor east of it; the vase moves left to make room. The floor under the old places is already refilled.
 PROP_MOVE = {"vase": (-54, 0), "bowl_food": (-98, 0), "bowl_water": (-70, 0)}
 
+def cast_split(alpha, ox, oy, base, hmax, s):
+    """the door's cast shadow of one thing, the same way the game draws Lili's: every pixel at height h above
+    its floor line lands h * s towards the viewer (a short throw, so it starts at the thing's foot), sheared
+    along the ray from the door; the near half solid, the far half stippled (every other pixel, a soft edge).
+    -> (near, far) masks on the 400 grid. (The long 0.6 throw floated: the owner, 2026-10-23.)"""
+    lx, ly = bp.LIGHT
+    near = np.zeros((GRID, GRID), bool); far = np.zeros((GRID, GRID), bool)
+    ys, xs = np.nonzero(alpha)
+    reach = hmax * s
+    for y, x in zip(ys + oy, xs + ox):
+        h = min(base - y, hmax)
+        if h < 0: continue
+        k = 0.6 * (x - lx) / max(8, base - ly)
+        d = h * s
+        for dy in (0, 1):
+            for dx in (0, 1):
+                sy, sx = int(round(base + d)) + dy, int(round(x + d * k)) + dx
+                if not (0 <= sy < GRID and 0 <= sx < GRID): continue
+                if d <= reach * 0.5: near[sy, sx] = True
+                elif (sx + sy) % 2 == 0: far[sy, sx] = True
+    return near, far
+
 def prop_pos(pid):
     x, y = bp.PROPS[pid][:2]
     dx, dy = PROP_MOVE.get(pid, (0, 0))
@@ -179,21 +201,21 @@ def main():
     # the masks, computed on the 400 grid exactly as the preview did, then scaled
     grey = Image.new("RGB", (GRID, GRID), (100, 100, 100))
     sun = np.asarray(bp.sunbeam(grey, 1.0)).sum(2) != 300
-    cast = np.zeros((GRID, GRID), bool)
-    for bm, base, hmax in bp.bench_alpha():
-        cast |= bp.cast_mask(bm, 0, 0, base, hmax, bp.LIGHT, (GRID, GRID))
+    near = np.zeros((GRID, GRID), bool); far = np.zeros((GRID, GRID), bool)
+    for bm, base, hmax in bp.bench_alpha():                         # the bench is tall: a longer throw
+        n_, f_ = cast_split(bm, 0, 0, base, hmax, 0.4); near |= n_; far |= f_
     yy, xx = np.mgrid[0:GRID, 0:GRID]
     sh_out = np.zeros((GRID, GRID), bool); sh_in = np.zeros((GRID, GRID), bool)
     for pid in ("bowl_food", "bowl_water", "vase"):
         sp = Image.open(os.path.join(BG, "props", f"{pid}.png")).convert("RGBA")
         px, py = prop_pos(pid)
         al = np.asarray(sp)[..., 3] > 0
-        cast |= bp.cast_mask(al, px, py, py + np.nonzero(al)[0].max(), 80, bp.LIGHT, (GRID, GRID))
+        n_, f_ = cast_split(al, px, py, py + np.nonzero(al)[0].max(), 60, 0.25); near |= n_; far |= f_
         cx, cy, rx, ry = bp.prop_shadow(pid, sp, px, py)
         d = ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2
         sh_out |= d <= 1.0; sh_in |= d <= 0.55
-    cast = bp.floor_only(cast)
-    for name, m in (("mask_sun", sun), ("mask_cast", cast), ("mask_shade_out", sh_out & ~sh_in), ("mask_shade_in", sh_in)):
+    near = bp.floor_only(near); far = bp.floor_only(far & ~near)
+    for name, m in (("mask_sun", sun), ("mask_cast", near), ("mask_cast_far", far), ("mask_shade_out", sh_out & ~sh_in), ("mask_shade_in", sh_in)):
         mm, x, y = mask_layer(m)
         Image.fromarray(mm.astype(np.uint8) * 255).save(os.path.join(OUT, name + ".png"))
         meta["images"].append({"name": name, "file": name + ".png", "x": x, "y": y, "mask": True})

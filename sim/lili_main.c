@@ -254,7 +254,8 @@ static int selftest(void) {
                 if (!body && bg.px[y * LILI_LOG_W + x] != sc.px[y * LILI_LOG_W + x]) shadow[dp]++;
             }
         }
-        CHECK(shadow[3] > 50 && shadow[1] > shadow[3] + 300, "Lili throws a shadow; by day the door's light makes it a long one (the owner, 2026-10-23)");
+        printf("shadow pixels around her: afternoon %d, night %d\n", shadow[1], shadow[3]);
+        CHECK(shadow[3] > 50 && shadow[1] > shadow[3] + 40, "Lili throws a shadow; by day the door's light adds her cast shadow (short, from the paws: the owner, 2026-10-23)");
         s_world.daypart_force = 1; world_render(&s_world, &bg); uint16_t day = bg.lut[150 + 50];
         s_world.daypart_force = 3; world_render(&s_world, &bg); uint16_t night = bg.lut[150 + 50];
         CHECK(((night >> 11) + ((night >> 5) & 63) / 2) < ((day >> 11) + ((day >> 5) & 63) / 2), "the night palette is darker than the afternoon's");

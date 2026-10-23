@@ -30,7 +30,7 @@ ANIMS = {
     "walk":           (4,  10, True,  {"S": "walk_S", "SW": "walk_SW", "W": "walk_W", "N": "walk_N", "NE": "walk_NE", "SE": "walk_SE"}),
     "trot":           (5,  12, True,  {"SE": "run_SE"}),
     "pant_smile":     (9,  8,  True,  {"S": "pant_smile_S"}),
-    "play_bow":       (11, 10, True,  {"SW": "play_bow_SW"}),
+    "play_bow":       (11, 10, True,  {"SW": "play_bow_SW_v2"}),   # v2 (2026-10-23): front legs still, hips and tail; v1 batted its paws
     "bark_head_flip": (12, 10, False, {"S": "bark_S"}),
     "eat_drink":      (17, 8,  True,  {"W": "eat_W"}),
     "sleep_curl":     (18, 3,  True,  {"SW": "sleep_curl_SW_v2"}),

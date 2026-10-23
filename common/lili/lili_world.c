@@ -196,6 +196,7 @@ static void painted_bg(const world_t *w, render8_t *r) {
     if (pak_image(s_pak, IMG_PAD, &im)) pak_image_blit(r, &im);                                  /* flat: always under Lili */
     if (pak_image(s_pak, IMG_MASK_SUN, &im)) pak_image_remap(r, &im, bg_lut(w, DAYPART[dp].sun));
     if (pak_image(s_pak, IMG_MASK_CAST, &im)) pak_image_remap(r, &im, bg_lut(w, DAYPART[dp].cast));
+    if (pak_image(s_pak, IMG_MASK_CAST_FAR, &im)) pak_image_remap(r, &im, bg_lut(w, DAYPART[dp].cast == LUT_CAST_DAY ? LUT_CAST_EVE : -1));
     if (pak_image(s_pak, IMG_MASK_SHADE_OUT, &im)) pak_image_remap(r, &im, bg_lut(w, LUT_SHADE_OUT));
     if (pak_image(s_pak, IMG_MASK_SHADE_IN, &im)) pak_image_remap(r, &im, bg_lut(w, LUT_SHADE_IN));
 }
@@ -229,7 +230,7 @@ static void actor_shadow(const world_t *w, render8_t *r, const actor_t *a, const
     for (int y = set->pivot_y - 1 - set->cell_h / 12; y < set->pivot_y && y < H; y++)
         for (int x = 0; x < W; x++) if (y >= 0 && s_cell[y * W + x]) { if (x < fx0) fx0 = x; if (x > fx1) fx1 = x; }
     if (fx1 >= fx0) {
-        const float cx = ox + (fx0 + fx1) / 2.0f, rx = (fx1 - fx0) / 2.0f + 3, ry = 3 + (fx1 - fx0) / 12.0f;
+        const float cx = ox + (fx0 + fx1) / 2.0f, rx = (fx1 - fx0) / 2.0f + 4, ry = 3 + (fx1 - fx0) / 12.0f;
         for (int y = 0; y < SH_H; y++) for (int x = 0; x < SH_W; x++) {
             float dx = (rx0 + x - cx) / rx, dy = (ry0 + y - (py - 1)) / ry, d = dx * dx + dy * dy;
             if (d <= 0.55f) s_shade[y * SH_W + x] = 5; else if (d <= 1.0f) s_shade[y * SH_W + x] = 1;
@@ -237,26 +238,28 @@ static void actor_shadow(const world_t *w, render8_t *r, const actor_t *a, const
     }
     const int dp = world_daypart(w);
     if (DAYPART[dp].cast >= 0) {
-        /* how far the light throws it: 0.35 in the room, 0.3 outdoors; the height cap scales with the cell (the
-           yard's smaller sprites) */
-        const float s = w->view == VIEW_ROOM ? 0.35f : 0.3f;
+        /* how far the light throws it: a quarter of her height in the room, a little less outdoors; the height
+           cap scales with the cell (the yard's smaller sprites) */
+        const float s = w->view == VIEW_ROOM ? 0.25f : 0.22f;
         const int hmax = shadow_hmax(a->anim) * set->cell_h / 96;
-        /* the owner's rule (2026-10-23): the shadow starts at the paws, always. So not every pixel of her lands
-           on its own (that left the body's shadow floating ahead of the thin legs' ones): each column of the
-           frame throws an unbroken strip from the paws' row out to where its highest pixel lands, sheared
-           along the light. Under a lifted paw and between the legs it is shadow too; it reads as standing. */
+        /* the owner's rules (2026-10-23): the shadow starts at the paws, always, and it is her shape, not a block.
+           So every pixel of her lands on one point (her shape), but the throw is short (a quarter of her height),
+           so the body's shadow stays against the paws, and the dark contact patch under the paws joins the two.
+           The far half is stippled (every other pixel): a soft edge instead of a hard slab.
+           (Tried and dropped the same day: a long throw, 0.6, floated ahead of the thin legs; an unbroken strip
+           per column from the paws was attached but a square block.) */
         const float ks = 0.6f;                                          /* the door's sideways pull, softened */
         const float reach = hmax * s;
-        for (int x = 0; x < W; x++) {
-            int top = -1;
-            for (int y = 0; y < set->pivot_y && y < H; y++) if (s_cell[y * W + x]) { top = y; break; }
-            if (top < 0) continue;
-            int h = set->pivot_y - top; if (h > hmax) h = hmax;
+        for (int y = 0; y < set->pivot_y && y < H; y++) for (int x = 0; x < W; x++) {
+            if (!s_cell[y * W + x]) continue;
+            int h = set->pivot_y - y; if (h > hmax) h = hmax;
             float k = w->view == VIEW_ROOM ? ks * (ox + x - LILI_ROOM_LIGHT_X) / (float)(py - LILI_ROOM_LIGHT_Y > 8 ? py - LILI_ROOM_LIGHT_Y : 8) : 0.45f;
-            const int len = (int)(h * s + 0.5f);
-            for (int d = 0; d <= len; d++) {
-                const uint8_t lv = d <= reach * 0.35f ? 4 : d <= reach * 0.7f ? 3 : 2;   /* near the paws darkest, then fading */
-                int qx = (int)(ox + x + d * k + 0.5f) - rx0, qy = py + d - ry0;
+            const float d = h * s;
+            const uint8_t lv = d <= reach * 0.5f ? 4 : 2;                /* near: the full cast table; far: lighter, stippled */
+            int sx = (int)(ox + x + d * k + 0.5f) - rx0, sy = (int)(py + d + 0.5f) - ry0;
+            for (int dy = 0; dy < 2; dy++) for (int dx = 0; dx < 2; dx++) {     /* a 2 x 2 splat: no holes between the rows */
+                int qx = sx + dx, qy = sy + dy;
+                if (lv == 2 && ((rx0 + qx + ry0 + qy) & 1)) continue;
                 if (qx >= 0 && qy >= 0 && qx < SH_W && qy < SH_H && s_shade[qy * SH_W + qx] < lv) s_shade[qy * SH_W + qx] = lv;
             }
         }

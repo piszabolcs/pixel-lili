@@ -29,7 +29,7 @@ LUTS = ["sun_strong", "sun_weak", "cast_day", "cast_eve", "shade_out", "shade_in
 IMAGES = {"room": 1, "yard_spring": 2, "yard_summer": 3, "yard_autumn": 4, "yard_winter": 5,
           "door_spring": 6, "door_summer": 7, "door_autumn": 8, "door_winter": 9,
           "pad": 10, "vase": 11, "bowl_food": 12, "bowl_water": 13,
-          "mask_sun": 20, "mask_cast": 21, "mask_shade_out": 22, "mask_shade_in": 23}
+          "mask_sun": 20, "mask_cast": 21, "mask_shade_out": 22, "mask_shade_in": 23, "mask_cast_far": 24}
 COVERS_PER_SEASON = 8                                   # the yard's covers: id IMG_COVER_BASE + season * 8 + k (tools/bg_build.py COVERS)
 for _s, _season in enumerate(["spring", "summer", "autumn", "winter"]):
     for _k in range(COVERS_PER_SEASON):
