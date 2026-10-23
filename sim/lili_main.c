@@ -179,7 +179,7 @@ static int selftest(void) {
         pak_t t; CHECK(!pak_open(&t, bad, sizeof bad) && !pak_open(&t, NULL, 0), "a bad or missing pack is refused (placeholder graphics then)");
         if (s_pak.data) {
             sprite_set_t set; sprite_frame_t fr;
-            CHECK(pak_sprite_set(&s_pak, ANIM_IDLE_STAND, &set) && set.cell_w == 48 * K && set.pivot_x == 24 * K && set.pivot_y == 40 * K && set.n_frames == 6, "idle_stand: a 48 x K px cell, pivot (24, 40) x K, 6 frames");
+            CHECK(pak_sprite_set(&s_pak, ANIM_IDLE_STAND, &set) && set.cell_w == 48 * K && set.pivot_x == 24 * K && set.pivot_y == 90 && set.n_frames == 6, "idle_stand: a 96 px cell, pivot (48, 90) (the 2D line, 2026-10-23), 6 frames");
             CHECK(pak_frame(&set, DIR_S, 0, &fr) && fr.rle_len > 0, "frame S/0 exists");
             const int cx = 120 * K, cy = 140 * K;
             r8_clear(&s_r8, PAL_FLOOR + 5); pak_blit(&s_r8, &set, &fr, cx, cy);
@@ -188,7 +188,8 @@ static int selftest(void) {
                 painted++; if (x < cx - set.pivot_x || x >= cx - set.pivot_x + set.cell_w || y < cy - set.pivot_y || y >= cy - set.pivot_y + set.cell_h) out_of_cell++;
             }
             CHECK(painted > 200 * K * K && !out_of_cell, "the sprite paints inside its cell around the pivot");
-            int paws = 0; for (int dy = 1; dy <= 3 * K; dy++) paws |= s_r8.px[(cy - dy) * LILI_LOG_W + cx] != PAL_FLOOR + 5;
+            int paws = 0;                               /* the bottom rows, a paw's width either side of the pivot (a front view has a gap in the middle) */
+            for (int dy = 1; dy <= 3 * K; dy++) for (int dx = -12; dx <= 12; dx++) paws |= s_r8.px[(cy - dy) * LILI_LOG_W + cx + dx] != PAL_FLOOR + 5;
             CHECK(paws, "the paws stand on the pivot row");
             r8_clear(&s_r8, 0); pak_blit(&s_r8, &set, &fr, 2, 2); pak_blit(&s_r8, &set, &fr, LILI_LOG_W - 2, LILI_LOG_H - 2);   /* clipped at both corners: no crash */
             CHECK(pak_frame(&set, DIR_NE, 7, &fr), "a frame index wraps, a missing direction falls back");
@@ -349,7 +350,7 @@ int main(int argc, char **argv) {
         for (int k = 0; k < 4; k++) if (key_edge(SDL_SCANCODE_1 + k)) ev_push(&s_q, EV_SET_SEASON, k, 0);
         if (key_edge(SDL_SCANCODE_D)) { int c = s_world.daypart_force; ev_push(&s_q, EV_SET_DAYPART, c >= 3 ? -1 : c + 1, 0); }
         if (key_edge(SDL_SCANCODE_M)) s_debug = !s_debug;
-        if (key_edge(SDL_SCANCODE_A)) { actor_t *l = &s_world.actors[0]; l->anim = l->anim == ANIM_IDLE_STAND ? ANIM_WALK : ANIM_IDLE_STAND; l->anim_t = 0; }
+        if (key_edge(SDL_SCANCODE_A)) { actor_t *l = &s_world.actors[0]; static const uint16_t cyc[] = { ANIM_IDLE_STAND, ANIM_IDLE_SIT_BLINK, ANIM_WALK, ANIM_PANT_SMILE, ANIM_SLEEP_CURL }; int k = 0; while (k < 5 && cyc[k] != l->anim) k++; l->anim = cyc[(k + 1) % 5]; l->anim_t = 0; }
         if (key_edge(SDL_SCANCODE_R)) { actor_t *l = &s_world.actors[0]; l->dir = (dir8_t)((l->dir + 1) % DIR_COUNT); }
         SDL_Delay(wait < 5 ? wait : 5);
     }

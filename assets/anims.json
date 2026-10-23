@@ -1,5 +1,8 @@
 {
-  "_note": "The animation catalogue (spec 7.4): id = the A-number, fps = playback, dirs = how many of the 8 directions are rendered (8 = all; a list names them), loop. render_all.py renders what is listed here and the pak carries the same ids (common/asset_ids.h is generated from this file).",
-  "idle_stand": { "id": 1, "frames": 6, "fps": 6, "dirs": 8, "loop": true },
-  "walk":       { "id": 4, "frames": 6, "fps": 10, "dirs": 8, "loop": true }
+  "_note": "The animation catalogue (spec 7.4): id = the A-number, fps = playback, dirs = the directions that exist (8 = all; a list names them), loop. The 2D line (2026-10-23): tools/animate2d.py and tools/video_to_sprites.py write assets/sprites/lili/<name>/ + manifest.json; tools/pack_assets.py packs what is there and generates common/asset_ids.h from this file.",
+  "idle_stand":     { "id": 1,  "frames": 6, "fps": 6,  "dirs": ["S", "SW", "W", "N", "NE", "SE"], "loop": true },
+  "idle_sit_blink": { "id": 2,  "frames": 8, "fps": 6,  "dirs": ["S"], "loop": true },
+  "walk":           { "id": 4,  "frames": 6, "fps": 10, "dirs": ["SE"], "loop": true },
+  "pant_smile":     { "id": 9,  "frames": 6, "fps": 8,  "dirs": ["SW", "S"], "loop": true },
+  "sleep_curl":     { "id": 18, "frames": 4, "fps": 3,  "dirs": ["SW"], "loop": true }
 }

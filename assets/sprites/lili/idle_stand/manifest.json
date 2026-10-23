@@ -7,18 +7,16 @@
   0,
   1,
   2,
-  3,
   4,
   5,
-  6,
   7
  ],
  "frames": 6,
  "cell": 96,
- "scale": 4,
+ "scale": 1,
  "pivot": [
   48,
-  80
+  90
  ],
  "files": [
   {
@@ -148,48 +146,6 @@
    "head": null
   },
   {
-   "dir": 3,
-   "frame": 0,
-   "file": "d3_f0.png",
-   "mouth": null,
-   "head": null
-  },
-  {
-   "dir": 3,
-   "frame": 1,
-   "file": "d3_f1.png",
-   "mouth": null,
-   "head": null
-  },
-  {
-   "dir": 3,
-   "frame": 2,
-   "file": "d3_f2.png",
-   "mouth": null,
-   "head": null
-  },
-  {
-   "dir": 3,
-   "frame": 3,
-   "file": "d3_f3.png",
-   "mouth": null,
-   "head": null
-  },
-  {
-   "dir": 3,
-   "frame": 4,
-   "file": "d3_f4.png",
-   "mouth": null,
-   "head": null
-  },
-  {
-   "dir": 3,
-   "frame": 5,
-   "file": "d3_f5.png",
-   "mouth": null,
-   "head": null
-  },
-  {
    "dir": 4,
    "frame": 0,
    "file": "d4_f0.png",
@@ -274,48 +230,6 @@
    "head": null
   },
   {
-   "dir": 6,
-   "frame": 0,
-   "file": "d6_f0.png",
-   "mouth": null,
-   "head": null
-  },
-  {
-   "dir": 6,
-   "frame": 1,
-   "file": "d6_f1.png",
-   "mouth": null,
-   "head": null
-  },
-  {
-   "dir": 6,
-   "frame": 2,
-   "file": "d6_f2.png",
-   "mouth": null,
-   "head": null
-  },
-  {
-   "dir": 6,
-   "frame": 3,
-   "file": "d6_f3.png",
-   "mouth": null,
-   "head": null
-  },
-  {
-   "dir": 6,
-   "frame": 4,
-   "file": "d6_f4.png",
-   "mouth": null,
-   "head": null
-  },
-  {
-   "dir": 6,
-   "frame": 5,
-   "file": "d6_f5.png",
-   "mouth": null,
-   "head": null
-  },
-  {
    "dir": 7,
    "frame": 0,
    "file": "d7_f0.png",
@@ -357,5 +271,6 @@
    "mouth": null,
    "head": null
   }
- ]
+ ],
+ "source": "tools/animate2d.py"
 }

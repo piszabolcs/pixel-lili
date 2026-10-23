@@ -5,7 +5,10 @@ enum { PAK_T_SPRITE_SET = 1, PAK_T_PALETTE = 2, PAK_T_LUT = 3, PAK_T_MAP = 4, PA
 enum { PAL_ID_MASTER = 1 };
 enum {
     ANIM_IDLE_STAND = 1,
+    ANIM_IDLE_SIT_BLINK = 2,
     ANIM_WALK = 4,
+    ANIM_PANT_SMILE = 9,
+    ANIM_SLEEP_CURL = 18,
     ANIM_COUNT_LISTED
 };
 #endif
