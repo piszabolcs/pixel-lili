@@ -6,7 +6,8 @@
  *   ./lilisim --selftest              headless checks, exit 0 = green
  *   ./lilisim --bench                 headless: render + flush cost per frame (spec 6.4)
  *   ./lilisim --screenshot out.ppm    headless, one frame to a PPM
- *   ./lilisim --demo-record DIR [fps] headless, one round of the demo tour as PPM frames (G toggles it in the window)
+ *   ./lilisim --demo                  the window with the demo tour running (G toggles it)
+ *   ./lilisim --demo-record DIR [fps] headless, one round of the demo tour as PPM frames
  *
  * The fish simulator (main.c) is untouched and still builds with make SQUARE=1. */
 #include <stdio.h>
@@ -500,6 +501,7 @@ int main(int argc, char **argv) {
     world_init(&s_world, (uint32_t)time(NULL));
     ev_init(&s_q);
     ui_build();
+    if (argc > 1 && !strcmp(argv[1], "--demo")) demo_start();      /* the window with the tour already running (G stops it) */
     for (;;) {
         uint32_t wait = lv_timer_handler();
         if (key_edge(SDL_SCANCODE_Q)) break;
