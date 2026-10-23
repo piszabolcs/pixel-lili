@@ -136,16 +136,24 @@ def pane_mask():
             m[ya:yb + 1, xa:xb + 1] = True
     return m
 
-def show(img400, sprites=(), night=False):
-    """the 480 display: 1.2x nearest (every 5th pixel doubled), Lili at native size with her shadow under
-    her, rounded corners; night = the evening table: darker and colder (the game swaps the palette LUT)"""
+def show(img400, sprites=(), cast=0.0, tone=None, room=True):
+    """the 480 display: 1.2x nearest (every 5th pixel doubled), Lili at native size with her shadows (the
+    door's cast shadow in the room by day, the short one under her always), rounded corners; tone = the
+    time-of-day table (multiply, add), as the game's palette LUT swap would do it"""
     s = img400.convert("RGB").resize((SHOW, SHOW), Image.NEAREST)
-    s = shade(s, [(x + 3, y - 1, rx, ry) for pose, x, y, rx, ry in sprites])
-    for pose, x, y, rx, ry in sprites:
-        sp = Image.open(os.path.join(ROOT, "assets", "sprites", "lili_src", pose + ".png")).convert("RGBA")
+    sps = [(Image.open(os.path.join(ROOT, "assets", "sprites", "lili_src", pose + ".png")).convert("RGBA"), x, y)
+           for pose, x, y, rx, ry in sprites]
+    if room and cast > 0:
+        k = SHOW / GRID
+        cm = np.zeros((SHOW, SHOW), bool)
+        for sp, x, y in sps:
+            cm |= cast_mask(np.asarray(sp)[..., 3] > 0, x - 48, y - 90, y, 60, (LIGHT[0] * k, LIGHT[1] * k), (SHOW, SHOW))
+        s = darken(s, floor_only(cm, k), 1 - 0.36 * cast)
+    s = shade(s, [(x + (0 if room else 3), y - 1, rx, ry) for pose, x, y, rx, ry in sprites])
+    for sp, x, y in sps:
         s.paste(sp, (x - 48, y - 90), sp)
-    if night:
-        a = np.asarray(s).astype(float) * 0.45 + np.array([8, 12, 38])
+    if tone:
+        a = np.asarray(s).astype(float) * np.array(tone[0]) + np.array(tone[1])
         s = Image.fromarray(a.clip(0, 255).astype(np.uint8))
     m = Image.new("L", s.size, 0); ImageDraw.Draw(m).rounded_rectangle((0, 0, SHOW - 1, SHOW - 1), CORNER, fill=255)
     out = Image.new("RGB", s.size, (0, 0, 0)); out.paste(s, (0, 0), m)
@@ -171,25 +179,86 @@ def main():
     lili_room = [("sit_S", 240, 285, 22, 6), ("sleep", 92, 262, 34, 8)]          # 480 px: pose, pivot, shadow
     for s in SEASONS:
         dv = door_view(yards[s]); dv.save(os.path.join(OUT, f"door_view_{s}.png"))
-        for mode in ("day", "night") if s == "spring" else ("day",):
+        for mode in MODES if s == "spring" else ("afternoon",):
+            cfg = MODES[mode]
             comp = Image.new("RGB", (GRID, GRID)); comp.paste(dv, (x0, y0))
             comp.paste(Image.fromarray(rgba, "RGBA"), (0, 0), Image.fromarray(rgba, "RGBA"))
-            if mode == "day":
-                comp = sunbeam(comp)
-            for pid in ("bowl_food", "bowl_water", "vase"):                      # contact shadows, light from top left
+            comp = sunbeam(comp, cfg["beam"])
+            if cfg["cast"] > 0:                                      # the door's light: cast shadows
+                cm = np.zeros((GRID, GRID), bool)
+                for bm, base, hmax in bench_alpha():
+                    cm |= cast_mask(bm, 0, 0, base, hmax, LIGHT, (GRID, GRID))
+                for pid in ("bowl_food", "bowl_water", "vase"):
+                    sp, (px, py) = props[pid]
+                    al = np.asarray(sp)[..., 3] > 0
+                    cm |= cast_mask(al, px, py, py + np.nonzero(al)[0].max(), 80, LIGHT, (GRID, GRID))
+                comp = darken(comp, floor_only(cm), 1 - 0.36 * cfg["cast"])
+            for pid in ("bowl_food", "bowl_water", "vase"):          # the overhead light: contact shadows
                 sp, (px, py) = props[pid]
                 comp = shade(comp, [prop_shadow(pid, sp, px, py)])
             for pid in ("pad", "vase", "bowl_food", "bowl_water"):
                 sp, pos = props[pid]; comp.paste(sp, pos, sp)
-            name = f"room_{s}_480.png" if mode == "day" else f"room_{s}_night_480.png"
-            show(comp, lili_room, night=(mode == "night")).save(os.path.join(DOC, name))
-            if mode == "day":
+            name = f"room_{s}_480.png" if mode == "afternoon" else f"room_{s}_{mode}_480.png"
+            show(comp, lili_room, cast=cfg["cast"], tone=cfg["tone"]).save(os.path.join(DOC, name))
+            if mode == "afternoon":
                 comp.crop((150, 15, 250, 140)).resize((600, 750), Image.NEAREST).save(os.path.join(DOC, f"door_{s}_zoom.png"))
-        show(yards[s], [("walk_SE", 240, 300, 26, 6)]).save(os.path.join(DOC, f"yard_{s}_480.png"))
+        show(yards[s], [("walk_SE", 240, 300, 26, 6)], room=False).save(os.path.join(DOC, f"yard_{s}_480.png"))
     show(Image.fromarray(np.asarray(filled))).save(os.path.join(DOC, "room_empty_floor_480.png"))
     print("->", os.path.relpath(OUT, ROOT), "and", os.path.relpath(DOC, ROOT))
 
 # --- the runtime light and shadow, simulated for the preview (the game does the same with remap tables) ---
+# The owner (2026-10-23): by day the light comes through the door, from the back and above, so everything
+# throws a shadow towards the viewer and away from the door (the vase, the bowls, Lili, the corner bench);
+# in the evening this fades, at night only the overhead lamp's short shadow right under things remains.
+LIGHT = (197, 100)                             # the door's glass, the light source (400 grid)
+FLOOR_TOP, FLOOR_BOTTOM = 138, 386             # shadows fall on the floor and the rug only
+# the corner bench is part of the background: hand-traced silhouettes (400 grid), the floor line under
+# each part, and its real height (a part's depth on the screen must not count as height)
+BENCH = [([(250, 87), (312, 87), (312, 181), (250, 181)], 181, 60),
+         ([(312, 90), (345, 90), (382, 140), (382, 297), (322, 297), (320, 160)], 297, 45)]
+MODES = {"afternoon": dict(cast=1.0, beam=1.0, tone=None),
+         "evening": dict(cast=0.45, beam=0.35, tone=((0.80, 0.74, 0.68), (18, 6, 0))),
+         "night": dict(cast=0.0, beam=0.0, tone=((0.45, 0.45, 0.45), (8, 12, 38)))}
+
+def cast_mask(alpha, ox, oy, base, hmax, light, size, s=0.6):
+    """the classic 2D cast shadow: every pixel of the object at height h above its floor line lands on one
+    point, h * s further towards the viewer, shifted sideways along the ray from the light (so the shadow
+    keeps the object's shape: legs stay thin); then closed. Filling the whole ray from the floor line was
+    tried first: it turned Lili's shadow into a solid block."""
+    lx, ly = light
+    ys, xs = np.nonzero(alpha)
+    out = np.zeros(size[::-1], bool)
+    for y, x in zip(ys + oy, xs + ox):
+        h = min(base - y, hmax)
+        if h < 0: continue
+        k = (x - lx) / max(8, base - ly)
+        sy = int(round(base + h * s)); sx = int(round(x + h * s * k))
+        if 0 <= sy < size[1] and 0 <= sx < size[0]: out[sy, sx] = True
+    m = Image.fromarray(out.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.MinFilter(3))
+    return np.asarray(m) > 0
+
+def darken(img, mask, f):
+    a = np.asarray(img).astype(float)
+    a[mask] = a[mask] * f + np.array([0, 4, 14]) * (1 - f)
+    return Image.fromarray(a.clip(0, 255).astype(np.uint8))
+
+def bench_alpha():
+    out = []
+    for poly, base, hmax in BENCH:
+        m = Image.new("L", (GRID, GRID), 0); ImageDraw.Draw(m).polygon(poly, fill=255)
+        out.append((np.asarray(m) > 0, base, hmax))
+    return out
+
+def floor_only(mask, scale=1.0):
+    """no shadow on the wall or on the bench itself"""
+    h, w = mask.shape
+    yy = np.arange(h)[:, None] / scale
+    m = mask & (yy >= FLOOR_TOP) & (yy < FLOOR_BOTTOM)
+    b = np.zeros((GRID, GRID), bool)
+    for bm, _, _ in bench_alpha(): b |= bm
+    if scale != 1.0:
+        b = np.asarray(Image.fromarray(b.astype(np.uint8) * 255).resize((w, h), Image.NEAREST)) > 0
+    return m & ~b
 
 def shade(img, ellipses, inner=0.62, outer=0.80):
     """a hard-edged two-step pixel-art shadow: the outer ring a little darker, the core darker, both a bit
@@ -204,17 +273,20 @@ def shade(img, ellipses, inner=0.62, outer=0.80):
     return Image.fromarray(a.clip(0, 255).astype(np.uint8))
 
 def prop_shadow(pid, sp, px, py):
-    """under the object's base, nudged right and down (the light comes from the top left)"""
+    """the overhead light's short shadow, right under the object's base"""
     al = np.asarray(sp)[..., 3] > 0
     ys, xs = np.nonzero(al)
     base = ys.max()
     cols = xs[ys >= base - 3]
-    cx = px + (cols.min() + cols.max()) / 2 + 2
+    cx = px + (cols.min() + cols.max()) / 2
     rx = (cols.max() - cols.min()) / 2 + 3
     return (cx, py + base - 1, rx, 4)
 
-def sunbeam(img):
-    """afternoon: the door's 3 x 3 panes land on the floor as a warm, widening patch (muntin gaps between)"""
+def sunbeam(img, strength=1.0):
+    """the door's 3 x 3 panes land on the floor as a warm, widening patch (muntin gaps between);
+    strength 1 in the afternoon, weaker in the evening, none at night"""
+    if strength <= 0:
+        return img
     a = np.asarray(img).astype(float)
     top, bot = (150, 172, 228), (252, 150, 266)                 # y, x_left, x_right of the patch's edges
     for r in range(3):
@@ -225,7 +297,7 @@ def sunbeam(img):
                 xl = top[1] + (bot[1] - top[1]) * t; xr = top[2] + (bot[2] - top[2]) * t
                 w = (xr - xl) / 3
                 xa, xb = int(xl + w * c + 2), int(xl + w * (c + 1) - 2)
-                a[y, xa:xb] = a[y, xa:xb] * 1.16 + np.array([30, 20, 2])
+                a[y, xa:xb] = a[y, xa:xb] * (1 + 0.16 * strength) + np.array([30, 20, 2]) * strength
     return Image.fromarray(a.clip(0, 255).astype(np.uint8))
 
 if __name__ == "__main__":
