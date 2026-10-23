@@ -37,6 +37,15 @@ TABLES = {  # name: (multiply, add) on RGB, the same numbers the preview (bg_pre
     "cast_day": (0.64, (0, 1.44, 5.04)), "cast_eve": (0.838, (0, 0.65, 2.27)),
     "shade_out": (0.80, (0, 0.8, 2.8)), "shade_in": (0.62, (0, 1.52, 5.32))}
 SEASONS = bp.SEASONS
+# the room's props moved apart on the 400 grid (2026-10-23, the owner: eating she stood in the other bowl,
+# drinking she hung off the picture): her eating and drinking frames face west, so each bowl needs her length
+# of floor east of it; the vase moves left to make room. The floor under the old places is already refilled.
+PROP_MOVE = {"vase": (-54, 0), "bowl_food": (-98, 0), "bowl_water": (-70, 0)}
+
+def prop_pos(pid):
+    x, y = bp.PROPS[pid][:2]
+    dx, dy = PROP_MOVE.get(pid, (0, 0))
+    return x + dx, y + dy
 # the yard's covers (2026-10-23, the owner: she must go behind and into the bushes, behind the trees and the
 # bench): hand-traced on the 400 grid (the four seasons share the layout), each with the floor row it stands on
 # (its Y-sort key). Cut from each season's picture, drawn over Lili when she is behind that row.
@@ -148,7 +157,7 @@ def main():
     props = {}
     for pid, box in bp.PROPS.items():
         sp = Image.open(os.path.join(BG, "props", f"{pid}.png")).convert("RGBA")
-        props[pid] = layer(sp, box[:2])
+        props[pid] = layer(sp, prop_pos(pid))
     floor = room[int(bp.FLOOR_TOP * 1.2):int(bp.FLOOR_BOTTOM * 1.2), :, :3].reshape(-1, 3)
     pix = [room[room[..., 3] > 0][:, :3]]
     for s in SEASONS: pix += [doors[s][0][..., :3].reshape(-1, 3)] * 20      # small but must keep their greens
@@ -177,7 +186,7 @@ def main():
     sh_out = np.zeros((GRID, GRID), bool); sh_in = np.zeros((GRID, GRID), bool)
     for pid in ("bowl_food", "bowl_water", "vase"):
         sp = Image.open(os.path.join(BG, "props", f"{pid}.png")).convert("RGBA")
-        px, py = bp.PROPS[pid][:2]
+        px, py = prop_pos(pid)
         al = np.asarray(sp)[..., 3] > 0
         cast |= bp.cast_mask(al, px, py, py + np.nonzero(al)[0].max(), 80, bp.LIGHT, (GRID, GRID))
         cx, cy, rx, ry = bp.prop_shadow(pid, sp, px, py)

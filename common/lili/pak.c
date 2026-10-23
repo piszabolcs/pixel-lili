@@ -39,6 +39,27 @@ const uint8_t *pak_find(const pak_t *p, uint8_t type, uint16_t id, uint32_t *siz
     return NULL;
 }
 
+void pak_blit_dither(render8_t *r, const sprite_set_t *s, const sprite_frame_t *f, int x, int y, int level) {
+    static const uint8_t BAYER[4][4] = { { 0, 8, 2, 10 }, { 12, 4, 14, 6 }, { 3, 11, 1, 9 }, { 15, 7, 13, 5 } };
+    if (level >= 16) { pak_blit(r, s, f, x, y); return; }
+    if (level <= 0) return;
+    const int W = s->cell_w, H = s->cell_h, ox = x - s->pivot_x, oy = y - s->pivot_y;
+    const uint8_t *p = f->rle, *end = f->rle + f->rle_len;
+    int i = 0, n = W * H;
+    while (i < n && p < end) {
+        int c = *p++, run, lit;
+        if (c < 128) { run = c + 1; lit = 1; } else { run = c - 126; lit = 0; }
+        for (int k = 0; k < run && i < n; k++, i++) {
+            uint8_t v = lit ? p[k] : p[0];
+            if (!v) continue;
+            int px = ox + i % W, py = oy + i / W;
+            if (px < 0 || py < 0 || px >= LILI_LOG_W || py >= LILI_LOG_H || BAYER[py & 3][px & 3] >= level) continue;
+            r->px[py * LILI_LOG_W + px] = v;
+        }
+        p += lit ? run : 1;
+    }
+}
+
 void pak_frame_decode(const sprite_set_t *s, const sprite_frame_t *f, uint8_t *out) {
     const uint8_t *p = f->rle, *end = f->rle + f->rle_len;
     int i = 0, n = s->cell_w * s->cell_h;

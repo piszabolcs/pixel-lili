@@ -76,15 +76,15 @@ static const uint8_t walk_room[1800] = {  /* 7869 of 14400 cells walkable */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 static const map_point_t pts_room[SPOT_COUNT] = {
-    [SPOT_BOWL_FOOD] = { 374, 434, 0 },
-    [SPOT_BOWL_WATER] = { 420, 434, 0 },
+    [SPOT_BOWL_FOOD] = { 258, 434, 0 },
+    [SPOT_BOWL_WATER] = { 336, 434, 0 },
     [SPOT_PLUSH_START] = { 300, 260, 0 },
     [SPOT_ROPE_START] = { 160, 392, 0 },
     [SPOT_BUSH_1] = { 0, 0, -1 },
     [SPOT_BUSH_2] = { 0, 0, -1 },
     [SPOT_BUSH_3] = { 0, 0, -1 },
     [SPOT_CENTER] = { 240, 280, 0 },
-    [SPOT_DECO] = { 244, 428, 0 },
+    [SPOT_DECO] = { 180, 428, 0 },
     [SPOT_DOOR] = { 236, 180, 0 },
     [SPOT_DOOR_YARD] = { 0, 0, -1 },
     [SPOT_FLOWERS] = { 0, 0, -1 },
@@ -101,15 +101,15 @@ static const map_prop_t props_room[] = {
     { "pad", 34, 384, 100, 68, RAMP_ID_PAD, 0, 1, 452, 0 },
     { "bench_back", 300, 166, 74, 52, RAMP_ID_WOOD, 44, 0, 218, 0 },
     { "bench_side", 374, 166, 84, 190, RAMP_ID_WOOD, 44, 0, 356, 0 },
-    { "bowl_food", 358, 424, 34, 26, RAMP_ID_METAL, 8, 0, 450, 0 },
-    { "bowl_water", 402, 422, 36, 28, RAMP_ID_WATER, 8, 0, 450, 0 },
+    { "bowl_food", 236, 416, 42, 36, RAMP_ID_METAL, 8, 0, 452, 0 },
+    { "bowl_water", 314, 414, 42, 40, RAMP_ID_WATER, 8, 0, 454, 0 },
 };
 static const int16_t poly_room_sunbeam[] = { 206, 180, 274, 180, 320, 302, 180, 302 };
 static const map_zone_t zones_room[] = {
     { "sunbeam", 1, 0, 0, 0, 0, poly_room_sunbeam, 4 },
     { "nook", 0, 390, 300, 60, 60, 0, 0 },
     { "rug", 0, 36, 178, 172, 190, 0, 0 },
-    { "deco", 0, 208, 412, 72, 48, 0, 0 },
+    { "deco", 0, 148, 380, 68, 76, 0, 0 },
 };
 
 static const uint8_t walk_yard[1800] = {  /* 7078 of 14400 cells walkable */

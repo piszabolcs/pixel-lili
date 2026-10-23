@@ -19,6 +19,7 @@ typedef struct {
     dir8_t  dir;
     uint16_t anim;             /* ANIM_* (common/asset_ids.h); 0 = none (the capsule placeholder) */
     float   anim_t;            /* seconds into the animation; the frame = anim_t * fps */
+    float   vis;               /* 1 seen .. 0 gone: she fades out deep in a bush (a map "hide_" zone) and back (2026-10-23) */
 } actor_t;
 
 typedef struct {

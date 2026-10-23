@@ -45,6 +45,9 @@ bool     pak_sprite_set(const pak_t *p, uint16_t anim_id, sprite_set_t *out);
 bool     pak_frame(const sprite_set_t *s, int dir, int frame, sprite_frame_t *out);
 /* the frame onto the canvas with its pivot at logical (x, y); index 0 skipped; clipped */
 void     pak_blit(render8_t *r, const sprite_set_t *s, const sprite_frame_t *f, int x, int y);
+/* the same with only `level` of 16 pixels drawn (an ordered 4 x 4 Bayer pattern): a fade on an 8-bit canvas;
+   16 = pak_blit, 0 = nothing */
+void     pak_blit_dither(render8_t *r, const sprite_set_t *s, const sprite_frame_t *f, int x, int y, int level);
 /* the frame's cell_w x cell_h indices into out (the shadow needs the shape, 2026-10-23) */
 void     pak_frame_decode(const sprite_set_t *s, const sprite_frame_t *f, uint8_t *out);
 uint32_t pak_crc32(const uint8_t *d, uint32_t n);

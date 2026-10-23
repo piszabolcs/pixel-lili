@@ -1,6 +1,7 @@
 /* lili_world.c - M2.1: an empty room and yard, and Lili as a placeholder capsule
  * (spec 7.7: nothing waits for the art). Platform-free C99, no malloc. */
 #include "lili_world.h"
+#include "maps_gen.h"
 #include <string.h>
 
 uint32_t world_rand(world_t *w) {                      /* xorshift32: fast, tiny, and the same sequence on every platform */
@@ -22,6 +23,18 @@ void world_init(world_t *w, uint32_t seed) {
     lili->y = 140.0f * LILI_K;
     lili->dir = DIR_S;
     lili->anim = ANIM_IDLE_STAND;
+    lili->vis = 1.0f;
+}
+
+/* deep in a bush (a "hide_" zone of the map she is in) she fades out, out of it she fades back in
+   (the owner, 2026-10-23: once she is more than about 60 % in, she should be gone, smoothly) */
+static bool in_hide_zone(const actor_t *a) {
+    const map_t *m = &MAPS[a->view];
+    for (int i = 0; i < m->n_zones; i++) {
+        const map_zone_t *z = &m->zones[i];
+        if (z->kind == 0 && !strncmp(z->name, "hide", 4) && a->x >= z->a && a->x < z->a + z->c && a->y >= z->b && a->y < z->b + z->d) return true;
+    }
+    return false;
 }
 
 static const pak_t *s_pak;
@@ -30,7 +43,13 @@ const pak_t *world_pak(void) { return s_pak; }
 
 void world_tick(world_t *w, float dt) {
     w->clock_s += dt;
-    for (int a = 0; a < MAX_ACTORS; a++) if (w->actors[a].present) w->actors[a].anim_t += dt;
+    for (int i = 0; i < MAX_ACTORS; i++) {
+        actor_t *a = &w->actors[i];
+        if (!a->present) continue;
+        a->anim_t += dt;
+        const float target = in_hide_zone(a) ? 0.0f : 1.0f, step = dt * 1.6f;   /* a 0.6 s fade */
+        a->vis = a->vis < target ? (a->vis + step > target ? target : a->vis + step) : (a->vis - step < target ? target : a->vis - step);
+    }
 }
 
 void world_switch_view(world_t *w) {
@@ -188,7 +207,7 @@ static void painted_bg(const world_t *w, render8_t *r) {
    then one table look-up each; nothing above the room's wall line. */
 enum { SH_W = 200, SH_H = 72, SH_UP = 12 };
 static uint8_t s_cell[96 * 96];                   /* one decoded frame */
-static uint8_t s_shade[SH_W * SH_H];              /* 1 contact edge, 2 cast far, 3 cast near, 4 contact core */
+static uint8_t s_shade[SH_W * SH_H];              /* 1 contact edge, 2 cast far, 3 cast middle, 4 cast near, 5 contact core */
 /* how high she really is in a pose: the 3/4 camera shows a curled-up dog's back as depth, not height, so
    counting every sprite row as height threw a long flat slab under her that looked like a glass plate
    (the owner, 2026-10-23). Lying is a hand high, sitting and the play bow in between, standing the most. */
@@ -213,31 +232,41 @@ static void actor_shadow(const world_t *w, render8_t *r, const actor_t *a, const
         const float cx = ox + (fx0 + fx1) / 2.0f, rx = (fx1 - fx0) / 2.0f + 3, ry = 3 + (fx1 - fx0) / 12.0f;
         for (int y = 0; y < SH_H; y++) for (int x = 0; x < SH_W; x++) {
             float dx = (rx0 + x - cx) / rx, dy = (ry0 + y - (py - 1)) / ry, d = dx * dx + dy * dy;
-            if (d <= 0.55f) s_shade[y * SH_W + x] = 4; else if (d <= 1.0f) s_shade[y * SH_W + x] = 1;
+            if (d <= 0.55f) s_shade[y * SH_W + x] = 5; else if (d <= 1.0f) s_shade[y * SH_W + x] = 1;
         }
     }
     const int dp = world_daypart(w);
     if (DAYPART[dp].cast >= 0) {
-        /* 0.42 in the room (0.6 put her body's shadow so far ahead that she seemed to float over it, the owner),
-           shorter outdoors; the height cap scales with the cell (the yard's smaller sprites) */
-        const float s = w->view == VIEW_ROOM ? 0.42f : 0.3f;
+        /* how far the light throws it: 0.35 in the room, 0.3 outdoors; the height cap scales with the cell (the
+           yard's smaller sprites) */
+        const float s = w->view == VIEW_ROOM ? 0.35f : 0.3f;
         const int hmax = shadow_hmax(a->anim) * set->cell_h / 96;
-        for (int y = 0; y < set->pivot_y && y < H; y++) for (int x = 0; x < W; x++) {
-            if (!s_cell[y * W + x]) continue;
-            int h = set->pivot_y - y; if (h > hmax) h = hmax;
-            float k = w->view == VIEW_ROOM ? (ox + x - LILI_ROOM_LIGHT_X) / (float)(py - LILI_ROOM_LIGHT_Y > 8 ? py - LILI_ROOM_LIGHT_Y : 8) : 0.45f;
-            int sx = (int)(ox + x + h * s * k + 0.5f) - rx0, sy = (int)(py + h * s + 0.5f) - ry0;
-            const uint8_t lv = h * 2 <= hmax ? 3 : 2;                 /* the half next to her darker, the far half lighter */
-            for (int dy = 0; dy < 2; dy++) for (int dx = 0; dx < 2; dx++) {     /* a 2 x 2 splat: no gaps between the rows */
-                int qx = sx + dx, qy = sy + dy;
+        /* the owner's rule (2026-10-23): the shadow starts at the paws, always. So not every pixel of her lands
+           on its own (that left the body's shadow floating ahead of the thin legs' ones): each column of the
+           frame throws an unbroken strip from the paws' row out to where its highest pixel lands, sheared
+           along the light. Under a lifted paw and between the legs it is shadow too; it reads as standing. */
+        const float ks = 0.6f;                                          /* the door's sideways pull, softened */
+        const float reach = hmax * s;
+        for (int x = 0; x < W; x++) {
+            int top = -1;
+            for (int y = 0; y < set->pivot_y && y < H; y++) if (s_cell[y * W + x]) { top = y; break; }
+            if (top < 0) continue;
+            int h = set->pivot_y - top; if (h > hmax) h = hmax;
+            float k = w->view == VIEW_ROOM ? ks * (ox + x - LILI_ROOM_LIGHT_X) / (float)(py - LILI_ROOM_LIGHT_Y > 8 ? py - LILI_ROOM_LIGHT_Y : 8) : 0.45f;
+            const int len = (int)(h * s + 0.5f);
+            for (int d = 0; d <= len; d++) {
+                const uint8_t lv = d <= reach * 0.35f ? 4 : d <= reach * 0.7f ? 3 : 2;   /* near the paws darkest, then fading */
+                int qx = (int)(ox + x + d * k + 0.5f) - rx0, qy = py + d - ry0;
                 if (qx >= 0 && qy >= 0 && qx < SH_W && qy < SH_H && s_shade[qy * SH_W + qx] < lv) s_shade[qy * SH_W + qx] = lv;
             }
         }
     }
-    /* by day the near half is the full cast shadow and the far half the evening's lighter one; in the
-       evening the near half is the lighter one and the far half fades out */
-    const int8_t near_t = DAYPART[dp].cast, far_t = DAYPART[dp].cast == LUT_CAST_DAY ? LUT_CAST_EVE : -1;
-    const uint8_t *lut[5] = { NULL, bg_lut(w, LUT_SHADE_OUT), bg_lut(w, far_t), bg_lut(w, near_t), bg_lut(w, LUT_SHADE_IN) };
+    /* levels: 1 contact edge, 2 far, 3 middle, 4 near the paws, 5 contact core. By day near = the full cast
+       shadow, middle = the contact edge's, far = the evening's lighter one; in the evening one step lighter
+       each and the far part gone; at night only the contact shadow */
+    const bool day = DAYPART[dp].cast == LUT_CAST_DAY;
+    const uint8_t *lut[6] = { NULL, bg_lut(w, LUT_SHADE_OUT), bg_lut(w, day ? LUT_CAST_EVE : -1), bg_lut(w, day ? LUT_SHADE_OUT : LUT_CAST_EVE),
+                              bg_lut(w, day ? LUT_CAST_DAY : LUT_SHADE_OUT), bg_lut(w, LUT_SHADE_IN) };
     const int top = w->view == VIEW_ROOM ? LILI_ROOM_FLOOR_Y : 0;
     for (int y = 0; y < SH_H; y++) {
         int cy = ry0 + y; if (cy < top || cy < 0 || cy >= LILI_LOG_H) continue;
@@ -250,26 +279,18 @@ static void actor_shadow(const world_t *w, render8_t *r, const actor_t *a, const
     (void)oy;
 }
 
-/* a bowl in Lili's eating / drinking frames: the room's own bowl steps aside while she uses it */
-static bool prop_in_use(const world_t *w, uint16_t img) {
-    for (int a = 0; a < MAX_ACTORS; a++) {
-        const actor_t *ac = &w->actors[a];
-        if (!ac->present || ac->view != VIEW_ROOM) continue;
-        if ((img == IMG_BOWL_FOOD && ac->anim == ANIM_EAT_DRINK) || (img == IMG_BOWL_WATER && ac->anim == ANIM_DRINK)) return true;
-    }
-    return false;
-}
-
 static void painted_actor(const world_t *w, render8_t *r, const actor_t *a) {
     sprite_set_t set; sprite_frame_t fr;
+    if (a->vis <= 0.02f) return;                                          /* gone into a bush */
     /* outdoors the smaller set: the yard is painted at a smaller scale than the room (the owner, 2026-10-23) */
     const bool small = w->view == VIEW_YARD && a->anim && pak_sprite_set(s_pak, (uint16_t)(a->anim + ANIM_YARD_OFFSET), &set);
     if (small || (a->anim && pak_sprite_set(s_pak, a->anim, &set))) {
         int frame = (int)(a->anim_t * set.fps);
         if (!set.loop && frame >= set.n_frames) frame = set.n_frames - 1;
         if (pak_frame(&set, a->dir, frame, &fr)) {
-            actor_shadow(w, r, a, &set, &fr);
-            pak_blit(r, &set, &fr, (int)a->x, (int)(a->y - a->z));
+            if (a->vis >= 0.5f) actor_shadow(w, r, a, &set, &fr);
+            /* fading in or out of a bush: an ordered (Bayer 4 x 4) dither, the 8-bit canvas has no alpha */
+            pak_blit_dither(r, &set, &fr, (int)a->x, (int)(a->y - a->z), (int)(a->vis * 16.0f + 0.5f));
             return;
         }
     }
@@ -283,14 +304,11 @@ static void painted_fg(const world_t *w, render8_t *r) {
         for (int k = 0; k < IMG_COVERS_PER_SEASON && np < IMG_COVERS_PER_SEASON; k++)
             if (pak_image(s_pak, IMG_COVER(world_season(w), k), &props[np])) { key[n] = props[np].sort_y; who[n++] = (int8_t)np; np++; }
     if (w->view == VIEW_ROOM) {
+        /* the bowls stand apart (tools/bg_build.py PROP_MOVE) so she has room beside each; while she eats or
+           drinks, the room's bowl sorts in front of her and covers the one her frames carry */
         static const uint16_t P[3] = { IMG_VASE, IMG_BOWL_FOOD, IMG_BOWL_WATER };
-        /* at a bowl she stands beside the other one (the two sit side by side, her frames face west):
-           that one goes under her instead of over her legs */
-        const bool at_bowls = prop_in_use(w, IMG_BOWL_FOOD) || prop_in_use(w, IMG_BOWL_WATER);
         for (int i = 0; i < 3; i++)
-            if (!prop_in_use(w, P[i]) && pak_image(s_pak, P[i], &props[np])) {
-                key[n] = at_bowls && P[i] != IMG_VASE ? (int16_t)-1 : props[np].sort_y; who[n++] = (int8_t)np; np++;
-            }
+            if (pak_image(s_pak, P[i], &props[np])) { key[n] = props[np].sort_y; who[n++] = (int8_t)np; np++; }
     }
     for (int a = 0; a < MAX_ACTORS && n < MAXD; a++)
         if (w->actors[a].present && w->actors[a].view == w->view) { key[n] = (int16_t)w->actors[a].y; who[n++] = (int8_t)(-1 - a); }

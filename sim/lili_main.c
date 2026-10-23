@@ -131,8 +131,8 @@ static int selftest(void) {
     }
     const map_t *room = &MAPS[VIEW_ROOM], *yard = &MAPS[VIEW_YARD];
     CHECK(map_walkable(room, 52 * K, 126 * K) && room->points[SPOT_RUG].z == 0, "the rug is walkable: she plays and sleeps on it (owner, 2026-10-19)");
-    CHECK(room->points[SPOT_PAD].x < LILI_LOG_W / 3 && room->points[SPOT_BOWL_FOOD].x >= 2 * LILI_LOG_W / 3 && room->points[SPOT_BOWL_WATER].x >= 2 * LILI_LOG_W / 3,
-          "the pad in the left third, food and water in the right third (owner, 2026-10-19)");
+    CHECK(room->points[SPOT_PAD].x < LILI_LOG_W / 3 && room->points[SPOT_BOWL_FOOD].x >= LILI_LOG_W / 2 && room->points[SPOT_BOWL_WATER].x >= LILI_LOG_W / 2,
+          "the pad in the left third, food and water in the right half (owner, 2026-10-19; moved apart 2026-10-23 so she can eat and drink beside them)");
     CHECK(room->points[SPOT_DECO].x >= LILI_LOG_W / 3 && room->points[SPOT_DECO].x < 2 * LILI_LOG_W / 3, "the season's decoration in the middle third");
     CHECK(map_walkable(room, 208 * K, 150 * K), "the nook under the bench is walkable (H10, H11)");
     CHECK(!map_walkable(yard, 24 * K, 165 * K) && !map_walkable(yard, 120 * K, 10 * K), "the yard: a tree trunk and the fence block (the painted yard, 2026-10-23)");
@@ -260,10 +260,20 @@ static int selftest(void) {
         CHECK(((night >> 11) + ((night >> 5) & 63) / 2) < ((day >> 11) + ((day >> 5) & 63) / 2), "the night palette is darker than the afternoon's");
         pak_image_t bowl; CHECK(pak_image(&s_pak, IMG_BOWL_FOOD, &bowl), "the food bowl is a prop");
         const int bx = bowl.x + bowl.w / 2, by = bowl.y + bowl.h / 2;
-        s_world.daypart_force = 3; d->x = 100; d->y = 300; d->anim = ANIM_IDLE_STAND; world_render(&s_world, &sc);
-        uint8_t with_bowl = sc.px[by * LILI_LOG_W + bx];
-        d->anim = ANIM_EAT_DRINK; world_render(&s_world, &sc);
-        CHECK(with_bowl != sc.px[by * LILI_LOG_W + bx], "while she eats (her frames hold a bowl), the room's own bowl steps aside");
+        s_world.daypart_force = 3; d->present = false; world_render(&s_world, &bg);
+        d->present = true; d->x = bx + 19; d->y = by + 9; d->anim = ANIM_EAT_DRINK; d->dir = DIR_W; world_render(&s_world, &sc);
+        CHECK(bg.px[by * LILI_LOG_W + bx] == sc.px[by * LILI_LOG_W + bx] && d->y < bowl.y + bowl.h,
+              "eating, she stands beside the bowl and the room's bowl stays in front of her (covers her frames' own bowl)");
+        pak_image_t water; CHECK(pak_image(&s_pak, IMG_BOWL_WATER, &water) && water.x > bx + 19 + 36, "the water bowl is past her tail while she eats");
+        d->x = 300; d->y = 230; world_tick(&s_world, 0.01f); CHECK(d->vis > 0.99f, "out of the bushes she is fully seen");
+        s_world.view = VIEW_YARD; d->view = VIEW_YARD;
+        const map_t *ym = &MAPS[VIEW_YARD]; const map_zone_t *hz = NULL;
+        for (int i = 0; i < ym->n_zones; i++) if (!strncmp(ym->zones[i].name, "hide", 4) && ym->zones[i].kind == 0) hz = &ym->zones[i];
+        CHECK(hz, "the yard has a hiding zone");
+        d->x = hz->a + hz->c / 2; d->y = hz->b + hz->d / 2;
+        for (int i = 0; i < 30; i++) world_tick(&s_world, 1.0f / 30.0f);
+        CHECK(d->vis < 0.02f, "deep in a bush she fades out within a second");
+        s_world.view = VIEW_ROOM; d->view = VIEW_ROOM; d->vis = 1.0f;
     } else printf("note: no painted backgrounds in the pak, those tests were skipped\n");
 
     /* --- the world (placeholder shapes) --- */
@@ -305,9 +315,9 @@ static const demo_step_t DEMO[] = {
     { D_DO, 0, 0, ANIM_IDLE_SIT_BLINK, DIR_S, 2.5f, -1, -1, -1 },
     { D_WALK, 250, 330, 0, 0, 0, -1, -1, -1 },
     { D_DO, 0, 0, ANIM_PANT_SMILE, DIR_S, 3.0f, -1, -1, -1 },
-    { D_WALK, 394, 443, 0, 0, 0, -1, -1, -1 },                                          /* her frames' bowl onto the food bowl */
+    { D_WALK, 277, 443, 0, 0, 0, -1, -1, -1 },                                          /* east of the food bowl, her frames' bowl under it */
     { D_DO, 0, 0, ANIM_EAT_DRINK, DIR_W, 3.5f, -1, -1, -1 },
-    { D_WALK, 437, 448, 0, 0, 0, -1, -1, -1 },                                          /* and onto the water bowl */
+    { D_WALK, 353, 448, 0, 0, 0, -1, -1, -1 },                                          /* east of the water bowl */
     { D_DO, 0, 0, ANIM_DRINK, DIR_W, 3.0f, -1, -1, -1 },
     { D_WALK, 300, 400, 0, 0, 0, -1, -1, -1 },
     { D_WALK, 250, 250, 0, 0, 0, -1, -1, -1 },                                          /* towards the door */
@@ -323,7 +333,9 @@ static const demo_step_t DEMO[] = {
     { D_WALK, 260, 300, 0, 0, 0, -1, -1, -1 },
     { D_WALK, 404, 246, 0, 0, 0, -1, -1, -1 },                                          /* half into the right bush (spot_bush_2) */
     { D_DO, 0, 0, ANIM_LOOK_AROUND, DIR_S, 2.6f, -1, -1, -1 },                          /* peeking out of it */
-    { D_DO, 0, 0, ANIM_IDLE_SIT_BLINK, DIR_S, 2.0f, -1, -1, -1 },
+    { D_WALK, 446, 236, 0, 0, 0, -1, -1, -1 },                                          /* deep in (hide_bush_2): she fades out */
+    { D_DO, 0, 0, ANIM_IDLE_SIT_BLINK, DIR_S, 2.5f, -1, -1, -1 },
+    { D_WALK, 380, 300, 0, 0, 0, -1, -1, -1 },                                          /* and out again, fading in */
     { D_SET, -1, -1, 0, 0, 0, -1, 1, -1 },                                              /* summer */
     { D_WALK, 250, 250, 0, 0, 0, -1, -1, -1 },
     { D_DO, 0, 0, ANIM_PLAY_BOW, DIR_SW, 2.0f, -1, -1, -1 },
@@ -434,10 +446,14 @@ static int demo_record(const char *dir, int fps) {
     canvas_init(); world_init(&s_world, 42); demo_start(); s_demo_rounds = 0;
     const float dt = 1.0f / (float)fps;
     char path[512]; int n = 0;
+    snprintf(path, sizeof path, "%s/log.txt", dir); FILE *lg = fopen(path, "w");   /* frame, step, x, y, anim, vis: to find a moment */
     while (!s_demo_rounds && n < 400 * fps) {                    /* until the tour comes round to its start */
         demo_tick(dt); world_tick(&s_world, dt); frame();
+        const actor_t *l = &s_world.actors[0];
+        if (lg) fprintf(lg, "%d %d %.0f %.0f %u %.2f %d\n", n, s_demo_i, l->x, l->y, l->anim, l->vis, s_world.view);
         snprintf(path, sizeof path, "%s/f%05d.ppm", dir, n++); write_ppm(path, s_fb);
     }
+    if (lg) fclose(lg);
     printf("demo: %d frames at %d fps (%.1f s) -> %s\n", n, fps, n / (float)fps, dir);
     return 0;
 }
