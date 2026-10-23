@@ -281,6 +281,15 @@ Hiba: a pak eddig Lili színei nélkül ment ki (a mester-paletta 144-183 helyei
 
 Fogalmak: palettás átszínezés (remap LUT), statikus réteg kulcsa (cache key), Y szerinti rendezés
 
+## 2026-10-23 | 2D vonal, 4. lépés: a meghajlás harmadszor
+Készült: play bow v3 a gazdi promptjával ("legs still, wiggle tail and ass like happy dog, and happy face"), 8 kocka (`assets/pixellab/play_bow_SW_v3_sheet.png`); a gazdi jóváhagyása után bekötve (`tools/pixellab_to_sprites.py`), videó: `docs/img/anim/sim_play_bow_v3.mp4` (szoba és udvar, mellette 3x nagyítás).
+
+Döntés: új animáció csak megmutatás és jóváhagyás után kerül a pakba. Megmutatás előtt mérés: a mancsok környékének kockánkénti átfedése (a hátsó mancs legalsó sora végig a 75., az x-tartománya sem változik), így a lábemelés számmal is kiderül, nem csak szemre.
+
+Hiba: a v2-t (a hátsó lábát emelgette) jóváhagyás nélkül építettem be. Gyökérok: a kockák átnézésekor csak az első lábakat figyeltem, és nem kérdeztem meg a gazdit. Javítás: mérés mind a négy mancsra, és kérdés a beépítés előtt.
+
+Fogalmak: régióátfedés (IoU), forráskocka kihagyása a ciklusból
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -452,3 +461,7 @@ Fogalmak: palettás átszínezés (remap LUT), statikus réteg kulcsa (cache key
 **elárasztásos háttérleválasztás (flood fill):** a kép széléről indulva, szomszédról szomszédra terjedve jelöljük háttérnek a háttérszínhez hasonló pixeleket. A kutya sötét kontúrja megállítja, ezért a világos mellkas akkor sem tűnik el, ha a színe közel van a háttérhez.
 
 **indexelt PNG:** a pixel nem színt, hanem egy palettaindexet tárol (mint a játék 8 bites vászna); a 0-s index átlátszó. Így a sprite pontosan a játék palettájának színeit használja.
+
+**régióátfedés (IoU, intersection over union):** két kép ugyanazon területén a nem átlátszó pixelek metszete osztva az uniójukkal; 1,0 = pontosan ugyanott van minden pixel. A mancsok területére kockánként kiszámolva megmutatja, mozdul-e a láb (a meghajlásnál a hátsó mancsoké 0,94-0,99 maradt: csak a test széle rezdül).
+
+**forráskocka kihagyása:** a PixelLab sheet elején kétszer ott a kiinduló póz, a generált kockák ehhez képest kicsit elcsúsznak (itt 2 px-szel feljebb van a talp). Ciklusban ez egy ugrás lenne körönként, ezért csak a generált 8 kocka megy körbe; az utolsó és az első generált szinte egyforma, így a kör folytonos.
