@@ -272,6 +272,15 @@ Hiba 2: a tárgyak maszkja az egész téglalap lett. Gyökérok: a `floodfill` e
 
 Fogalmak: morfológiai nyitás és zárás, lyukkitöltés elárasztással, medián
 
+## 2026-10-23 | 2D vonal, 3. lépés: a festett világ a szimulátorban
+Készült: a pak képeket, háttérpalettákat és átszínező táblákat visz (`tools/bg_build.py`, `tools/pack_assets.py`, IMAGE típus); a világ ezekből rajzol (`lili_world.c` painted_*), a napszak a paletta tónusa, Lili árnyéka a saját alakjából számolódik; bemutató kör és videó (`--demo-record`).
+
+Döntés: a fény és az árnyék 8 bites térben marad: egy maszk megmondja, hol, egy 256 bájtos tábla megmondja, melyik szín helyett melyik sötétebb vagy világosabb szín legyen. Így pixelenként egyetlen kiolvasás, a panelen is gyors, és a hátteret nem kell napszakonként külön tárolni.
+
+Hiba: a pak eddig Lili színei nélkül ment ki (a mester-paletta 144-183 helyei nullák voltak). Gyökérok: a `sprite_clean.py` Lili színeit külön fájlba írta, a pakoló csak a mester-palettát olvasta. Javítás: a pakoló beírja Lili színeit a helyükre.
+
+Fogalmak: palettás átszínezés (remap LUT), statikus réteg kulcsa (cache key), Y szerinti rendezés
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.

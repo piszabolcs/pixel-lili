@@ -11,7 +11,7 @@
   5,
   7
  ],
- "frames": 6,
+ "frames": 8,
  "cell": 96,
  "scale": 1,
  "pivot": [
@@ -62,6 +62,20 @@
    "head": null
   },
   {
+   "dir": 0,
+   "frame": 6,
+   "file": "d0_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 7,
+   "file": "d0_f7.png",
+   "mouth": null,
+   "head": null
+  },
+  {
    "dir": 1,
    "frame": 0,
    "file": "d1_f0.png",
@@ -100,6 +114,20 @@
    "dir": 1,
    "frame": 5,
    "file": "d1_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 6,
+   "file": "d1_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 7,
+   "file": "d1_f7.png",
    "mouth": null,
    "head": null
   },
@@ -146,6 +174,20 @@
    "head": null
   },
   {
+   "dir": 2,
+   "frame": 6,
+   "file": "d2_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 7,
+   "file": "d2_f7.png",
+   "mouth": null,
+   "head": null
+  },
+  {
    "dir": 4,
    "frame": 0,
    "file": "d4_f0.png",
@@ -184,6 +226,20 @@
    "dir": 4,
    "frame": 5,
    "file": "d4_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 4,
+   "frame": 6,
+   "file": "d4_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 4,
+   "frame": 7,
+   "file": "d4_f7.png",
    "mouth": null,
    "head": null
   },
@@ -230,6 +286,20 @@
    "head": null
   },
   {
+   "dir": 5,
+   "frame": 6,
+   "file": "d5_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 5,
+   "frame": 7,
+   "file": "d5_f7.png",
+   "mouth": null,
+   "head": null
+  },
+  {
    "dir": 7,
    "frame": 0,
    "file": "d7_f0.png",
@@ -270,7 +340,21 @@
    "file": "d7_f5.png",
    "mouth": null,
    "head": null
+  },
+  {
+   "dir": 7,
+   "frame": 6,
+   "file": "d7_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 7,
+   "frame": 7,
+   "file": "d7_f7.png",
+   "mouth": null,
+   "head": null
   }
  ],
- "source": "tools/animate2d.py"
+ "source": "tools/pixellab_to_sprites.py (idle_stand_SW)"
 }

@@ -1,0 +1,75 @@
+{
+ "anim": "look_around",
+ "id": 23,
+ "fps": 8,
+ "loop": false,
+ "dirs": [
+  0
+ ],
+ "frames": 8,
+ "cell": 96,
+ "scale": 1,
+ "pivot": [
+  48,
+  90
+ ],
+ "files": [
+  {
+   "dir": 0,
+   "frame": 0,
+   "file": "d0_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 1,
+   "file": "d0_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 2,
+   "file": "d0_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 3,
+   "file": "d0_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 4,
+   "file": "d0_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 5,
+   "file": "d0_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 6,
+   "file": "d0_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 7,
+   "file": "d0_f7.png",
+   "mouth": null,
+   "head": null
+  }
+ ],
+ "source": "tools/pixellab_to_sprites.py (look_around_S)"
+}

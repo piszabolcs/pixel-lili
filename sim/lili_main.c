@@ -6,6 +6,7 @@
  *   ./lilisim --selftest              headless checks, exit 0 = green
  *   ./lilisim --bench                 headless: render + flush cost per frame (spec 6.4)
  *   ./lilisim --screenshot out.ppm    headless, one frame to a PPM
+ *   ./lilisim --demo-record DIR [fps] headless, one round of the demo tour as PPM frames (G toggles it in the window)
  *
  * The fish simulator (main.c) is untouched and still builds with make SQUARE=1. */
 #include <stdio.h>
@@ -65,6 +66,16 @@ static void write_ppm(const char *path, const uint16_t *fb) {
 
 #define CHECK(cond, msg) do { if (!(cond)) { printf("FAIL: %s\n", msg); return 1; } } while (0)
 static uint16_t px(int lx, int ly) { return s_fb[(ly * LILI_SCALE) * LILI_PHYS_W + lx * LILI_SCALE]; }
+/* the placeholder shapes (spec 7.7) are still the picture without a pak: their tests switch the pak off */
+static void placeholder_mode(bool on) {
+    uint8_t pal[256][3];
+    world_set_pak(on || !s_pak.data ? NULL : &s_pak);
+    if (on) { pal_master(pal); r8_set_palette(&s_r8, pal); }
+}
+static const map_prop_t *prop_named(const map_t *m, const char *name) {
+    for (int i = 0; i < m->n_props; i++) if (!strcmp(m->props[i].name, name)) return &m->props[i];
+    return NULL;
+}
 
 static int selftest(void) {
     const int K = LILI_K;                               /* the tests below were written on the 240 design grid */
@@ -123,27 +134,33 @@ static int selftest(void) {
           "the pad in the left third, food and water in the right third (owner, 2026-10-19)");
     CHECK(room->points[SPOT_DECO].x >= LILI_LOG_W / 3 && room->points[SPOT_DECO].x < 2 * LILI_LOG_W / 3, "the season's decoration in the middle third");
     CHECK(map_walkable(room, 208 * K, 150 * K), "the nook under the bench is walkable (H10, H11)");
-    CHECK(!map_walkable(yard, 50 * K, 62 * K) && !map_walkable(yard, 120 * K, 10 * K), "the yard: a tree trunk and the hedge block");
+    CHECK(!map_walkable(yard, 24 * K, 165 * K) && !map_walkable(yard, 120 * K, 10 * K), "the yard: a tree trunk and the fence block (the painted yard, 2026-10-23)");
     for (int i = 0; i < room->n_props; i++) {                /* every interactive thing is wholly on the glass, 2 px in */
         const map_prop_t *p = &room->props[i];
         if (strcmp(p->name, "pad") && strcmp(p->name, "bowl_food") && strcmp(p->name, "bowl_water")) continue;
         if (!mask_rect_visible(p->x, p->y - p->height, p->w, p->h + p->height, 2)) { printf("FAIL: %s is not wholly on the glass\n", p->name); return 1; }
     }
     CHECK(room->props[0].x >= 0, "props exist");
-    const map_prop_t *side = NULL; for (int i = 0; i < room->n_props; i++) if (!strcmp(room->props[i].name, "bench_side")) side = &room->props[i];
-    CHECK(side && LILI_LOG_W - (side->x + side->w) <= 5 * K, "the bench stands at the right wall (owner, 2026-10-19)");
+    const map_prop_t *side = prop_named(room, "bench_side");
+    int floor_right = 232 * K;                          /* the painted room's floor ends at its right wall (room.json floor) */
+    CHECK(side && floor_right - (side->x + side->w) <= 5 * K, "the bench stands at the right wall (owner, 2026-10-19; the painted room, 2026-10-23)");
     CHECK(side->y + side->h <= 180 * K && mask_rect_visible(side->x, side->y - side->height, side->w, side->h + side->height, 2),
           "the bench keeps its length and stays clear of the bottom-right corner arc");
-    const map_prop_t *rug = NULL; for (int i = 0; i < room->n_props; i++) if (!strcmp(room->props[i].name, "rug")) rug = &room->props[i];
-    CHECK(rug && rug->h * 2 == rug->w * 3, "the rug is 3:2 like the real 300 x 200 cm one, lengthwise");
-    /* the Y-sort, in the yard (H13): behind a bush Lili is covered by it, in front of it she covers it */
+    const map_prop_t *rug = prop_named(room, "rug");
+    CHECK(rug && rug->x <= room->points[SPOT_RUG].x && room->points[SPOT_RUG].x < rug->x + rug->w && rug->y <= room->points[SPOT_RUG].y && room->points[SPOT_RUG].y < rug->y + rug->h,
+          "the rug spot is on the painted rug (it is the painting's shape now, not 3:2)");
+    /* the Y-sort, in the yard (H13): behind a bush Lili is covered by it, in front of it she covers it (placeholder shapes) */
+    placeholder_mode(true);
+    const map_prop_t *bush = prop_named(yard, "bush_3");
+    CHECK(bush, "the yard has a bush at the top");
     world_init(&s_world, 1); actor_t *l = &s_world.actors[0];
     s_world.view = VIEW_YARD; l->view = VIEW_YARD;
-    l->x = 40 * K; l->y = 112 * K; frame();            /* bush_1: footprint y 120-134, raised 18 (design px): its top face hides her */
-    uint16_t behind = px(40 * K, 106 * K);
-    l->y = 170 * K; frame();
-    int front_dog = 0;                                  /* the sprite (or the capsule) above the pivot: anything that is not grass */
-    for (int yy = 150 * K; yy < 170 * K; yy++) for (int xx = 36 * K; xx < 44 * K; xx++) {
+    const int bx = bush->x + bush->w / 2;
+    l->x = bx; l->y = bush->y - 4 * K; frame();         /* just behind the footprint: the bush's raised top face hides her */
+    uint16_t behind = px(bx, bush->y - 10 * K);
+    l->y = bush->y + bush->h + 36 * K; frame();
+    int front_dog = 0;                                  /* the sprite above the pivot: anything that is not grass */
+    for (int yy = (int)l->y - 20 * K; yy < (int)l->y; yy++) for (int xx = bx - 4 * K; xx < bx + 4 * K; xx++) {
         uint16_t c = px(xx, yy); int grass = 0;
         for (int sh = 0; sh < 8; sh++) grass |= c == s_r8.lut[pal_ramp(RAMP_ID_GRASS, sh)];
         front_dog += !grass;
@@ -151,9 +168,10 @@ static int selftest(void) {
     CHECK(behind == s_r8.lut[pal_ramp(RAMP_ID_HEDGE, 6)], "behind a bush, the bush covers Lili (H13)");
     CHECK(front_dog > 60 * K * K, "in front of a bush, Lili is drawn over the grass");
     world_init(&s_world, 1); frame();
-    uint16_t rugpx = px(30 * K, 100 * K);
+    uint16_t rugpx = px(rug->x + 6 * K, rug->y + 10 * K);
     int on_rug = 0; for (int sh = 0; sh < 8; sh++) on_rug |= rugpx == s_r8.lut[pal_ramp(RAMP_ID_RUG_GRAY, sh)] || rugpx == s_r8.lut[pal_ramp(RAMP_ID_RUG_GREEN, sh)];
     CHECK(on_rug, "the rug is drawn where the bed was");
+    placeholder_mode(false);
 
     /* --- the event queue (spec 6.3: the one door into the world) --- */
     ev_queue_t q; ev_init(&q); ev_t e;
@@ -179,7 +197,8 @@ static int selftest(void) {
         pak_t t; CHECK(!pak_open(&t, bad, sizeof bad) && !pak_open(&t, NULL, 0), "a bad or missing pack is refused (placeholder graphics then)");
         if (s_pak.data) {
             sprite_set_t set; sprite_frame_t fr;
-            CHECK(pak_sprite_set(&s_pak, ANIM_IDLE_STAND, &set) && set.cell_w == 48 * K && set.pivot_x == 24 * K && set.pivot_y == 90 && set.n_frames == 6, "idle_stand: a 96 px cell, pivot (48, 90) (the 2D line, 2026-10-23), 6 frames");
+            CHECK(pak_sprite_set(&s_pak, ANIM_IDLE_STAND, &set) && set.cell_w == 48 * K && set.pivot_x == 24 * K && set.pivot_y == 90 && set.n_frames == 8, "idle_stand: a 96 px cell, pivot (48, 90) (the 2D line, 2026-10-23), 8 frames");
+            sprite_set_t ws; CHECK(pak_sprite_set(&s_pak, ANIM_WALK, &ws) && ws.dir_mask == 0xB7, "the walk has S, SW, W, N, NE and SE (PixelLab, 2026-10-23)");
             CHECK(pak_frame(&set, DIR_S, 0, &fr) && fr.rle_len > 0, "frame S/0 exists");
             const int cx = 120 * K, cy = 140 * K;
             r8_clear(&s_r8, PAL_FLOOR + 5); pak_blit(&s_r8, &set, &fr, cx, cy);
@@ -210,10 +229,48 @@ static int selftest(void) {
         CHECK(world_bg_key(&s_world) != bc.key, "a view switch changes the key, so the next render redraws the static layer");
     }
 
-    /* --- the world --- */
+    /* --- the painted world (2026-10-23): the owner's pictures, the door view, light and shadow --- */
+    if (world_painted()) {
+        static render8_t bg, sc;
+        world_init(&s_world, 5); actor_t *d = &s_world.actors[0];
+        const int pane_x = 211, pane_y = 50;                  /* the door's top-left pane (tools/bg_prepare.py PANE_X/Y x 1.2) */
+        s_world.season_force = 0; world_render(&s_world, &bg); uint8_t spring = bg.px[pane_y * LILI_LOG_W + pane_x];
+        s_world.season_force = 3; world_render(&s_world, &bg); uint8_t winter = bg.px[pane_y * LILI_LOG_W + pane_x];
+        CHECK(spring && winter && spring != winter, "the door's glass shows the season's yard (spring and winter differ)");
+        s_world.season_force = 2;
+        int shadow[4] = { 0 };
+        for (int dp = 1; dp <= 3; dp += 2) {                  /* the afternoon and the night */
+            s_world.daypart_force = (int8_t)dp;
+            d->x = 240; d->y = 300; d->anim = ANIM_IDLE_SIT_BLINK; d->dir = DIR_S; d->anim_t = 0;
+            d->present = false; world_render(&s_world, &bg);
+            d->present = true;  world_render(&s_world, &sc);
+            sprite_set_t set; sprite_frame_t fr; static uint8_t cell[96 * 96];
+            CHECK(pak_sprite_set(&s_pak, d->anim, &set) && pak_frame(&set, d->dir, 0, &fr), "the sitting frame exists");
+            pak_frame_decode(&set, &fr, cell);
+            for (int y = 0; y < LILI_LOG_H; y++) for (int x = 0; x < LILI_LOG_W; x++) {
+                int cx = x - (240 - set.pivot_x), cy = y - (300 - set.pivot_y);
+                bool body = cx >= 0 && cy >= 0 && cx < set.cell_w && cy < set.cell_h && cell[cy * set.cell_w + cx];
+                if (!body && bg.px[y * LILI_LOG_W + x] != sc.px[y * LILI_LOG_W + x]) shadow[dp]++;
+            }
+        }
+        CHECK(shadow[3] > 50 && shadow[1] > shadow[3] + 300, "Lili throws a shadow; by day the door's light makes it a long one (the owner, 2026-10-23)");
+        s_world.daypart_force = 1; world_render(&s_world, &bg); uint16_t day = bg.lut[150 + 50];
+        s_world.daypart_force = 3; world_render(&s_world, &bg); uint16_t night = bg.lut[150 + 50];
+        CHECK(((night >> 11) + ((night >> 5) & 63) / 2) < ((day >> 11) + ((day >> 5) & 63) / 2), "the night palette is darker than the afternoon's");
+        pak_image_t bowl; CHECK(pak_image(&s_pak, IMG_BOWL_FOOD, &bowl), "the food bowl is a prop");
+        const int bx = bowl.x + bowl.w / 2, by = bowl.y + bowl.h / 2;
+        s_world.daypart_force = 3; d->x = 100; d->y = 300; d->anim = ANIM_IDLE_STAND; world_render(&s_world, &sc);
+        uint8_t with_bowl = sc.px[by * LILI_LOG_W + bx];
+        d->anim = ANIM_EAT_DRINK; world_render(&s_world, &sc);
+        CHECK(with_bowl != sc.px[by * LILI_LOG_W + bx], "while she eats (her frames hold a bowl), the room's own bowl steps aside");
+    } else printf("note: no painted backgrounds in the pak, those tests were skipped\n");
+
+    /* --- the world (placeholder shapes) --- */
+    placeholder_mode(true);
     world_init(&s_world, 1234);
     for (int i = 0; i < 600; i++) world_tick(&s_world, 1.0f / 60.0f);
     CHECK(s_world.clock_s > 9.9f && s_world.clock_s < 10.1f, "10 s of ticks");
+    s_world.actors[0].anim = 0;                         /* the capsule */
     frame();
     const actor_t *a = &s_world.actors[0];
     CHECK(px((int)a->x, (int)a->y - 6) != px(120, 220), "the placeholder dog is drawn in the room");
@@ -222,11 +279,114 @@ static int selftest(void) {
     CHECK(s_world.view == VIEW_YARD, "Tab goes to the yard");
     world_switch_view(&s_world);
     CHECK(s_world.view == VIEW_ROOM, "and back to the room");
+    placeholder_mode(false);
     world_t a1, a2; world_init(&a1, 7); world_init(&a2, 7);
     for (int i = 0; i < 1000; i++) CHECK(world_rand(&a1) == world_rand(&a2), "seeded PRNG is deterministic");
     world_init(&a1, 0); CHECK(world_rand(&a1) != 0, "seed 0 does not stall the PRNG");
     printf("selftest: ok (world %zu B, canvas %zu B vs %zu B as RGB565, %d actor(s), logical %dx%d, corner %d px)\n",
            sizeof(world_t), sizeof s_r8.px, sizeof s_fb, MAX_ACTORS, LILI_LOG_W, LILI_LOG_H, LILI_CORNER_R_PHYS);
+    return 0;
+}
+
+/* ---------- the demo tour (2026-10-23): the simulator's own director, not the world's behaviour ----------
+ * Lili walks a fixed route through the painted room and yard so the owner can see the animations, the
+ * light and the shadows moving (G in the window, --demo-record headless). The world's own plans come in M5;
+ * until then this is a script: walk / trot to a point (the direction from the way she goes), play an
+ * animation for a while, or set the view, season and daypart. Coordinates are logical px (480). */
+#include <math.h>
+enum { D_WALK, D_TROT, D_DO, D_SET };
+typedef struct { uint8_t kind; int16_t x, y; uint16_t anim; int8_t dir; float t; int8_t view, season, daypart; } demo_step_t;
+static const demo_step_t DEMO[] = {
+    { D_SET, 240, 290, 0, 0, 0, VIEW_ROOM, 2, 1 },                                     /* the room, autumn, afternoon */
+    { D_DO, 0, 0, ANIM_IDLE_STAND, DIR_SW, 2.5f, -1, -1, -1 },
+    { D_WALK, 130, 272, 0, 0, 0, -1, -1, -1 },                                          /* to the rug */
+    { D_DO, 0, 0, ANIM_SLEEP_CURL, DIR_SW, 4.0f, -1, -1, -1 },
+    { D_DO, 0, 0, ANIM_IDLE_SIT_BLINK, DIR_S, 2.5f, -1, -1, -1 },
+    { D_WALK, 250, 330, 0, 0, 0, -1, -1, -1 },
+    { D_DO, 0, 0, ANIM_PANT_SMILE, DIR_S, 3.0f, -1, -1, -1 },
+    { D_WALK, 394, 443, 0, 0, 0, -1, -1, -1 },                                          /* her frames' bowl onto the food bowl */
+    { D_DO, 0, 0, ANIM_EAT_DRINK, DIR_W, 3.5f, -1, -1, -1 },
+    { D_WALK, 437, 448, 0, 0, 0, -1, -1, -1 },                                          /* and onto the water bowl */
+    { D_DO, 0, 0, ANIM_DRINK, DIR_W, 3.0f, -1, -1, -1 },
+    { D_WALK, 300, 400, 0, 0, 0, -1, -1, -1 },
+    { D_WALK, 250, 250, 0, 0, 0, -1, -1, -1 },                                          /* towards the door */
+    { D_DO, 0, 0, ANIM_LOOK_AROUND, DIR_S, 2.2f, -1, -1, -1 },
+    { D_DO, 0, 0, ANIM_BARK_HEAD_FLIP, DIR_S, 1.8f, -1, -1, -1 },
+    { D_DO, 0, 0, ANIM_PLAY_BOW, DIR_SW, 2.5f, -1, -1, -1 },
+    { D_SET, -1, -1, 0, 0, 0, -1, -1, 2 },                                               /* evening: the door's light fades */
+    { D_DO, 0, 0, ANIM_IDLE_STAND, DIR_SW, 3.0f, -1, -1, -1 },
+    { D_WALK, 135, 262, 0, 0, 0, -1, -1, -1 },
+    { D_SET, -1, -1, 0, 0, 0, -1, -1, 3 },                                               /* night: only the lamp's short shadows */
+    { D_DO, 0, 0, ANIM_SLEEP_CURL, DIR_SW, 4.0f, -1, -1, -1 },
+    { D_SET, 236, 456, 0, 0, 0, VIEW_YARD, 0, 1 },                                      /* out to the yard: spring, afternoon */
+    { D_WALK, 236, 300, 0, 0, 0, -1, -1, -1 },
+    { D_WALK, 130, 300, 0, 0, 0, -1, -1, -1 },
+    { D_DO, 0, 0, ANIM_PLAY_BOW, DIR_SW, 2.0f, -1, -1, -1 },
+    { D_SET, -1, -1, 0, 0, 0, -1, 1, -1 },                                              /* summer */
+    { D_WALK, 130, 220, 0, 0, 0, -1, -1, -1 },
+    { D_TROT, 330, 370, 0, 0, 0, -1, -1, -1 },
+    { D_DO, 0, 0, ANIM_PANT_SMILE, DIR_S, 2.5f, -1, -1, -1 },
+    { D_SET, -1, -1, 0, 0, 0, -1, 2, -1 },                                              /* autumn */
+    { D_WALK, 250, 250, 0, 0, 0, -1, -1, -1 },
+    { D_DO, 0, 0, ANIM_LOOK_AROUND, DIR_S, 2.2f, -1, -1, -1 },
+    { D_WALK, 250, 400, 0, 0, 0, -1, -1, -1 },
+    { D_SET, -1, -1, 0, 0, 0, -1, 3, -1 },                                              /* winter */
+    { D_DO, 0, 0, ANIM_IDLE_SIT_BLINK, DIR_S, 2.5f, -1, -1, -1 },
+    { D_WALK, 236, 456, 0, 0, 0, -1, -1, -1 },
+};
+enum { DEMO_N = (int)(sizeof DEMO / sizeof DEMO[0]) };
+static int s_demo_i = -1; static float s_demo_t;
+
+static dir8_t dir_of(float dx, float dy) {             /* screen vector -> dir8 (S = down, clockwise) */
+    float a = atan2f(-dx, dy) * 57.29578f; if (a < 0) a += 360.0f;
+    return (dir8_t)((int)(a / 45.0f + 0.5f) & 7);
+}
+static void demo_start(void) { s_demo_i = 0; s_demo_t = 0; }
+static void demo_tick(float dt) {
+    if (s_demo_i < 0) return;
+    actor_t *l = &s_world.actors[0];
+    const demo_step_t *s = &DEMO[s_demo_i];
+    bool done = false;
+    if (s->kind == D_SET) {
+        if (s->view >= 0) { s_world.view = (view_t)s->view; l->view = (view_t)s->view; }
+        if (s->season >= 0) s_world.season_force = s->season;
+        if (s->daypart >= 0) s_world.daypart_force = s->daypart;
+        if (s->x >= 0) { l->x = s->x; l->y = s->y; }
+        done = true;
+    } else if (s->kind == D_DO) {
+        if (s_demo_t == 0) { l->anim = s->anim; l->dir = (dir8_t)s->dir; l->anim_t = 0; }
+        s_demo_t += dt; done = s_demo_t >= s->t;
+    } else {
+        const uint16_t anim = s->kind == D_TROT ? ANIM_TROT : ANIM_WALK;
+        const float speed = s->kind == D_TROT ? 95.0f : 48.0f;              /* logical px per second */
+        float dx = s->x - l->x, dy = s->y - l->y, dist = sqrtf(dx * dx + dy * dy);
+        if (l->anim != anim) { l->anim = anim; l->anim_t = 0; }
+        if (dist > 0.5f) l->dir = dir_of(dx, dy);
+        if (dist <= speed * dt) { l->x = s->x; l->y = s->y; done = true; }
+        else { l->x += dx / dist * speed * dt; l->y += dy / dist * speed * dt; }
+    }
+    if (done) { s_demo_i = (s_demo_i + 1) % DEMO_N; s_demo_t = 0; }
+}
+static float demo_length(void) {                       /* seconds for one round (walks measured from the points) */
+    float t = 0, x = DEMO[0].x, y = DEMO[0].y;
+    for (int i = 0; i < DEMO_N; i++) {
+        const demo_step_t *s = &DEMO[i];
+        if (s->kind == D_DO) t += s->t;
+        else if (s->kind == D_SET) { if (s->x >= 0) { x = s->x; y = s->y; } }
+        else { t += sqrtf((s->x - x) * (s->x - x) + (s->y - y) * (s->y - y)) / (s->kind == D_TROT ? 95.0f : 48.0f) + 0.1f; x = s->x; y = s->y; }
+    }
+    return t;
+}
+/* --demo-record DIR [fps]: one round of the tour, headless, as DIR/f00000.ppm ... (tools: ffmpeg -> mp4) */
+static int demo_record(const char *dir, int fps) {
+    canvas_init(); world_init(&s_world, 42); demo_start();
+    const float dt = 1.0f / (float)fps; const int n = (int)(demo_length() * fps) + fps;
+    char path[512];
+    for (int i = 0; i < n; i++) {
+        demo_tick(dt); world_tick(&s_world, dt); frame();
+        snprintf(path, sizeof path, "%s/f%05d.ppm", dir, i); write_ppm(path, s_fb);
+    }
+    printf("demo: %d frames at %d fps (%.1f s) -> %s\n", n, fps, n / (float)fps, dir);
     return 0;
 }
 
@@ -271,6 +431,7 @@ static void frame_cb(lv_timer_t *t) {
     float dt = (now - s_last_ms) / 1000.0f; s_last_ms = now;
     if (dt > 0.1f) dt = 0.1f;                           /* a dragged window pauses time, not jumps it */
     drain_events();
+    demo_tick(dt);
     world_tick(&s_world, dt);
     frame();
     lv_obj_invalidate(s_canvas);
@@ -327,6 +488,7 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--selftest")) return selftest();
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
     if (argc > 2 && !strcmp(argv[1], "--inspector-shot")) return inspector_shot(argv[2]);
+    if (argc > 2 && !strcmp(argv[1], "--demo-record")) return demo_record(argv[2], argc > 3 ? atoi(argv[3]) : 12);
     if (argc > 2 && !strcmp(argv[1], "--screenshot")) {
         s_debug = argc > 3 && !strcmp(argv[3], "--debug");
         canvas_init(); world_init(&s_world, 1234);
@@ -350,7 +512,15 @@ int main(int argc, char **argv) {
         for (int k = 0; k < 4; k++) if (key_edge(SDL_SCANCODE_1 + k)) ev_push(&s_q, EV_SET_SEASON, k, 0);
         if (key_edge(SDL_SCANCODE_D)) { int c = s_world.daypart_force; ev_push(&s_q, EV_SET_DAYPART, c >= 3 ? -1 : c + 1, 0); }
         if (key_edge(SDL_SCANCODE_M)) s_debug = !s_debug;
-        if (key_edge(SDL_SCANCODE_A)) { actor_t *l = &s_world.actors[0]; static const uint16_t cyc[] = { ANIM_IDLE_STAND, ANIM_IDLE_SIT_BLINK, ANIM_WALK, ANIM_PANT_SMILE, ANIM_SLEEP_CURL }; int k = 0; while (k < 5 && cyc[k] != l->anim) k++; l->anim = cyc[(k + 1) % 5]; l->anim_t = 0; }
+        if (key_edge(SDL_SCANCODE_A)) {
+            actor_t *l = &s_world.actors[0];
+            static const uint16_t cyc[] = { ANIM_IDLE_STAND, ANIM_IDLE_SIT_BLINK, ANIM_WALK, ANIM_TROT, ANIM_PANT_SMILE, ANIM_PLAY_BOW, ANIM_BARK_HEAD_FLIP,
+                                            ANIM_EAT_DRINK, ANIM_DRINK, ANIM_SLEEP_CURL, ANIM_LOOK_AROUND };
+            enum { NC = (int)(sizeof cyc / sizeof cyc[0]) }; int k = 0;
+            while (k < NC && cyc[k] != l->anim) k++;
+            l->anim = cyc[(k + 1) % NC]; l->anim_t = 0;
+        }
+        if (key_edge(SDL_SCANCODE_G)) { if (s_demo_i < 0) demo_start(); else s_demo_i = -1; }
         if (key_edge(SDL_SCANCODE_R)) { actor_t *l = &s_world.actors[0]; l->dir = (dir8_t)((l->dir + 1) % DIR_COUNT); }
         SDL_Delay(wait < 5 ? wait : 5);
     }

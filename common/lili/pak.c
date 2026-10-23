@@ -39,11 +39,60 @@ const uint8_t *pak_find(const pak_t *p, uint8_t type, uint16_t id, uint32_t *siz
     return NULL;
 }
 
-bool pak_palette(const pak_t *p, uint8_t out[256][3]) {
-    uint32_t sz; const uint8_t *d = pak_find(p, PAK_T_PALETTE, PAL_ID_MASTER, &sz);
+void pak_frame_decode(const sprite_set_t *s, const sprite_frame_t *f, uint8_t *out) {
+    const uint8_t *p = f->rle, *end = f->rle + f->rle_len;
+    int i = 0, n = s->cell_w * s->cell_h;
+    while (i < n && p < end) {
+        int c = *p++;
+        if (c < 128) { int run = c + 1; for (int k = 0; k < run && i < n; k++) out[i++] = p[k]; p += run; }
+        else { int run = c - 126; for (int k = 0; k < run && i < n; k++) out[i++] = *p; p++; }
+    }
+    while (i < n) out[i++] = 0;
+}
+
+bool pak_palette_id(const pak_t *p, uint16_t id, uint8_t out[256][3]) {
+    uint32_t sz; const uint8_t *d = pak_find(p, PAK_T_PALETTE, id, &sz);
     if (!d || sz != 768) return false;
     memcpy(out, d, 768); return true;
 }
+bool pak_palette(const pak_t *p, uint8_t out[256][3]) { return pak_palette_id(p, PAL_ID_MASTER, out); }
+
+const uint8_t *pak_lut(const pak_t *p, uint16_t id) {
+    uint32_t sz; const uint8_t *d = pak_find(p, PAK_T_LUT, id, &sz);
+    return d && sz == 256 ? d : NULL;
+}
+
+bool pak_image(const pak_t *p, uint16_t id, pak_image_t *im) {
+    uint32_t sz; const uint8_t *d = pak_find(p, PAK_T_IMAGE, id, &sz);
+    if (!d || sz < 12) return false;
+    im->w = rd16(d); im->h = rd16(d + 2); im->x = (int16_t)rd16(d + 4); im->y = (int16_t)rd16(d + 6);
+    im->sort_y = (int16_t)rd16(d + 8); im->mask = d[10] & 1;
+    im->rle = d + 12; im->rle_len = sz - 12;
+    return im->w && im->h;
+}
+
+/* the RLE of an image, run by run, onto the canvas: a colour picture writes its non-zero bytes, a mask
+   remaps the canvas where its byte is 1 (the same walk; one branch per run, not per pixel) */
+static void image_walk(render8_t *r, const pak_image_t *im, const uint8_t *lut) {
+    const uint8_t *p = im->rle, *end = im->rle + im->rle_len;
+    const int W = im->w; int i = 0, n = im->w * im->h;
+    while (i < n && p < end) {
+        int c = *p++, run, lit;
+        if (c < 128) { run = c + 1; lit = 1; } else { run = c - 126; lit = 0; }
+        if (!lit && *p == 0) { i += run; p++; continue; }                  /* a transparent run: skip it whole */
+        for (int k = 0; k < run && i < n; k++, i++) {
+            uint8_t v = lit ? p[k] : p[0];
+            if (!v) continue;
+            int px = im->x + i % W, py = im->y + i / W;
+            if (px < 0 || py < 0 || px >= LILI_LOG_W || py >= LILI_LOG_H) continue;
+            uint8_t *dst = &r->px[py * LILI_LOG_W + px];
+            *dst = lut ? lut[*dst] : v;
+        }
+        p += lit ? run : 1;
+    }
+}
+void pak_image_blit(render8_t *r, const pak_image_t *im) { image_walk(r, im, NULL); }
+void pak_image_remap(render8_t *r, const pak_image_t *m, const uint8_t lut[256]) { if (lut) image_walk(r, m, lut); }
 
 bool pak_sprite_set(const pak_t *p, uint16_t anim_id, sprite_set_t *s) {
     uint32_t sz; const uint8_t *d = pak_find(p, PAK_T_SPRITE_SET, anim_id, &sz);

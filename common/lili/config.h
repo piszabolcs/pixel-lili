@@ -14,6 +14,14 @@
 #define LILI_CORNER_R_PHYS   72                           /* M1.7, 2026-10-19: the 64 px arc is cut, 72 shows whole */
 #define LILI_CORNER_R        (LILI_CORNER_R_PHYS / LILI_SCALE)
 
+/* ---- time and light (spec 7.2, 9.3, 9.4; the painted world, 2026-10-23) ---- */
+#define LILI_SEASON_DEFAULT  2                            /* autumn: the first art round (spec 7.1); the date replaces it with the RTC (M5) */
+#define LILI_START_HOUR      14.0f                        /* the world clock starts in the afternoon until the RTC sets it (M5) */
+#define LILI_ROOM_FLOOR_Y    166                          /* the painted room's wall ends here (logical px): no shadow above it */
+#define LILI_ROOM_LIGHT_X    236                          /* the door's glass: by day the room's light comes from here, */
+#define LILI_ROOM_LIGHT_Y    120                          /* so shadows fall towards the viewer and away from the door (the owner) */
+#define LILI_SHADOW_HMAX     60                           /* a sprite pixel higher than this above the paws throws no longer shadow */
+
 /* ---- the actors (spec 11.5: Bella-ready, one dog in v1) ---- */
 #define MAX_ACTORS           1
 

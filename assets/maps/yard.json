@@ -1,37 +1,39 @@
 {
   "name": "yard",
   "view": 1,
-  "_note": "Spec 8.3, logical px. Lili comes out of the house at the bottom (the door at x 104-136), the hedge is at the back.",
-  "background": { "floor_ramp": "grass", "wall_ramp": "hedge", "wall_bottom": 30 },
-  "floor": [[4, 32], [236, 32], [236, 212], [4, 212]],
+  "_note": "Spec 8.3, measured from the owner's painted yard (2026-10-23, the four seasons share one layout): the fence and the big tree's crown at the back, a tree at the left with the flowerbed under it, a bush at the top and one at the right, the bench with its pots and the watering can bottom right, shrubs bottom left, the stone path down the middle to the house (off the picture: the owner, no wall needed at the bottom). Logical px (240 x 240) on the design grid.",
+  "background": { "floor_ramp": "grass", "wall_ramp": "hedge", "wall_bottom": 50 },
+  "floor": [[4, 56], [236, 56], [236, 236], [4, 236]],
   "blocked": [
-    { "id": "trunk_1",    "circle": [50, 62, 6] },
-    { "id": "trunk_2",    "circle": [196, 50, 6] },
-    { "id": "flowerbed",  "rect": [166, 188, 22, 14] }
+    { "id": "trunk_1",   "circle": [24, 165, 8] },
+    { "id": "trunk_2",   "circle": [197, 98, 9] },
+    { "id": "flowerbed", "rect": [0, 122, 82, 32] },
+    { "id": "shrubs",    "rect": [0, 176, 64, 64] },
+    { "id": "bush_r",    "rect": [202, 104, 36, 26] },
+    { "id": "bench",     "rect": [168, 168, 56, 36] },
+    { "id": "can",       "rect": [188, 206, 36, 24] }
   ],
   "points": {
-    "spot_door_yard": [120, 206, 0],
-    "spot_grass":     [120, 150, 0],
-    "spot_bush_1":    [40, 120, 0],
-    "spot_bush_2":    [202, 130, 0],
-    "spot_bush_3":    [128, 66, 0],
-    "spot_tree":      [50, 76, 0],
-    "spot_flowers":   [176, 184, 0]
+    "spot_door_yard": [118, 228, 0],
+    "spot_grass":     [130, 120, 0],
+    "spot_bush_1":    [76, 190, 0],
+    "spot_bush_2":    [214, 140, 0],
+    "spot_bush_3":    [76, 72, 0],
+    "spot_tree":      [176, 110, 0],
+    "spot_flowers":   [60, 160, 0]
   },
   "zones": {
-    "hide_bush_1": { "rect": [28, 114, 24, 12] },
-    "hide_bush_2": { "rect": [190, 124, 24, 12] },
-    "hide_bush_3": { "rect": [116, 60, 24, 12] }
+    "hide_bush_1": { "rect": [64, 182, 22, 14] },
+    "hide_bush_2": { "rect": [204, 134, 24, 12] },
+    "hide_bush_3": { "rect": [64, 66, 26, 12] }
   },
   "props": [
-    { "id": "house_wall", "rect": [0, 214, 104, 26],  "ramp": "house",  "flat": true },
-    { "id": "house_wall2","rect": [136, 214, 104, 26],"ramp": "house",  "flat": true },
-    { "id": "house_door", "rect": [104, 214, 32, 26], "ramp": "wood",   "flat": true },
-    { "id": "flowerbed",  "rect": [166, 188, 22, 14], "ramp": "flower", "height": 3 },
-    { "id": "bush_1",     "rect": [26, 120, 28, 14],  "ramp": "hedge",  "height": 18 },
-    { "id": "bush_2",     "rect": [188, 130, 28, 14], "ramp": "hedge",  "height": 18 },
-    { "id": "bush_3",     "rect": [114, 66, 28, 14],  "ramp": "hedge",  "height": 18 },
-    { "id": "tree_1",     "rect": [30, 58, 40, 8],    "ramp": "leaf",   "height": 50 },
-    { "id": "tree_2",     "rect": [176, 46, 40, 8],   "ramp": "leaf",   "height": 40 }
+    { "id": "flowerbed", "rect": [0, 122, 82, 32],   "ramp": "flower", "height": 3 },
+    { "id": "bush_1",    "rect": [0, 172, 64, 14],   "ramp": "hedge",  "height": 18 },
+    { "id": "bush_2",    "rect": [202, 116, 36, 14], "ramp": "hedge",  "height": 18 },
+    { "id": "bush_3",    "rect": [58, 52, 36, 14],   "ramp": "hedge",  "height": 18 },
+    { "id": "tree_1",    "rect": [12, 160, 26, 8],   "ramp": "leaf",   "height": 50 },
+    { "id": "tree_2",    "rect": [184, 94, 26, 8],   "ramp": "leaf",   "height": 40 },
+    { "id": "bench",     "rect": [168, 190, 56, 14], "ramp": "wood",   "height": 12 }
   ]
 }

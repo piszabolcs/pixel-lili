@@ -1,38 +1,39 @@
 {
   "name": "room",
   "view": 0,
-  "_note": "Spec 8.2 as changed by the owner on 2026-10-19: the bed became his room's rug (Lili played and slept on it with him), the pad is in the bottom-left third, food and water side by side in the bottom-right third, the season's decoration in the middle; later the same evening the bench, the pad and the bowls moved 70 % closer to the bottom and right edges. Logical px (240 x 240), y is depth. Edit this file, then `python3 tools/gen_maps.py` (the sim's make does it).",
-  "background": { "floor_ramp": "floor", "wall_ramp": "wall", "wall_bottom": 64 },
-  "floor": [[4, 66], [236, 66], [236, 236], [4, 236]],
+  "_note": "Spec 8.2 as changed by the owner on 2026-10-19 (the rug instead of the bed, the pad bottom left, food and water bottom right, the season's decoration in the middle), and since 2026-10-23 measured from the owner's painted room (assets/backgrounds/src/room.png, its 400 grid x 0.6 = this 240 design grid): the wall ends at 83, the L-shaped bench stands along the back and the right wall with the nook arch at its front, the rug is the painting's (not 3:2 any more). Logical px (240 x 240), y is depth. Edit this file, then `python3 tools/gen_maps.py` (the sim's make does it).",
+  "background": { "floor_ramp": "floor", "wall_ramp": "wall", "wall_bottom": 83 },
+  "floor": [[8, 84], [232, 84], [232, 231], [8, 231]],
   "blocked": [
-    { "id": "backrest",  "rect": [160, 64, 76, 10] }
+    { "id": "backrest",   "rect": [150, 83, 80, 6] },
+    { "id": "backrest_r", "rect": [222, 83, 10, 95] }
   ],
   "points": {
-    "spot_door":    [120, 70, 0],
+    "spot_door":    [118, 90, 0],
     "spot_center":  [120, 140, 0],
-    "spot_front":   [120, 210, 0],
-    "spot_nook":    [218, 160, 0],
-    "spot_rug":     [46, 128, 0],
-    "bowl_food":    [176, 225, 0],
-    "bowl_water":   [200, 225, 0],
-    "spot_pad":     [52, 218, 0],
-    "spot_deco":    [120, 218, 0],
-    "rope_start":   [70, 150, 0],
-    "plush_start":  [150, 120, 0]
+    "spot_front":   [120, 196, 0],
+    "spot_nook":    [208, 170, 0],
+    "spot_rug":     [60, 136, 0],
+    "bowl_food":    [187, 217, 0],
+    "bowl_water":   [210, 217, 0],
+    "spot_pad":     [42, 208, 0],
+    "spot_deco":    [122, 214, 0],
+    "rope_start":   [80, 196, 0],
+    "plush_start":  [150, 130, 0]
   },
   "zones": {
-    "sunbeam": { "poly": [[104, 70], [136, 70], [160, 150], [84, 150]] },
-    "nook":    { "rect": [206, 96, 30, 80] },
-    "rug":     { "rect": [14, 80, 64, 96] },
-    "deco":    { "rect": [100, 206, 40, 24] }
+    "sunbeam": { "poly": [[103, 90], [137, 90], [160, 151], [90, 151]] },
+    "nook":    { "rect": [195, 150, 30, 30] },
+    "rug":     { "rect": [18, 89, 86, 95] },
+    "deco":    { "rect": [104, 206, 36, 24] }
   },
   "props": [
-    { "id": "door",       "rect": [104, 20, 32, 44], "ramp": "wood",    "flat": true },
-    { "id": "rug",        "rect": [14, 80, 64, 96],  "ramp": "rug_gray", "flat": true, "pattern": "rug" },
-    { "id": "pad",        "rect": [30, 205, 44, 26], "ramp": "pad",     "flat": true },
-    { "id": "bench_back", "rect": [160, 64, 46, 32], "ramp": "wood",    "height": 22 },
-    { "id": "bench_side", "rect": [206, 64, 30, 112], "ramp": "wood",    "height": 22, "seat_only": true },
-    { "id": "bowl_food",  "rect": [170, 221, 12, 8], "ramp": "metal",   "height": 4 },
-    { "id": "bowl_water", "rect": [194, 221, 12, 8], "ramp": "water",   "height": 4 }
+    { "id": "door",       "rect": [98, 15, 41, 68],  "ramp": "wood",     "flat": true },
+    { "id": "rug",        "rect": [18, 89, 86, 95],  "ramp": "rug_gray", "flat": true, "pattern": "rug" },
+    { "id": "pad",        "rect": [17, 192, 50, 34], "ramp": "pad",      "flat": true },
+    { "id": "bench_back", "rect": [150, 83, 37, 26], "ramp": "wood",     "height": 22 },
+    { "id": "bench_side", "rect": [187, 83, 42, 95], "ramp": "wood",     "height": 22, "seat_only": true },
+    { "id": "bowl_food",  "rect": [179, 212, 17, 13], "ramp": "metal",   "height": 4 },
+    { "id": "bowl_water", "rect": [201, 211, 18, 14], "ramp": "water",   "height": 4 }
   ]
 }

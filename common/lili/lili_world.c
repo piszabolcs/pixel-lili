@@ -128,9 +128,167 @@ static void draw_actor(render8_t *r, const actor_t *a) {    /* the sprite from t
     r8_fill(r, x - 8 * K, y - 18 * K, 8 * K, 6 * K, PAL_FUR + 6);       /* the head */
 }
 
-uint32_t world_bg_key(const world_t *w) { return (uint32_t)w->view + 1; }   /* the placeholder world's static layer depends on the view only */
+/* ---- the painted world (2026-10-23): the owner's pictures from the pak, light and shadow as palette remaps ----
+ * The static layer: the door view (the season's yard through the 9 glass panes), the room picture over it,
+ * the pad; then where the light lands: the sunbeam through the door, the door's cast shadows of the bench,
+ * the bowls and the vase, and the overhead light's contact shadows. Each is a mask in the pak and a 256-byte
+ * table (index -> a lighter or darker index of the same picture's palette), so it is one look-up per pixel.
+ * The time of day is the palette itself (the LUT): one tone per daypart over the picture's own colours. */
+#include <math.h>
+
+int world_season(const world_t *w) { return w->season_force >= 0 && w->season_force <= 3 ? w->season_force : LILI_SEASON_DEFAULT; }
+int world_daypart(const world_t *w) {
+    if (w->daypart_force >= 0 && w->daypart_force <= 3) return w->daypart_force;
+    float h = fmodf(LILI_START_HOUR + w->clock_s / 3600.0f, 24.0f);
+    return h >= 6 && h < 12 ? 0 : h >= 12 && h < 18 ? 1 : h >= 18 && h < 21 ? 2 : 3;
+}
+bool world_painted(void) { pak_image_t im; return s_pak && pak_image(s_pak, IMG_ROOM, &im); }
+
+/* by daypart: the palette tone (multiply, add), and which light / shadow table applies (-1 = none) */
+static const struct { float m[3], a[3]; int8_t sun, cast; } DAYPART[4] = {
+    { { 1.00f, 0.98f, 0.96f }, { 0, 3, 8 },   LUT_SUN_WEAK,   LUT_CAST_DAY },   /* morning: a little cool */
+    { { 1.00f, 1.00f, 1.00f }, { 0, 0, 0 },   LUT_SUN_STRONG, LUT_CAST_DAY },   /* afternoon: the sun through the door */
+    { { 0.80f, 0.74f, 0.68f }, { 18, 6, 0 },  LUT_SUN_WEAK,   LUT_CAST_EVE },   /* evening: warmer, the door's light fades */
+    { { 0.45f, 0.45f, 0.45f }, { 8, 12, 38 }, -1,             -1 },             /* night: only the overhead lamp's short shadows */
+};
+static uint16_t bg_palette(const world_t *w) { return w->view == VIEW_ROOM ? PAL_ID_ROOM : (uint16_t)(PAL_ID_YARD_SPRING + world_season(w)); }
+static const uint8_t *bg_lut(const world_t *w, int t) { return t < 0 ? NULL : pak_lut(s_pak, LUT_ID(bg_palette(w), t)); }
+
+static void painted_palette(const world_t *w, render8_t *r) {
+    uint8_t pal[256][3];
+    if (!pak_palette_id(s_pak, bg_palette(w), pal)) return;
+    const int dp = world_daypart(w);
+    for (int i = 1; i < 256; i++)
+        for (int c = 0; c < 3; c++) {
+            float v = pal[i][c] * DAYPART[dp].m[c] + DAYPART[dp].a[c];
+            pal[i][c] = (uint8_t)(v < 0 ? 0 : v > 255 ? 255 : v);
+        }
+    r8_set_palette(r, pal);
+}
+
+static void painted_bg(const world_t *w, render8_t *r) {
+    pak_image_t im;
+    const int season = world_season(w), dp = world_daypart(w);
+    painted_palette(w, r);
+    r8_clear(r, 0);
+    if (w->view == VIEW_YARD) { if (pak_image(s_pak, (uint16_t)(IMG_YARD_SPRING + season), &im)) pak_image_blit(r, &im); return; }
+    if (pak_image(s_pak, (uint16_t)(IMG_DOOR_SPRING + season), &im)) pak_image_blit(r, &im);   /* behind the glass */
+    if (pak_image(s_pak, IMG_ROOM, &im)) pak_image_blit(r, &im);
+    if (pak_image(s_pak, IMG_PAD, &im)) pak_image_blit(r, &im);                                  /* flat: always under Lili */
+    if (pak_image(s_pak, IMG_MASK_SUN, &im)) pak_image_remap(r, &im, bg_lut(w, DAYPART[dp].sun));
+    if (pak_image(s_pak, IMG_MASK_CAST, &im)) pak_image_remap(r, &im, bg_lut(w, DAYPART[dp].cast));
+    if (pak_image(s_pak, IMG_MASK_SHADE_OUT, &im)) pak_image_remap(r, &im, bg_lut(w, LUT_SHADE_OUT));
+    if (pak_image(s_pak, IMG_MASK_SHADE_IN, &im)) pak_image_remap(r, &im, bg_lut(w, LUT_SHADE_IN));
+}
+
+/* an actor's shadow, every frame, from the frame's own shape: the overhead light's short shadow under the
+   paws (an ellipse as wide as the footprint: core and edge), and by day the cast shadow (every pixel at
+   height h above the paws lands h * s towards the viewer; in the room sideways along the ray from the
+   door, in the yard a little to the right like the trees' shadows). Levels per pixel, the darkest wins,
+   then one table look-up each; nothing above the room's wall line. */
+enum { SH_W = 200, SH_H = 72, SH_UP = 12 };
+static uint8_t s_cell[96 * 96];                   /* one decoded frame */
+static uint8_t s_shade[SH_W * SH_H];              /* 1 contact edge, 2 cast, 3 contact core */
+static void actor_shadow(const world_t *w, render8_t *r, const actor_t *a, const sprite_set_t *set, const sprite_frame_t *fr) {
+    if (set->cell_w * set->cell_h > (int)sizeof s_cell) return;
+    pak_frame_decode(set, fr, s_cell);
+    const int W = set->cell_w, H = set->cell_h, px = (int)a->x, py = (int)(a->y - a->z);
+    const int ox = px - set->pivot_x, oy = py - set->pivot_y, rx0 = px - SH_W / 2, ry0 = py - SH_UP;
+    memset(s_shade, 0, sizeof s_shade);
+    int fx0 = W, fx1 = -1;                                       /* the footprint: the bottom 8 rows above the paws */
+    for (int y = set->pivot_y - 8; y < set->pivot_y && y < H; y++)
+        for (int x = 0; x < W; x++) if (y >= 0 && s_cell[y * W + x]) { if (x < fx0) fx0 = x; if (x > fx1) fx1 = x; }
+    if (fx1 >= fx0) {
+        const float cx = ox + (fx0 + fx1) / 2.0f, rx = (fx1 - fx0) / 2.0f + 3, ry = 3 + (fx1 - fx0) / 16.0f;
+        for (int y = 0; y < SH_H; y++) for (int x = 0; x < SH_W; x++) {
+            float dx = (rx0 + x - cx) / rx, dy = (ry0 + y - (py - 1)) / ry, d = dx * dx + dy * dy;
+            if (d <= 0.55f) s_shade[y * SH_W + x] = 3; else if (d <= 1.0f) s_shade[y * SH_W + x] = 1;
+        }
+    }
+    const int dp = world_daypart(w);
+    if (DAYPART[dp].cast >= 0) {
+        const float s = w->view == VIEW_ROOM ? 0.6f : 0.35f;
+        for (int y = 0; y < set->pivot_y && y < H; y++) for (int x = 0; x < W; x++) {
+            if (!s_cell[y * W + x]) continue;
+            int h = set->pivot_y - y; if (h > LILI_SHADOW_HMAX) h = LILI_SHADOW_HMAX;
+            float k = w->view == VIEW_ROOM ? (ox + x - LILI_ROOM_LIGHT_X) / (float)(py - LILI_ROOM_LIGHT_Y > 8 ? py - LILI_ROOM_LIGHT_Y : 8) : 0.45f;
+            int sx = (int)(ox + x + h * s * k + 0.5f) - rx0, sy = (int)(py + h * s + 0.5f) - ry0;
+            for (int dy = 0; dy < 2; dy++) for (int dx = 0; dx < 2; dx++) {     /* a 2 x 2 splat: no gaps between the rows */
+                int qx = sx + dx, qy = sy + dy;
+                if (qx >= 0 && qy >= 0 && qx < SH_W && qy < SH_H && s_shade[qy * SH_W + qx] < 2) s_shade[qy * SH_W + qx] = 2;
+            }
+        }
+    }
+    const uint8_t *lut[4] = { NULL, bg_lut(w, LUT_SHADE_OUT), bg_lut(w, DAYPART[dp].cast), bg_lut(w, LUT_SHADE_IN) };
+    const int top = w->view == VIEW_ROOM ? LILI_ROOM_FLOOR_Y : 0;
+    for (int y = 0; y < SH_H; y++) {
+        int cy = ry0 + y; if (cy < top || cy < 0 || cy >= LILI_LOG_H) continue;
+        for (int x = 0; x < SH_W; x++) {
+            int cx = rx0 + x, lv = s_shade[y * SH_W + x];
+            if (!lv || cx < 0 || cx >= LILI_LOG_W || !lut[lv]) continue;
+            uint8_t *d = &r->px[cy * LILI_LOG_W + cx]; *d = lut[lv][*d];
+        }
+    }
+    (void)oy;
+}
+
+/* a bowl in Lili's eating / drinking frames: the room's own bowl steps aside while she uses it */
+static bool prop_in_use(const world_t *w, uint16_t img) {
+    for (int a = 0; a < MAX_ACTORS; a++) {
+        const actor_t *ac = &w->actors[a];
+        if (!ac->present || ac->view != VIEW_ROOM) continue;
+        if ((img == IMG_BOWL_FOOD && ac->anim == ANIM_EAT_DRINK) || (img == IMG_BOWL_WATER && ac->anim == ANIM_DRINK)) return true;
+    }
+    return false;
+}
+
+static void painted_actor(const world_t *w, render8_t *r, const actor_t *a) {
+    sprite_set_t set; sprite_frame_t fr;
+    if (a->anim && pak_sprite_set(s_pak, a->anim, &set)) {
+        int frame = (int)(a->anim_t * set.fps);
+        if (!set.loop && frame >= set.n_frames) frame = set.n_frames - 1;
+        if (pak_frame(&set, a->dir, frame, &fr)) {
+            actor_shadow(w, r, a, &set, &fr);
+            pak_blit(r, &set, &fr, (int)a->x, (int)(a->y - a->z));
+            return;
+        }
+    }
+    draw_actor(r, a);
+}
+
+static void painted_fg(const world_t *w, render8_t *r) {
+    enum { MAXD = 8 }; int16_t key[MAXD]; int8_t who[MAXD]; int n = 0;   /* who: prop slot, or -1 - actor */
+    pak_image_t props[3]; int np = 0;
+    if (w->view == VIEW_ROOM) {
+        static const uint16_t P[3] = { IMG_VASE, IMG_BOWL_FOOD, IMG_BOWL_WATER };
+        /* at a bowl she stands beside the other one (the two sit side by side, her frames face west):
+           that one goes under her instead of over her legs */
+        const bool at_bowls = prop_in_use(w, IMG_BOWL_FOOD) || prop_in_use(w, IMG_BOWL_WATER);
+        for (int i = 0; i < 3; i++)
+            if (!prop_in_use(w, P[i]) && pak_image(s_pak, P[i], &props[np])) {
+                key[n] = at_bowls && P[i] != IMG_VASE ? (int16_t)-1 : props[np].sort_y; who[n++] = (int8_t)np; np++;
+            }
+    }
+    for (int a = 0; a < MAX_ACTORS && n < MAXD; a++)
+        if (w->actors[a].present && w->actors[a].view == w->view) { key[n] = (int16_t)w->actors[a].y; who[n++] = (int8_t)(-1 - a); }
+    for (int i = 1; i < n; i++)
+        for (int j = i; j > 0 && key[j - 1] > key[j]; j--) {
+            int16_t tk = key[j]; key[j] = key[j - 1]; key[j - 1] = tk;
+            int8_t tw = who[j]; who[j] = who[j - 1]; who[j - 1] = tw;
+        }
+    for (int i = 0; i < n; i++) {
+        if (who[i] >= 0) pak_image_blit(r, &props[who[i]]);
+        else painted_actor(w, r, &w->actors[-1 - who[i]]);
+    }
+}
+
+uint32_t world_bg_key(const world_t *w) {               /* placeholder: the view only; painted: view, season and daypart */
+    if (!world_painted()) return (uint32_t)w->view + 1;
+    return 0x100u | (uint32_t)w->view | (uint32_t)world_season(w) << 2 | (uint32_t)world_daypart(w) << 4;
+}
 
 void world_render_bg(const world_t *w, render8_t *r) {
+    if (world_painted()) { painted_bg(w, r); return; }
     const map_t *m = world_map(w, w->view);
     r8_clear(r, pal_ramp(m->floor_ramp, 5));
     r8_fill(r, 0, 0, LILI_LOG_W, m->wall_bottom, pal_ramp(m->wall_ramp, 4));
@@ -148,6 +306,7 @@ void world_render_cached(const world_t *w, render8_t *r, bgcache_t *c) {
 void world_render(const world_t *w, render8_t *r) { world_render_bg(w, r); world_render_fg(w, r); }
 
 void world_render_fg(const world_t *w, render8_t *r) {
+    if (world_painted()) { painted_fg(w, r); return; }
     const map_t *m = world_map(w, w->view);
     /* the Y-sort (spec 7.2 step 3, 8.5): the flat props are already in the static layer; everything else
        by its front edge, so a prop in front of Lili covers her and one behind her is covered. Fixed arrays, no malloc. */
