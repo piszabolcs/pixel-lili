@@ -1,0 +1,24 @@
+{
+  "_note": "The approved 2D Lili poses (docs/art/Lilik, 2026-10-23) and what each is. tools/sprite_clean.py reads this. dir is the game's dir8_t name (S = towards the viewer); her RIGHT ear droops (D-03), never mirrored. part = the dog's index from the left in a montage. Missing directions so far: NW, E (need new source images).",
+  "_scale": { "png_ref": "sit_S", "png_ref_height": 82, "montage_ref": "happy_sit_S", "montage_ref_ratio": 1.0 },
+  "poses": [
+    { "id": "stand_S",      "file": "Lili(9).png", "dir": "S",  "use": "idle_stand" },
+    { "id": "stand_SW",     "file": "Lili(8).png", "dir": "SW", "use": "idle_stand" },
+    { "id": "stand_W",      "file": "Lili(7).png", "dir": "W",  "use": "idle_stand" },
+    { "id": "stand_N",      "file": "Lili(6).png", "dir": "N",  "use": "idle_stand" },
+    { "id": "stand_NE",     "file": "Lili(5).png", "dir": "NE", "use": "idle_stand" },
+    { "id": "stand_SE",     "file": "Lili(4).png", "dir": "SE", "use": "idle_stand" },
+    { "id": "walk_SE",      "file": "Lili.png",    "dir": "SE", "use": "walk" },
+    { "id": "happy_SW",     "file": "Lili(1).png", "dir": "SW", "use": "pant_smile" },
+    { "id": "sit_S",        "file": "Lili(3).png", "dir": "S",  "use": "idle_sit" },
+    { "id": "sleep",        "file": "Lili(2).png", "dir": "SW", "use": "sleep_curl" },
+    { "id": "drink_W",      "file": "drink_playful_happy_look.jpg", "part": 0, "dir": "W",  "use": "eat_drink" },
+    { "id": "playbow_SW",   "file": "drink_playful_happy_look.jpg", "part": 1, "dir": "SW", "use": "play_bow" },
+    { "id": "happy_sit_S",  "file": "drink_playful_happy_look.jpg", "part": 2, "dir": "S",  "use": "pant_smile" },
+    { "id": "look_sit_S",   "file": "drink_playful_happy_look.jpg", "part": 3, "dir": "S",  "use": "head_tilt" },
+    { "id": "eat_W",        "file": "eat_playful_sad_talk.jpg", "part": 0, "dir": "W",  "use": "eat_drink" },
+    { "id": "playbow_SW_2", "file": "eat_playful_sad_talk.jpg", "part": 1, "dir": "SW", "use": "play_bow" },
+    { "id": "sad_sit_S",    "file": "eat_playful_sad_talk.jpg", "part": 2, "dir": "S",  "use": "sad" },
+    { "id": "talk_sit_S",   "file": "eat_playful_sad_talk.jpg", "part": 3, "dir": "S",  "use": "bark" }
+  ]
+}

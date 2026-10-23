@@ -244,6 +244,15 @@ Hiba: a Bend modifier a fület a szélessége mentén tekerte fel. Gyökérok: a
 
 Fogalmak: csúcsforgatás tengely körül (Matrix.Rotation), lágy gerinc (súlyozott hajtás)
 
+## 2026-10-23 | 2D vonal, 0. lépés: a Lili-képek élesítése
+Készült: `tools/sprite_clean.py` és `assets/sprites/lili_src/poses.json`: 18 póz (10 PNG + 2 montázsból 8) 96 px-es, indexelt PNG sprite-tá, átlátszó háttérrel, Lili saját 40 színével; összevető lap: `docs/img/lili_src_compare.png`.
+
+Döntés: nem vektorizálunk és nem AI-felskálázunk; a pixel art élességét az adja, hogy minden pixel egy rácson ül, kevés színnel és kemény széllel. A forrás valódi pixelméretét Fourier-módszerrel mértem (az élek ismétlődésének periódusa).
+
+Hiba: az első kör színei fakók és rózsaszínesek lettek. Gyökérok: a játék mester-palettájára képeztem, aminek a bundarámpája a szobaképről mért, árnyékban kékre hajló színekből áll. Javítás: Lili saját palettája a pózokból, a 256-os paletta üres helyein. A kontúr először szürke lett, mert a JPG-montázsok széle a bézzsel keveredett; csak a valódi alfájú PNG-k szélét mérem.
+
+Fogalmak: periódusmérés Fourier-transzformációval, elárasztásos háttérleválasztás (flood fill), indexelt PNG
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -409,3 +418,9 @@ Fogalmak: csúcsforgatás tengely körül (Matrix.Rotation), lágy gerinc (súly
 **csúcsforgatás tengely körül:** egy ponthalmaz hajlítása úgy, hogy a kiválasztott csúcsokat egy tengely (itt a fül keresztirányú gerince) körül forgatjuk egy forgatási mátrixszal; a gerinc alatti csúcsok a helyükön maradnak.
 
 **lágy gerinc (súlyozott hajtás):** a forgatás szöge a gerinctől távolodva 0-ról teljesre nő (itt negyed fülmagasságon át), így nem éles törés, hanem ívelt hajlat lesz; a Subdivision tovább simítja.
+
+**periódusmérés Fourier-transzformációval:** a kép oszloponkénti él-erősségét egy jelnek tekintjük; ha a rajz pixelei p képpontonként ismétlődnek, a jel 1/p frekvencián erős. A legerősebb frekvencia adja a pixelméretet (itt 1,17 és 4,27), a fázisa a rács eltolását.
+
+**elárasztásos háttérleválasztás (flood fill):** a kép széléről indulva, szomszédról szomszédra terjedve jelöljük háttérnek a háttérszínhez hasonló pixeleket. A kutya sötét kontúrja megállítja, ezért a világos mellkas akkor sem tűnik el, ha a színe közel van a háttérhez.
+
+**indexelt PNG:** a pixel nem színt, hanem egy palettaindexet tárol (mint a játék 8 bites vászna); a 0-s index átlátszó. Így a sprite pontosan a játék palettájának színeit használja.

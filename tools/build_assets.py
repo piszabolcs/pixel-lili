@@ -13,6 +13,7 @@ import argparse, os, subprocess, sys, time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PY = sys.executable
 STEPS = ["palette", "scene", "model", "render", "pixelize", "pack"]
+DEFAULT_SKIP = {"model"}     # lili.blend is shaped by hand in the live Blender since 2026-10-21 (docs/decisions.md): the script only builds a fresh base on request (--from model or --with-model)
 
 def run(label, cmd):
     t = time.time()
@@ -24,8 +25,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--from", dest="start", choices=STEPS, default="palette")
     ap.add_argument("--anim", default="all")
+    ap.add_argument("--with-model", action="store_true", help="rebuild lili.blend from lili_model.py (overwrites the hand-shaped model!)")
     a = ap.parse_args()
-    todo = STEPS[STEPS.index(a.start):]
+    todo = [st for st in STEPS[STEPS.index(a.start):] if st not in DEFAULT_SKIP or a.with_model or a.start == "model"]
     if "palette" in todo:
         run("palette from the concept art", [PY, "tools/palette_from_photos.py"])
         run("palette_gen.c", [PY, "tools/gen_palette.py"])
