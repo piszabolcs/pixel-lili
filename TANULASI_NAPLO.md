@@ -262,6 +262,16 @@ Hiba: a megnyitás és a mentés a Windows fájlablakát dobta fel, amit innen n
 
 Fogalmak: postMessage (ablakok közti üzenet), egyidejű feladatkorlát (queue)
 
+## 2026-10-23 | 2D vonal, 2. lépés: hátterek rétegekre bontva
+Készült: `tools/bg_prepare.py`: a gazdi 5 háttere (szoba, udvar 4 évszak) a valódi 400-as rácsukon, az ajtóüvegek átlátszóak (mögöttük az évszak udvara), a tálak, a pelenka és a váza külön elemek, a padló alattuk kitöltve; előnézet árnyékkal, napfolttal, éjjeli tónussal (`docs/img/bg/`).
+
+Döntés: az árnyék és a fény futás közben számolódik (remap tábla), nem a képen van, mert a napszakkal változik; ami nem változik (a fák árnyéka az udvaron), az maradhat a képen.
+
+Hiba 1: a padló kitöltésénél a sorok másolása rácsmintát adott. Gyökérok: a deszkavégek vízszintes vonalai minden ismétlésnél ugyanabban a sorban jelentek meg. Javítás: oszloponként a deszka saját színe (medián), elölről hátra átmenettel.
+Hiba 2: a tárgyak maszkja az egész téglalap lett. Gyökérok: a `floodfill` egy `fromarray`-jel készült képen nem módosított semmit (a kép a tömb memóriáját használta), ezért minden háttérpixel "lyuknak" számított. Javítás: `.copy()`. A váza terrakottája padlószínű (mérve 20-67 eltérés), ezért a teste kézzel rajzolt sokszöggel van kivágva.
+
+Fogalmak: morfológiai nyitás és zárás, lyukkitöltés elárasztással, medián
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
