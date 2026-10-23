@@ -1,0 +1,47 @@
+{
+ "anim": "sleep_curl",
+ "id": 18,
+ "fps": 3,
+ "loop": true,
+ "dirs": [
+  1
+ ],
+ "frames": 4,
+ "cell": 96,
+ "scale": 1,
+ "pivot": [
+  48,
+  90
+ ],
+ "files": [
+  {
+   "dir": 1,
+   "frame": 0,
+   "file": "d1_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 1,
+   "file": "d1_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 2,
+   "file": "d1_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 3,
+   "file": "d1_f3.png",
+   "mouth": null,
+   "head": null
+  }
+ ],
+ "source": "tools/pixellab_to_sprites.py (sleep_curl_SW_v2)"
+}

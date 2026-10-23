@@ -4,8 +4,10 @@
     py -3.12 tools/pixellab_to_sprites.py
 
 assets/pixellab/<tag>_sheet.png (one row of 96 px frames: the source pose twice, then the generated ones) ->
-assets/sprites/lili/<anim>/d<dir>_f<i>.png (indexed, Lili's 40 colours in slots 144-183, 0 = transparent)
-+ manifest.json, which tools/pack_assets.py packs. The generated frames only: the source pose differs a
+assets/sprites/lili_96/<anim>/d<dir>_f<i>.png, the full-size masters (indexed, Lili's 40 colours in slots
+144-183, 0 = transparent), and from them the game's two sizes, which tools/pack_assets.py packs:
+assets/sprites/lili/<anim>/ the room's 72 px set (0.75, the owner picked it on 2026-10-23: at 96 px she looked
+too cartoonish) and assets/sprites/lili_yard/<anim>/ the yard's 60 px set (0.625), each with a manifest.json. The generated frames only: the source pose differs a
 little (the ear lifts while walking), so it would pop once per loop. PixelLab kept Lili's palette (measured:
 95 % of the pixels are exactly one of her 40 colours), so the mapping is nearest-colour in Oklab.
 The directions PixelLab did not make yet fall back to the nearest one in the game (pak_frame).
@@ -38,9 +40,10 @@ ANIMS = {
     "drink":          (28, 8,  True,  {"W": "drink_W"}),
 }
 BREATH = (0, 0, 1, 1, 1, 1, 0, 0)        # idle_stand's other directions: the old 6-frame breath stretched to 8
-# outdoors she is smaller: the yard paintings are drawn at a smaller scale than the room (the owner: half the
-# bench, a third of the tree is too big); 0.625 makes a 60 px cell, pivot (30, 56). Anim id + YARD_OFFSET.
-YARD_SCALE, YARD_CELL, YARD_PIVOT, YARD_OFFSET = 0.625, 60, (30, 56), 100
+# the game's sizes, scaled from the 96 px masters: the room 0.75 (a 72 px cell, pivot (36, 68)), the yard 0.625
+# (60 px, pivot (30, 56): its paintings are drawn smaller; the owner: half the bench, a third of the tree was
+# too big). The yard's sets are anim id + 100 (pack_assets.py YARD_OFFSET).
+SIZES = (("lili", 0.75, 72, (36, 68), 0), ("lili_yard", 0.625, 60, (30, 56), 100))
 
 def grounded(idx, pivot_y):
     """the lowest paw on the row above the pivot: PixelLab's frames sit 1-6 px higher in some walk and trot
@@ -54,17 +57,17 @@ def grounded(idx, pivot_y):
     else: out[:dy] = idx[-dy:]
     return out
 
-def yard_frame(idx, full_rgb, pal_lab, outline):
-    """the 96 px frame down to the yard's 60 px: each output pixel the most common of the source colours it
+def scaled_frame(idx, full_rgb, pal_lab, outline, scale, size, pivot):
+    """the 96 px frame down to a game size: each output pixel the most common of the source colours it
     covers (crisp, no new colours), the outline redrawn, grounded again"""
     rgba = np.zeros(idx.shape + (4,), np.uint8)
     rgba[..., :3] = np.array(full_rgb, np.uint8)[idx]; rgba[..., 3] = np.where(idx > 0, 255, 0)
-    small = sc.resample(rgba, 1 / YARD_SCALE, pal_lab, np.arange(SLOT, SLOT + 40))
+    small = sc.resample(rgba, 1 / scale, pal_lab, np.arange(SLOT, SLOT + 40))
     small = sc.clean_outline(small, pal_lab, outline)
-    cell = np.zeros((YARD_CELL, YARD_CELL), np.uint8)
-    h, w = min(YARD_CELL, small.shape[0]), min(YARD_CELL, small.shape[1])
+    cell = np.zeros((size, size), np.uint8)
+    h, w = min(size, small.shape[0]), min(size, small.shape[1])
     cell[:h, :w] = small[:h, :w]
-    return grounded(cell, YARD_PIVOT[1])
+    return grounded(cell, pivot[1])
 
 def palette():
     master = json.load(open(os.path.join(ROOT, "assets", "palettes", "master.json"), encoding="utf-8"))["rgb"]
@@ -109,7 +112,7 @@ def main():
     lili_lab = rgb_to_oklab(lili)
     pal_lab = rgb_to_oklab(np.array(full, float))
     for anim, (aid, fps, loop, src) in ANIMS.items():
-        d = os.path.join(ROOT, "assets", "sprites", "lili", anim)
+        d = os.path.join(ROOT, "assets", "sprites", "lili_96", anim)
         old_breath = {}
         if anim == "idle_stand" and os.path.exists(os.path.join(d, "manifest.json")):
             man = json.load(open(os.path.join(d, "manifest.json"), encoding="utf-8"))
@@ -129,10 +132,10 @@ def main():
                 b = f != 0; p = np.pad(b, 1)
                 edge.append(f[b & ~(p[:-2, 1:-1] & p[2:, 1:-1] & p[1:-1, :-2] & p[1:-1, 2:])])
         outline = int(np.bincount(np.concatenate(edge)).argmax())
-        yard = {di: [yard_frame(f, full, pal_lab, outline) for f in s] for di, s in seqs.items()}
-        write_set(os.path.join(ROOT, "assets", "sprites", "lili_yard", anim), anim, aid + YARD_OFFSET, fps, loop, yard, n,
-                  YARD_CELL, YARD_PIVOT, full, src)
-        print(f"{anim:15s} id {aid:2d}: {n} frames x dirs {[DIRS[k] for k in sorted(seqs)]} (+ the yard's {YARD_CELL} px set, id {aid + YARD_OFFSET})")
+        for sub, scale, size, pivot, off in SIZES:
+            small = {di: [scaled_frame(f, full, pal_lab, outline, scale, size, pivot) for f in s] for di, s in seqs.items()}
+            write_set(os.path.join(ROOT, "assets", "sprites", sub, anim), anim, aid + off, fps, loop, small, n, size, pivot, full, src)
+        print(f"{anim:15s} id {aid:2d}: {n} frames x dirs {[DIRS[k] for k in sorted(seqs)]} (96 px master; the room's 72 px, the yard's 60 px, id {aid + 100})")
     cat = {"_note": "The animation catalogue (spec 7.4): id = the A-number (drink 28 is new: the spec's A17 eat_drink was split, "
                     "PixelLab made eating and drinking apart), fps, dirs (the ones that exist, the rest fall back to the nearest), loop. "
                     "The sprites come from tools/pixellab_to_sprites.py (2026-10-23); tools/pack_assets.py generates common/asset_ids.h from this file."}
@@ -140,7 +143,7 @@ def main():
         dirs = list(src) if anim != "idle_stand" else ["S", "SW", "W", "N", "NE", "SE"]
         cat[anim] = {"id": aid, "frames": 4 if anim == "sleep_curl" else 8, "fps": fps, "dirs": dirs, "loop": loop}
     json.dump(cat, open(os.path.join(ROOT, "assets", "anims.json"), "w", encoding="utf-8"), indent=1)
-    print("-> assets/sprites/lili/*, assets/anims.json")
+    print("-> assets/sprites/lili_96/* (masters), lili/* (room), lili_yard/* (yard), assets/anims.json")
 
 if __name__ == "__main__":
     main()

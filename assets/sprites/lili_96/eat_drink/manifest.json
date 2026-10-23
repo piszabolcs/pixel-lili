@@ -1,0 +1,75 @@
+{
+ "anim": "eat_drink",
+ "id": 17,
+ "fps": 8,
+ "loop": true,
+ "dirs": [
+  2
+ ],
+ "frames": 8,
+ "cell": 96,
+ "scale": 1,
+ "pivot": [
+  48,
+  90
+ ],
+ "files": [
+  {
+   "dir": 2,
+   "frame": 0,
+   "file": "d2_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 1,
+   "file": "d2_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 2,
+   "file": "d2_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 3,
+   "file": "d2_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 4,
+   "file": "d2_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 5,
+   "file": "d2_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 6,
+   "file": "d2_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 7,
+   "file": "d2_f7.png",
+   "mouth": null,
+   "head": null
+  }
+ ],
+ "source": "tools/pixellab_to_sprites.py (eat_W)"
+}

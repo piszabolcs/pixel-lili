@@ -300,6 +300,17 @@ static void painted_actor(const world_t *w, render8_t *r, const actor_t *a) {
     draw_actor(r, a);
 }
 
+/* a bowl in Lili's eating / drinking frames: the room's own bowl steps aside while she uses it, so her head
+   is in the bowl her frames carry (the room's bowl in front of her hid her head: the owner, 2026-10-23) */
+static bool prop_in_use(const world_t *w, uint16_t img) {
+    for (int a = 0; a < MAX_ACTORS; a++) {
+        const actor_t *ac = &w->actors[a];
+        if (!ac->present || ac->view != VIEW_ROOM) continue;
+        if ((img == IMG_BOWL_FOOD && ac->anim == ANIM_EAT_DRINK) || (img == IMG_BOWL_WATER && ac->anim == ANIM_DRINK)) return true;
+    }
+    return false;
+}
+
 static void painted_fg(const world_t *w, render8_t *r) {
     enum { MAXD = 16 }; int16_t key[MAXD]; int8_t who[MAXD]; int n = 0;  /* who: prop slot, or -1 - actor */
     pak_image_t props[IMG_COVERS_PER_SEASON + 3]; int np = 0;
@@ -307,11 +318,10 @@ static void painted_fg(const world_t *w, render8_t *r) {
         for (int k = 0; k < IMG_COVERS_PER_SEASON && np < IMG_COVERS_PER_SEASON; k++)
             if (pak_image(s_pak, IMG_COVER(world_season(w), k), &props[np])) { key[n] = props[np].sort_y; who[n++] = (int8_t)np; np++; }
     if (w->view == VIEW_ROOM) {
-        /* the bowls stand apart (tools/bg_build.py PROP_MOVE) so she has room beside each; while she eats or
-           drinks, the room's bowl sorts in front of her and covers the one her frames carry */
+        /* the bowls stand apart (tools/bg_build.py PROP_MOVE) so she has room beside each */
         static const uint16_t P[3] = { IMG_VASE, IMG_BOWL_FOOD, IMG_BOWL_WATER };
         for (int i = 0; i < 3; i++)
-            if (pak_image(s_pak, P[i], &props[np])) { key[n] = props[np].sort_y; who[n++] = (int8_t)np; np++; }
+            if (!prop_in_use(w, P[i]) && pak_image(s_pak, P[i], &props[np])) { key[n] = props[np].sort_y; who[n++] = (int8_t)np; np++; }
     }
     for (int a = 0; a < MAX_ACTORS && n < MAXD; a++)
         if (w->actors[a].present && w->actors[a].view == w->view) { key[n] = (int16_t)w->actors[a].y; who[n++] = (int8_t)(-1 - a); }

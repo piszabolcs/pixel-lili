@@ -290,6 +290,17 @@ Hiba: a v2-t (a hátsó lábát emelgette) jóváhagyás nélkül építettem be
 
 Fogalmak: régióátfedés (IoU), forráskocka kihagyása a ciklusból
 
+## 2026-10-23 | 2D vonal, 5. lépés: kisebb szobai Lili, tálak, demó a panelen
+Készült: a szobában 72 px-es Lili (a 96 px-es kockák mesterként maradnak), a tálaknál újra a kockák saját tálja látszik, a két tál között séta; a demó a `common/lili/lili_demo.c`-ben, a pak a firmware-be linkelve, a panelre flashelve (32-33 fps).
+
+Döntés: a pak nem külön partícióba, hanem az app képébe kerül (`target_add_binary_data`). Így nincs új partíciós tábla és külön flash-lépés, a pocket-tank modellpartíciója érintetlen marad, és a flashből a gyorsítótáron át közvetlenül olvasható. Ára: minden flasheléskor a pak is újra felmegy (1,5 MB, pár másodperc), és az app-hely 2,5 MB-ra korlátozza (most 33 % szabad).
+
+Hiba: a tálak széthúzásakor a szoba tálját Lili elé rendeztem, ezért eltakarta a fejét. Gyökérok: a Y-rendezést a tálra javítottam, de nem néztem meg, hogy evés közben a fej a kockák tálján belül van. Javítás: a használt tál félrelép, és egy teszt ellenőrzi, hogy a tál területén Lili minden pixele látszik.
+
+Hiba: a demó a tál melletti pontokat nem érte el (446-nál megállt 451 helyett). Gyökérok: az útkeresés 12 px-es falközt tart, a padló alja ennél közelebb van. Javítás: a falköz csak útközben számít, a célpontnak elég padlón lennie.
+
+Fogalmak: bináris beágyazás (EMBED), XIP (flashből futás/olvasás), mesterpéldány és származtatott méretek
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -465,3 +476,9 @@ Fogalmak: régióátfedés (IoU), forráskocka kihagyása a ciklusból
 **régióátfedés (IoU, intersection over union):** két kép ugyanazon területén a nem átlátszó pixelek metszete osztva az uniójukkal; 1,0 = pontosan ugyanott van minden pixel. A mancsok területére kockánként kiszámolva megmutatja, mozdul-e a láb (a meghajlásnál a hátsó mancsoké 0,94-0,99 maradt: csak a test széle rezdül).
 
 **forráskocka kihagyása:** a PixelLab sheet elején kétszer ott a kiinduló póz, a generált kockák ehhez képest kicsit elcsúsznak (itt 2 px-szel feljebb van a talp). Ciklusban ez egy ugrás lenne körönként, ezért csak a generált 8 kocka megy körbe; az utolsó és az első generált szinte egyforma, így a kör folytonos.
+
+**bináris beágyazás (target_add_binary_data):** az ESP-IDF a megadott fájlt a firmware írásvédett adatai közé linkeli, és két szimbólumot ad hozzá (`_binary_assets_pak_start`, `_end`). A program úgy látja, mint egy közönséges tömböt a memóriában.
+
+**XIP (execute in place):** az ESP32-S3 a külső flash-t egy gyorsítótáron át a címtérbe képezi le, így a kód és az adat onnan közvetlenül olvasható, nem kell RAM-ba másolni. A pak 1,5 MB-ja ezért nem foglal RAM-ot; ami gyakran kell (a háttér), azt a PSRAM-os statikus réteg tárolja.
+
+**mesterpéldány és származtatott méretek:** a legnagyobb, minőségi változat (itt a 96 px-es kocka) a forrás, a kisebbek (72 és 60 px) mindig ebből készülnek újra. Így egy méretváltás csak egy szám átírása, és nem romlik a minőség az ismételt kicsinyítéstől.

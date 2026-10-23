@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Pixel Lili: 2D puppet animation on the cleaned sprites (2026-10-23, the 2D line, round 1).
 
-    py -3.12 tools/animate2d.py            assets/sprites/lili_src/*.png -> assets/sprites/lili/<anim>/ + docs/img/anim/<anim>.gif
+    py -3.12 tools/animate2d.py            assets/sprites/lili_src/*.png -> assets/sprites/lili_96/<anim>/ + docs/img/anim/<anim>.gif
 
 Only motions that need no hand-drawn masks, so nothing tears:
   breathing  everything above a chest line moves up by 0-1 px, the line's row stretches into the gap,
@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 from palette_from_photos import rgb_to_oklab
 
 SRC = os.path.join(ROOT, "assets", "sprites", "lili_src")
-OUT = os.path.join(ROOT, "assets", "sprites", "lili")
+OUT = os.path.join(ROOT, "assets", "sprites", "lili_96")       # the full-size masters: tools/pixellab_to_sprites.py scales them for the game
 DIRS = ("S", "SW", "W", "NW", "N", "NE", "E", "SE")              # common/lili/lili_types.h dir8_t
 CELL, PIVOT = 96, (48, 90)
 

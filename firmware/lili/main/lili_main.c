@@ -3,7 +3,9 @@
  * The same common/lili core the simulator runs: world_tick, world_render into the 480 x 480 (native since M3.4)
  * byte canvas (PSRAM), then the panel's stripes are made straight into the DMA buffer:
  * 2x LUT flush, the glass mask, the byte swap. No RGB565 frame buffer exists.
- * Keys (the stand-in for the finger until M4): KEY3 = room <-> yard, BOOT = next season. */
+ * The painted world (2026-10-23): the pack (assets/build/assets.pak) is linked into the app image and read in
+ * place from flash; the demo tour (common/lili/lili_demo.c, the simulator's script) runs from power-on.
+ * Keys (the stand-in for the finger until M4): BOOT = the tour on / off, KEY3 = room <-> yard (stops the tour). */
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -21,6 +23,8 @@
 #include "palette.h"
 #include "mask.h"
 #include "events.h"
+#include "pak.h"
+#include "lili_demo.h"
 
 static const char *TAG = "lili";
 #define PIN_BOOT 0
@@ -31,6 +35,10 @@ static render8_t *s_r8;                        /* PSRAM: 57 600 B canvas + the L
 static mask_t    *s_mask;                      /* PSRAM: the glass's quadrant table */
 static bgcache_t *s_bg;                        /* PSRAM: the static layer (floor, wall, flat props), drawn once per view */
 static ev_queue_t s_q;
+static pak_t     s_pak;                        /* the pack, in place in the app image (flash, through the cache) */
+static demo_scratch_t *s_demo;                 /* PSRAM: the tour's path search (86 KB) */
+extern const uint8_t s_pak_start[] asm("_binary_assets_pak_start");
+extern const uint8_t s_pak_end[]   asm("_binary_assets_pak_end");
 static int64_t   s_fill_us;                    /* time spent making stripes (this window) */
 
 static void *psram(size_t n) { return heap_caps_aligned_alloc(64, (n + 63) & ~(size_t)63, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
@@ -53,8 +61,8 @@ static void keys_init(void) {
 static void keys_poll(void) {                  /* a press = one event on the falling edge */
     static int prev_boot = 1, prev_key3 = 1;
     int boot = gpio_get_level(PIN_BOOT), key3 = gpio_get_level(PIN_KEY3);
-    if (prev_key3 && !key3) ev_push(&s_q, EV_SWITCH_VIEW, 0, 0);
-    if (prev_boot && !boot) ev_push(&s_q, EV_SET_SEASON, (s_world.season_force + 1) & 3, 0);
+    if (prev_key3 && !key3) { demo_stop(); ev_push(&s_q, EV_SWITCH_VIEW, 0, 0); }   /* the tour's spots belong to its own view */
+    if (prev_boot && !boot) { if (demo_active()) demo_stop(); else demo_start(); }
     prev_boot = boot; prev_key3 = key3;
 }
 
@@ -64,13 +72,19 @@ void app_main(void) {
     esp_err_t e = nvs_flash_init();
     if (e == ESP_ERR_NVS_NO_FREE_PAGES || e == ESP_ERR_NVS_NEW_VERSION_FOUND) { nvs_flash_erase(); nvs_flash_init(); }
     keys_init();
-    s_r8 = psram(sizeof *s_r8); s_mask = psram(sizeof *s_mask); s_bg = psram(sizeof *s_bg);
-    if (!s_r8 || !s_mask || !s_bg) { ESP_LOGE(TAG, "no PSRAM for the canvas"); return; }
+    s_r8 = psram(sizeof *s_r8); s_mask = psram(sizeof *s_mask); s_bg = psram(sizeof *s_bg); s_demo = psram(sizeof *s_demo);
+    if (!s_r8 || !s_mask || !s_bg || !s_demo) { ESP_LOGE(TAG, "no PSRAM for the canvas"); return; }
     if (!display_port_init()) ESP_LOGE(TAG, "no display: the board was not told");
-    uint8_t pal[256][3]; pal_master(pal); r8_set_palette(s_r8, pal);      /* M3.2: the approved master palette */
+    int64_t tp = esp_timer_get_time();
+    if (pak_open(&s_pak, s_pak_start, (uint32_t)(s_pak_end - s_pak_start))) world_set_pak(&s_pak);   /* the CRC over it: once, here */
+    ESP_LOGI(TAG, "pak: %u B, %d entries, %s (%lld ms)", (unsigned)(s_pak_end - s_pak_start), s_pak.n, s_pak.data ? "ok" : "REFUSED: placeholder graphics",
+             (long long)((esp_timer_get_time() - tp) / 1000));
+    uint8_t pal[256][3]; if (!pak_palette(&s_pak, pal)) pal_master(pal); r8_set_palette(s_r8, pal);   /* the painted views set their own */
     mask_init(s_mask);
     world_init(&s_world, esp_random());
     ev_init(&s_q);
+    demo_init(s_demo);
+    if (s_pak.data) demo_start();
     memset(s_bg, 0, sizeof *s_bg);
     ESP_LOGI(TAG, "up: world %u B, canvas %u B, mask %u B, static-layer cache %u B | internal heap %u KB free", (unsigned)sizeof s_world, (unsigned)sizeof *s_r8, (unsigned)sizeof *s_mask, (unsigned)sizeof *s_bg,
              (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024);
@@ -83,6 +97,7 @@ void app_main(void) {
         if (dt > 0.1f) dt = 0.1f;
         keys_poll();
         ev_t ev; while (ev_pop(&s_q, &ev)) { ESP_LOGI(TAG, "event %s %d %d", ev_name((ev_type_t)ev.type), ev.a, ev.b); world_handle_event(&s_world, &ev); }
+        demo_tick(&s_world, dt);
         world_tick(&s_world, dt);
         int64_t t1 = esp_timer_get_time();
         world_render_cached(&s_world, s_r8, s_bg);
