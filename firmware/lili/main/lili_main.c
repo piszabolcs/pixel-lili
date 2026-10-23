@@ -29,6 +29,11 @@
 static const char *TAG = "lili";
 #define PIN_BOOT 0
 #define PIN_KEY3 S_PIN_KEY3                    /* 18, pull-up on the board, low when pressed */
+/* which way is up (the panel's MADCTL, display_port_set_madctl): the pocket-tank's 0xA0 is upright with the USB at
+   the foot; the owner (2026-10-23) wants the picture turned 90 degrees anticlockwise from that, so the cable leaves
+   at the side and the box lies flat. 0xC0 by the DCS reading (MV|MY = 90 anticlockwise from the panel's own, MX|MY = 180);
+   if a controller reads the bits the other way round, 0x00 is that turn */
+#define LILI_MADCTL 0xC0
 
 static world_t   s_world;
 static render8_t *s_r8;                        /* PSRAM: 57 600 B canvas + the LUT */
@@ -75,6 +80,7 @@ void app_main(void) {
     s_r8 = psram(sizeof *s_r8); s_mask = psram(sizeof *s_mask); s_bg = psram(sizeof *s_bg); s_demo = psram(sizeof *s_demo);
     if (!s_r8 || !s_mask || !s_bg || !s_demo) { ESP_LOGE(TAG, "no PSRAM for the canvas"); return; }
     if (!display_port_init()) ESP_LOGE(TAG, "no display: the board was not told");
+    display_port_set_madctl(LILI_MADCTL);      /* the hardware turns the picture: no cost per frame (the glass mask is the same in all four corners) */
     int64_t tp = esp_timer_get_time();
     if (pak_open(&s_pak, s_pak_start, (uint32_t)(s_pak_end - s_pak_start))) world_set_pak(&s_pak);   /* the CRC over it: once, here */
     ESP_LOGI(TAG, "pak: %u B, %d entries, %s (%lld ms)", (unsigned)(s_pak_end - s_pak_start), s_pak.n, s_pak.data ? "ok" : "REFUSED: placeholder graphics",
