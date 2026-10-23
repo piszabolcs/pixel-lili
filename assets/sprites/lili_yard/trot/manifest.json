@@ -1,0 +1,75 @@
+{
+ "anim": "trot",
+ "id": 105,
+ "fps": 12,
+ "loop": true,
+ "dirs": [
+  7
+ ],
+ "frames": 8,
+ "cell": 60,
+ "scale": 1,
+ "pivot": [
+  30,
+  56
+ ],
+ "files": [
+  {
+   "dir": 7,
+   "frame": 0,
+   "file": "d7_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 7,
+   "frame": 1,
+   "file": "d7_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 7,
+   "frame": 2,
+   "file": "d7_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 7,
+   "frame": 3,
+   "file": "d7_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 7,
+   "frame": 4,
+   "file": "d7_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 7,
+   "frame": 5,
+   "file": "d7_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 7,
+   "frame": 6,
+   "file": "d7_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 7,
+   "frame": 7,
+   "file": "d7_f7.png",
+   "mouth": null,
+   "head": null
+  }
+ ],
+ "source": "tools/pixellab_to_sprites.py (run_SE)"
+}

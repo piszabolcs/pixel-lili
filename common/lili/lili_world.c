@@ -206,11 +206,11 @@ static void actor_shadow(const world_t *w, render8_t *r, const actor_t *a, const
     const int W = set->cell_w, H = set->cell_h, px = (int)a->x, py = (int)(a->y - a->z);
     const int ox = px - set->pivot_x, oy = py - set->pivot_y, rx0 = px - SH_W / 2, ry0 = py - SH_UP;
     memset(s_shade, 0, sizeof s_shade);
-    int fx0 = W, fx1 = -1;                                       /* the footprint: the bottom 8 rows above the paws */
-    for (int y = set->pivot_y - 8; y < set->pivot_y && y < H; y++)
+    int fx0 = W, fx1 = -1;                                       /* the footprint: the bottom rows above the paws */
+    for (int y = set->pivot_y - 1 - set->cell_h / 12; y < set->pivot_y && y < H; y++)
         for (int x = 0; x < W; x++) if (y >= 0 && s_cell[y * W + x]) { if (x < fx0) fx0 = x; if (x > fx1) fx1 = x; }
     if (fx1 >= fx0) {
-        const float cx = ox + (fx0 + fx1) / 2.0f, rx = (fx1 - fx0) / 2.0f + 3, ry = 3 + (fx1 - fx0) / 16.0f;
+        const float cx = ox + (fx0 + fx1) / 2.0f, rx = (fx1 - fx0) / 2.0f + 3, ry = 3 + (fx1 - fx0) / 12.0f;
         for (int y = 0; y < SH_H; y++) for (int x = 0; x < SH_W; x++) {
             float dx = (rx0 + x - cx) / rx, dy = (ry0 + y - (py - 1)) / ry, d = dx * dx + dy * dy;
             if (d <= 0.55f) s_shade[y * SH_W + x] = 4; else if (d <= 1.0f) s_shade[y * SH_W + x] = 1;
@@ -218,8 +218,10 @@ static void actor_shadow(const world_t *w, render8_t *r, const actor_t *a, const
     }
     const int dp = world_daypart(w);
     if (DAYPART[dp].cast >= 0) {
-        const float s = w->view == VIEW_ROOM ? 0.6f : 0.35f;
-        const int hmax = shadow_hmax(a->anim);
+        /* 0.42 in the room (0.6 put her body's shadow so far ahead that she seemed to float over it, the owner),
+           shorter outdoors; the height cap scales with the cell (the yard's smaller sprites) */
+        const float s = w->view == VIEW_ROOM ? 0.42f : 0.3f;
+        const int hmax = shadow_hmax(a->anim) * set->cell_h / 96;
         for (int y = 0; y < set->pivot_y && y < H; y++) for (int x = 0; x < W; x++) {
             if (!s_cell[y * W + x]) continue;
             int h = set->pivot_y - y; if (h > hmax) h = hmax;
@@ -260,7 +262,9 @@ static bool prop_in_use(const world_t *w, uint16_t img) {
 
 static void painted_actor(const world_t *w, render8_t *r, const actor_t *a) {
     sprite_set_t set; sprite_frame_t fr;
-    if (a->anim && pak_sprite_set(s_pak, a->anim, &set)) {
+    /* outdoors the smaller set: the yard is painted at a smaller scale than the room (the owner, 2026-10-23) */
+    const bool small = w->view == VIEW_YARD && a->anim && pak_sprite_set(s_pak, (uint16_t)(a->anim + ANIM_YARD_OFFSET), &set);
+    if (small || (a->anim && pak_sprite_set(s_pak, a->anim, &set))) {
         int frame = (int)(a->anim_t * set.fps);
         if (!set.loop && frame >= set.n_frames) frame = set.n_frames - 1;
         if (pak_frame(&set, a->dir, frame, &fr)) {
@@ -273,8 +277,11 @@ static void painted_actor(const world_t *w, render8_t *r, const actor_t *a) {
 }
 
 static void painted_fg(const world_t *w, render8_t *r) {
-    enum { MAXD = 8 }; int16_t key[MAXD]; int8_t who[MAXD]; int n = 0;   /* who: prop slot, or -1 - actor */
-    pak_image_t props[3]; int np = 0;
+    enum { MAXD = 16 }; int16_t key[MAXD]; int8_t who[MAXD]; int n = 0;  /* who: prop slot, or -1 - actor */
+    pak_image_t props[IMG_COVERS_PER_SEASON + 3]; int np = 0;
+    if (w->view == VIEW_YARD)                                             /* the trees, bushes and the bench she goes behind */
+        for (int k = 0; k < IMG_COVERS_PER_SEASON && np < IMG_COVERS_PER_SEASON; k++)
+            if (pak_image(s_pak, IMG_COVER(world_season(w), k), &props[np])) { key[n] = props[np].sort_y; who[n++] = (int8_t)np; np++; }
     if (w->view == VIEW_ROOM) {
         static const uint16_t P[3] = { IMG_VASE, IMG_BOWL_FOOD, IMG_BOWL_WATER };
         /* at a bowl she stands beside the other one (the two sit side by side, her frames face west):

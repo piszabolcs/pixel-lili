@@ -1,39 +1,39 @@
 {
   "name": "yard",
   "view": 1,
-  "_note": "Spec 8.3, measured from the owner's painted yard (2026-10-23, the four seasons share one layout): the fence and the big tree's crown at the back, a tree at the left with the flowerbed under it, a bush at the top and one at the right, the bench with its pots and the watering can bottom right, shrubs bottom left, the stone path down the middle to the house (off the picture: the owner, no wall needed at the bottom). Logical px (240 x 240) on the design grid.",
+  "_note": "Spec 8.3, measured from the owner's painted yard (the four seasons share one layout; its 400 grid x 0.6 = this design grid): the fence and the big tree's crown at the back, a tree at the left with the flowerbed under it, a bush at the top and one at the right, the bench with its pots and the watering can bottom right, shrubs bottom left, the stone path down the middle to the house (off the picture: the owner, no wall at the bottom). The blocked shapes are the invisible walls of the fixed things (the owner, 2026-10-23: she must not walk over the flowerbed, the bench, the pots); the two bushes are not blocked in their lower half: she hides in them (their cover layers are in tools/bg_build.py COVERS). Logical px (240 x 240).",
   "background": { "floor_ramp": "grass", "wall_ramp": "hedge", "wall_bottom": 50 },
   "floor": [[4, 56], [236, 56], [236, 236], [4, 236]],
   "blocked": [
-    { "id": "trunk_1",   "circle": [24, 165, 8] },
-    { "id": "trunk_2",   "circle": [197, 98, 9] },
-    { "id": "flowerbed", "rect": [0, 122, 82, 32] },
-    { "id": "shrubs",    "rect": [0, 176, 64, 64] },
-    { "id": "bush_r",    "rect": [202, 104, 36, 26] },
-    { "id": "bench",     "rect": [168, 168, 56, 36] },
-    { "id": "can",       "rect": [188, 206, 36, 24] }
+    { "id": "trunk_1",    "circle": [22, 162, 10] },
+    { "id": "trunk_2",    "circle": [204, 88, 12] },
+    { "id": "flowerbed",  "rect": [0, 118, 86, 38] },
+    { "id": "shrubs",     "rect": [0, 172, 56, 68] },
+    { "id": "bush_r_top", "rect": [202, 90, 38, 16] },
+    { "id": "bench",      "rect": [156, 144, 70, 64] },
+    { "id": "can_pots",   "rect": [190, 200, 50, 36] }
   ],
   "points": {
     "spot_door_yard": [118, 228, 0],
     "spot_grass":     [130, 120, 0],
-    "spot_bush_1":    [76, 190, 0],
-    "spot_bush_2":    [214, 140, 0],
-    "spot_bush_3":    [76, 72, 0],
+    "spot_bush_1":    [72, 190, 0],
+    "spot_bush_2":    [202, 123, 0],
+    "spot_bush_3":    [93, 61, 0],
     "spot_tree":      [176, 110, 0],
-    "spot_flowers":   [60, 160, 0]
+    "spot_flowers":   [60, 164, 0]
   },
   "zones": {
-    "hide_bush_1": { "rect": [64, 182, 22, 14] },
-    "hide_bush_2": { "rect": [204, 134, 24, 12] },
-    "hide_bush_3": { "rect": [64, 66, 26, 12] }
+    "hide_bush_1": { "rect": [58, 182, 22, 14] },
+    "hide_bush_2": { "rect": [206, 110, 32, 16] },
+    "hide_bush_3": { "rect": [64, 56, 30, 8] }
   },
   "props": [
-    { "id": "flowerbed", "rect": [0, 122, 82, 32],   "ramp": "flower", "height": 3 },
-    { "id": "bush_1",    "rect": [0, 172, 64, 14],   "ramp": "hedge",  "height": 18 },
-    { "id": "bush_2",    "rect": [202, 116, 36, 14], "ramp": "hedge",  "height": 18 },
-    { "id": "bush_3",    "rect": [58, 52, 36, 14],   "ramp": "hedge",  "height": 18 },
-    { "id": "tree_1",    "rect": [12, 160, 26, 8],   "ramp": "leaf",   "height": 50 },
-    { "id": "tree_2",    "rect": [184, 94, 26, 8],   "ramp": "leaf",   "height": 40 },
-    { "id": "bench",     "rect": [168, 190, 56, 14], "ramp": "wood",   "height": 12 }
+    { "id": "flowerbed", "rect": [0, 118, 86, 38],   "ramp": "flower", "height": 3 },
+    { "id": "bush_1",    "rect": [0, 172, 56, 14],   "ramp": "hedge",  "height": 18 },
+    { "id": "bush_2",    "rect": [202, 112, 36, 14], "ramp": "hedge",  "height": 18 },
+    { "id": "bush_3",    "rect": [60, 50, 36, 14],   "ramp": "hedge",  "height": 18 },
+    { "id": "tree_1",    "rect": [10, 158, 26, 8],   "ramp": "leaf",   "height": 50 },
+    { "id": "tree_2",    "rect": [190, 84, 28, 8],   "ramp": "leaf",   "height": 40 },
+    { "id": "bench",     "rect": [156, 194, 70, 14], "ramp": "wood",   "height": 12 }
   ]
 }

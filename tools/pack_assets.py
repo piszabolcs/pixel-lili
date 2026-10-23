@@ -23,12 +23,17 @@ from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 T_SPRITE_SET, T_PALETTE, T_LUT, T_IMAGE = 1, 2, 3, 7
+YARD_OFFSET = 100                                  # the yard's smaller sprite sets: anim id + 100 (tools/pixellab_to_sprites.py)
 PALS = ["master", "room", "yard_spring", "yard_summer", "yard_autumn", "yard_winter"]          # PAL_ID = position + 1
 LUTS = ["sun_strong", "sun_weak", "cast_day", "cast_eve", "shade_out", "shade_in"]             # tools/bg_build.py TABLES
 IMAGES = {"room": 1, "yard_spring": 2, "yard_summer": 3, "yard_autumn": 4, "yard_winter": 5,
           "door_spring": 6, "door_summer": 7, "door_autumn": 8, "door_winter": 9,
           "pad": 10, "vase": 11, "bowl_food": 12, "bowl_water": 13,
           "mask_sun": 20, "mask_cast": 21, "mask_shade_out": 22, "mask_shade_in": 23}
+COVERS_PER_SEASON = 8                                   # the yard's covers: id IMG_COVER_BASE + season * 8 + k (tools/bg_build.py COVERS)
+for _s, _season in enumerate(["spring", "summer", "autumn", "winter"]):
+    for _k in range(COVERS_PER_SEASON):
+        IMAGES[f"cover_{_season}_{_k}"] = 40 + _s * COVERS_PER_SEASON + _k
 
 def backgrounds():
     """the IMAGE, PALETTE and LUT entries from tools/bg_build.py (none if it has not run)"""
@@ -106,17 +111,19 @@ def main():
     entries = [(1, T_PALETTE, bytes(sum(pal, [])))]
     bg, bg_raw = backgrounds()
     entries += bg
-    sprites = os.path.join(ROOT, "assets", "sprites", "lili")
     raw_total = 0
-    for name, spec in cat.items():
-        folder = os.path.join(sprites, name)
-        if not os.path.exists(os.path.join(folder, "manifest.json")):
-            print(f"pack: {name}: no sprites yet, skipped"); continue
-        man = json.load(open(os.path.join(folder, "manifest.json"), encoding="utf-8"))
-        payload, raw = sprite_set(folder, man)
-        raw_total += raw
-        entries.append((spec["id"], T_SPRITE_SET, payload))
-        print(f"pack: {name} (id {spec['id']}): {len(man['files'])} frames, {raw} B raw -> {len(payload)} B")
+    for sub, off in (("lili", 0), ("lili_yard", YARD_OFFSET)):     # the room's 96 px sets, the yard's smaller ones (id + 100)
+        sprites = os.path.join(ROOT, "assets", "sprites", sub)
+        for name, spec in cat.items():
+            folder = os.path.join(sprites, name)
+            if not os.path.exists(os.path.join(folder, "manifest.json")):
+                print(f"pack: {sub}/{name}: no sprites yet, skipped"); continue
+            man = json.load(open(os.path.join(folder, "manifest.json"), encoding="utf-8"))
+            man["id"] = spec["id"] + off
+            payload, raw = sprite_set(folder, man)
+            raw_total += raw
+            entries.append((man["id"], T_SPRITE_SET, payload))
+            print(f"pack: {sub}/{name} (id {man['id']}): {len(man['files'])} frames, {raw} B raw -> {len(payload)} B")
     body = bytearray(); toc = bytearray(); off = 20
     for eid, et, pl in entries:
         toc += struct.pack("<HBBII", eid, et, 0, off, len(pl)); off += len(pl); body += pl
@@ -130,7 +137,10 @@ def main():
            "enum {"] + [f"    PAL_ID_{n.upper()} = {i + 1}," for i, n in enumerate(PALS)] + ["};",
            "enum {"] + [f"    LUT_{n.upper()} = {i}," for i, n in enumerate(LUTS)] + ["    LUT_COUNT", "};",
            "#define LUT_ID(pal, t) ((uint16_t)((pal) * 8 + (t)))",
-           "enum {"] + [f"    IMG_{n.upper()} = {i}," for n, i in IMAGES.items()] + ["};",
+           f"#define ANIM_YARD_OFFSET {YARD_OFFSET}   /* the yard's smaller sprite set of an animation: its id + this */",
+           "enum {"] + [f"    IMG_{n.upper()} = {i}," for n, i in IMAGES.items() if not n.startswith("cover_")] + ["};",
+           f"#define IMG_COVER(season, k) ((uint16_t)(40 + (season) * {COVERS_PER_SEASON} + (k)))   /* the yard's covers, k < {COVERS_PER_SEASON} */",
+           f"#define IMG_COVERS_PER_SEASON {COVERS_PER_SEASON}",
            "enum {"] + [f"    ANIM_{n.upper()} = {s['id']}," for n, s in cat.items()] + ["    ANIM_COUNT_LISTED", "};", "#endif", ""]
     open(os.path.join(ROOT, "common", "asset_ids.h"), "w", encoding="utf-8", newline="\n").write("\n".join(ids))
     print(f"pack: assets.pak {total} B ({len(entries)} entries, sprites {raw_total} B raw, backgrounds {bg_raw} B raw), common/asset_ids.h")

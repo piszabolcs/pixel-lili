@@ -21,7 +21,7 @@ scaled whole, so the layers stay pixel-aligned with each other.
 """
 import json, os, sys
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
@@ -37,6 +37,20 @@ TABLES = {  # name: (multiply, add) on RGB, the same numbers the preview (bg_pre
     "cast_day": (0.64, (0, 1.44, 5.04)), "cast_eve": (0.838, (0, 0.65, 2.27)),
     "shade_out": (0.80, (0, 0.8, 2.8)), "shade_in": (0.62, (0, 1.52, 5.32))}
 SEASONS = bp.SEASONS
+# the yard's covers (2026-10-23, the owner: she must go behind and into the bushes, behind the trees and the
+# bench): hand-traced on the 400 grid (the four seasons share the layout), each with the floor row it stands on
+# (its Y-sort key). Cut from each season's picture, drawn over Lili when she is behind that row.
+COVERS = [
+    ("top_bush",   [(104, 62), (118, 50), (142, 48), (156, 58), (160, 78), (156, 96), (144, 105), (116, 105), (104, 96), (100, 78)], 104),
+    ("left_tree",  [(0, 72), (30, 70), (60, 74), (95, 90), (112, 112), (120, 140), (118, 160), (108, 178), (90, 190), (55, 196), (52, 212),
+                    (50, 240), (55, 262), (60, 276), (40, 280), (15, 282), (20, 262), (22, 230), (20, 196), (0, 192)], 278),
+    ("right_tree", [(242, 40), (250, 20), (275, 6), (310, 0), (399, 0), (399, 105), (380, 112), (365, 118), (362, 135), (368, 150),
+                    (355, 156), (330, 158), (312, 150), (320, 135), (318, 118), (300, 112), (270, 108), (245, 96), (240, 70)], 156),
+    ("right_bush", [(340, 170), (352, 156), (372, 152), (392, 158), (399, 170), (399, 200), (390, 208), (360, 210), (344, 202), (336, 186)], 208),
+    ("bench",      [(262, 262), (280, 240), (300, 238), (316, 252), (372, 288), (374, 344), (366, 346), (360, 330), (336, 322), (336, 344),
+                    (328, 346), (326, 326), (290, 306), (286, 312), (262, 306)], 330),
+    ("shrubs",     [(0, 290), (20, 282), (45, 286), (70, 300), (88, 320), (92, 345), (90, 370), (80, 399), (0, 399)], 399),
+]
 
 def up(img400):
     return img400.resize((SHOW, SHOW), Image.NEAREST)
@@ -180,8 +194,16 @@ def main():
         yard = np.asarray(up(Image.open(os.path.join(BG, f"yard_{s}.png")).convert("RGB")))
         full = build_palette(yard.reshape(-1, 3), yard[160:440].reshape(-1, 3), master)
         meta["palettes"][f"yard_{s}"] = full; meta["luts"][f"yard_{s}"] = luts(full)
-        save_indexed(os.path.join(OUT, f"yard_{s}.png"), index(yard, full), full)
+        yidx = index(yard, full)
+        save_indexed(os.path.join(OUT, f"yard_{s}.png"), yidx, full)
         meta["images"].append({"name": f"yard_{s}", "file": f"yard_{s}.png", "x": 0, "y": 0, "palette": f"yard_{s}"})
+        for k, (cname, poly, base) in enumerate(COVERS):
+            m = Image.new("L", (GRID, GRID), 0); ImageDraw.Draw(m).polygon(poly, fill=255)
+            mm, x, y = mask_layer(np.asarray(m) > 0)
+            piece = np.where(mm, yidx[y:y + mm.shape[0], x:x + mm.shape[1]], 0).astype(np.uint8)
+            save_indexed(os.path.join(OUT, f"cover_{s}_{cname}.png"), piece, full)
+            meta["images"].append({"name": f"cover_{s}_{k}", "file": f"cover_{s}_{cname}.png", "x": x, "y": y,
+                                   "palette": f"yard_{s}", "sort_y": int(round(base * SHOW / GRID))})
 
     json.dump(meta, open(os.path.join(OUT, "game.json"), "w", encoding="utf-8"))
     for name, t in meta["luts"]["room"].items():                   # does each table really step away from itself?

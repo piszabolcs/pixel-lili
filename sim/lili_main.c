@@ -320,23 +320,77 @@ static const demo_step_t DEMO[] = {
     { D_SET, -1, -1, 0, 0, 0, -1, -1, 3 },                                               /* night: only the lamp's short shadows */
     { D_DO, 0, 0, ANIM_SLEEP_CURL, DIR_SW, 4.0f, -1, -1, -1 },
     { D_SET, 236, 456, 0, 0, 0, VIEW_YARD, 0, 1 },                                      /* out to the yard: spring, afternoon */
-    { D_WALK, 236, 300, 0, 0, 0, -1, -1, -1 },
-    { D_WALK, 130, 300, 0, 0, 0, -1, -1, -1 },
-    { D_DO, 0, 0, ANIM_PLAY_BOW, DIR_SW, 2.0f, -1, -1, -1 },
+    { D_WALK, 260, 300, 0, 0, 0, -1, -1, -1 },
+    { D_WALK, 404, 246, 0, 0, 0, -1, -1, -1 },                                          /* half into the right bush (spot_bush_2) */
+    { D_DO, 0, 0, ANIM_LOOK_AROUND, DIR_S, 2.6f, -1, -1, -1 },                          /* peeking out of it */
+    { D_DO, 0, 0, ANIM_IDLE_SIT_BLINK, DIR_S, 2.0f, -1, -1, -1 },
     { D_SET, -1, -1, 0, 0, 0, -1, 1, -1 },                                              /* summer */
-    { D_WALK, 130, 220, 0, 0, 0, -1, -1, -1 },
-    { D_TROT, 330, 370, 0, 0, 0, -1, -1, -1 },
+    { D_WALK, 250, 250, 0, 0, 0, -1, -1, -1 },
+    { D_DO, 0, 0, ANIM_PLAY_BOW, DIR_SW, 2.0f, -1, -1, -1 },
+    { D_WALK, 130, 210, 0, 0, 0, -1, -1, -1 },
+    { D_TROT, 286, 340, 0, 0, 0, -1, -1, -1 },
     { D_DO, 0, 0, ANIM_PANT_SMILE, DIR_S, 2.5f, -1, -1, -1 },
     { D_SET, -1, -1, 0, 0, 0, -1, 2, -1 },                                              /* autumn */
-    { D_WALK, 250, 250, 0, 0, 0, -1, -1, -1 },
+    { D_WALK, 186, 122, 0, 0, 0, -1, -1, -1 },                                          /* half behind the top bush (spot_bush_3) */
     { D_DO, 0, 0, ANIM_LOOK_AROUND, DIR_S, 2.2f, -1, -1, -1 },
-    { D_WALK, 250, 400, 0, 0, 0, -1, -1, -1 },
+    { D_WALK, 250, 330, 0, 0, 0, -1, -1, -1 },
     { D_SET, -1, -1, 0, 0, 0, -1, 3, -1 },                                              /* winter */
     { D_DO, 0, 0, ANIM_IDLE_SIT_BLINK, DIR_S, 2.5f, -1, -1, -1 },
     { D_WALK, 236, 456, 0, 0, 0, -1, -1, -1 },
 };
+
+/* the way there: a breadth-first search on the map's 4 px walkable grid, keeping clear of the blocked shapes
+   (the fixed things' invisible walls) by a margin, then the straight stretches merged (line of sight) */
+enum { DEMO_PATH_MAX = 256 };
+static int16_t s_path[DEMO_PATH_MAX][2]; static int s_path_n, s_path_i;
+static bool clear_at(const map_t *m, int x, int y, int r) {
+    for (int dy = -r; dy <= r; dy++) for (int dx = -r; dx <= r; dx++)
+        if (!map_walkable(m, x + dx * MAP_CELL, y + dy * MAP_CELL)) return false;
+    return true;
+}
+static bool line_clear(const map_t *m, float x0, float y0, float x1, float y1, int r) {
+    float dx = x1 - x0, dy = y1 - y0; int n = (int)(sqrtf(dx * dx + dy * dy) / 2) + 1;
+    for (int i = 0; i <= n; i++) if (!clear_at(m, (int)(x0 + dx * i / n), (int)(y0 + dy * i / n), r)) return false;
+    return true;
+}
+static void demo_plan(const map_t *m, float x0, float y0, int x1, int y1, int r) {
+    static int16_t prev[MAP_GW * MAP_GH]; static int16_t queue[MAP_GW * MAP_GH];
+    const int start = (int)(y0 / MAP_CELL) * MAP_GW + (int)(x0 / MAP_CELL);
+    int goal = (y1 / MAP_CELL) * MAP_GW + x1 / MAP_CELL;
+    for (int i = 0; i < MAP_GW * MAP_GH; i++) prev[i] = -1;
+    int qh = 0, qt = 0, found = -1, best = -1, best_d = 1 << 30;
+    prev[start] = (int16_t)start; queue[qt++] = (int16_t)start;
+    while (qh < qt) {
+        int c = queue[qh++], cx = c % MAP_GW, cy = c / MAP_GW;
+        int d = (cx - goal % MAP_GW) * (cx - goal % MAP_GW) + (cy - goal / MAP_GW) * (cy - goal / MAP_GW);
+        if (d < best_d) { best_d = d; best = c; }                   /* the goal itself may be unreachable: the nearest then */
+        if (c == goal) { found = c; break; }
+        for (int k = 0; k < 8; k++) {
+            static const int8_t DX[8] = { 1, -1, 0, 0, 1, 1, -1, -1 }, DY[8] = { 0, 0, 1, -1, 1, -1, 1, -1 };
+            int nx = cx + DX[k], ny = cy + DY[k];
+            if (nx < 0 || ny < 0 || nx >= MAP_GW || ny >= MAP_GH) continue;
+            int n = ny * MAP_GW + nx;
+            if (prev[n] >= 0 || !clear_at(m, nx * MAP_CELL + 2, ny * MAP_CELL + 2, r)) continue;
+            prev[n] = (int16_t)c; queue[qt++] = (int16_t)n;
+        }
+    }
+    if (found < 0) found = best;
+    static int16_t cells[MAP_GW * MAP_GH]; int nc = 0;
+    for (int c = found; nc < MAP_GW * MAP_GH; c = prev[c]) { cells[nc++] = (int16_t)c; if (c == start) break; }
+    float ax = x0, ay = y0; s_path_n = 0; s_path_i = 0;
+    int i = nc - 1;
+    while (i > 0 && s_path_n < DEMO_PATH_MAX - 1) {                     /* the farthest cell still in sight, one after the other */
+        int j = 0;
+        while (j < i && !line_clear(m, ax, ay, cells[j] % MAP_GW * MAP_CELL + 2, cells[j] / MAP_GW * MAP_CELL + 2, r)) j++;
+        if (j == i) j = i - 1 > 0 ? i - 1 : 0;
+        ax = cells[j] % MAP_GW * MAP_CELL + 2; ay = cells[j] / MAP_GW * MAP_CELL + 2;
+        s_path[s_path_n][0] = (int16_t)ax; s_path[s_path_n][1] = (int16_t)ay; s_path_n++;
+        i = j;
+    }
+    if (found == goal) { s_path[s_path_n][0] = (int16_t)x1; s_path[s_path_n][1] = (int16_t)y1; s_path_n++; }
+}
 enum { DEMO_N = (int)(sizeof DEMO / sizeof DEMO[0]) };
-static int s_demo_i = -1; static float s_demo_t;
+static int s_demo_i = -1, s_demo_rounds; static float s_demo_t;
 
 static dir8_t dir_of(float dx, float dy) {             /* screen vector -> dir8 (S = down, clockwise) */
     float a = atan2f(-dx, dy) * 57.29578f; if (a < 0) a += 360.0f;
@@ -349,6 +403,7 @@ static void demo_tick(float dt) {
     const demo_step_t *s = &DEMO[s_demo_i];
     bool done = false;
     if (s->kind == D_SET) {
+        s_path_n = s_path_i = 0;
         if (s->view >= 0) { s_world.view = (view_t)s->view; l->view = (view_t)s->view; }
         if (s->season >= 0) s_world.season_force = s->season;
         if (s->daypart >= 0) s_world.daypart_force = s->daypart;
@@ -359,33 +414,29 @@ static void demo_tick(float dt) {
         s_demo_t += dt; done = s_demo_t >= s->t;
     } else {
         const uint16_t anim = s->kind == D_TROT ? ANIM_TROT : ANIM_WALK;
-        const float speed = s->kind == D_TROT ? 95.0f : 48.0f;              /* logical px per second */
-        float dx = s->x - l->x, dy = s->y - l->y, dist = sqrtf(dx * dx + dy * dy);
+        const bool yard = s_world.view == VIEW_YARD;                        /* outdoors she is 0.625 the size: slower in px */
+        const float speed = (s->kind == D_TROT ? 95.0f : 48.0f) * (yard ? 0.7f : 1.0f);   /* logical px per second */
+        if (s_demo_t == 0) { demo_plan(world_map(&s_world, s_world.view), l->x, l->y, s->x, s->y, yard ? 2 : 3); s_demo_t = 1e-6f; }
         if (l->anim != anim) { l->anim = anim; l->anim_t = 0; }
-        if (dist > 0.5f) l->dir = dir_of(dx, dy);
-        if (dist <= speed * dt) { l->x = s->x; l->y = s->y; done = true; }
-        else { l->x += dx / dist * speed * dt; l->y += dy / dist * speed * dt; }
+        float step = speed * dt;
+        while (step > 0 && s_path_i < s_path_n) {
+            float dx = s_path[s_path_i][0] - l->x, dy = s_path[s_path_i][1] - l->y, dist = sqrtf(dx * dx + dy * dy);
+            if (dist > 0.5f) l->dir = dir_of(dx, dy);
+            if (dist <= step) { l->x = s_path[s_path_i][0]; l->y = s_path[s_path_i][1]; step -= dist; s_path_i++; }
+            else { l->x += dx / dist * step; l->y += dy / dist * step; step = 0; }
+        }
+        done = s_path_i >= s_path_n;
     }
-    if (done) { s_demo_i = (s_demo_i + 1) % DEMO_N; s_demo_t = 0; }
-}
-static float demo_length(void) {                       /* seconds for one round (walks measured from the points) */
-    float t = 0, x = DEMO[0].x, y = DEMO[0].y;
-    for (int i = 0; i < DEMO_N; i++) {
-        const demo_step_t *s = &DEMO[i];
-        if (s->kind == D_DO) t += s->t;
-        else if (s->kind == D_SET) { if (s->x >= 0) { x = s->x; y = s->y; } }
-        else { t += sqrtf((s->x - x) * (s->x - x) + (s->y - y) * (s->y - y)) / (s->kind == D_TROT ? 95.0f : 48.0f) + 0.1f; x = s->x; y = s->y; }
-    }
-    return t;
+    if (done) { s_demo_i = (s_demo_i + 1) % DEMO_N; s_demo_t = 0; if (!s_demo_i) s_demo_rounds++; }
 }
 /* --demo-record DIR [fps]: one round of the tour, headless, as DIR/f00000.ppm ... (tools: ffmpeg -> mp4) */
 static int demo_record(const char *dir, int fps) {
-    canvas_init(); world_init(&s_world, 42); demo_start();
-    const float dt = 1.0f / (float)fps; const int n = (int)(demo_length() * fps) + fps;
-    char path[512];
-    for (int i = 0; i < n; i++) {
+    canvas_init(); world_init(&s_world, 42); demo_start(); s_demo_rounds = 0;
+    const float dt = 1.0f / (float)fps;
+    char path[512]; int n = 0;
+    while (!s_demo_rounds && n < 400 * fps) {                    /* until the tour comes round to its start */
         demo_tick(dt); world_tick(&s_world, dt); frame();
-        snprintf(path, sizeof path, "%s/f%05d.ppm", dir, i); write_ppm(path, s_fb);
+        snprintf(path, sizeof path, "%s/f%05d.ppm", dir, n++); write_ppm(path, s_fb);
     }
     printf("demo: %d frames at %d fps (%.1f s) -> %s\n", n, fps, n / (float)fps, dir);
     return 0;

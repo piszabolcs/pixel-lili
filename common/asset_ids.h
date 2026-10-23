@@ -20,6 +20,7 @@ enum {
     LUT_COUNT
 };
 #define LUT_ID(pal, t) ((uint16_t)((pal) * 8 + (t)))
+#define ANIM_YARD_OFFSET 100   /* the yard's smaller sprite set of an animation: its id + this */
 enum {
     IMG_ROOM = 1,
     IMG_YARD_SPRING = 2,
@@ -39,6 +40,8 @@ enum {
     IMG_MASK_SHADE_OUT = 22,
     IMG_MASK_SHADE_IN = 23,
 };
+#define IMG_COVER(season, k) ((uint16_t)(40 + (season) * 8 + (k)))   /* the yard's covers, k < 8 */
+#define IMG_COVERS_PER_SEASON 8
 enum {
     ANIM_IDLE_STAND = 1,
     ANIM_IDLE_SIT_BLINK = 2,

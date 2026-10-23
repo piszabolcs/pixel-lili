@@ -19,6 +19,7 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 from palette_from_photos import rgb_to_oklab
+import sprite_clean as sc
 
 DIRS = ("S", "SW", "W", "NW", "N", "NE", "E", "SE")
 CELL, PIVOT, SLOT = 96, (48, 90), 144
@@ -37,6 +38,33 @@ ANIMS = {
     "drink":          (28, 8,  True,  {"W": "drink_W"}),
 }
 BREATH = (0, 0, 1, 1, 1, 1, 0, 0)        # idle_stand's other directions: the old 6-frame breath stretched to 8
+# outdoors she is smaller: the yard paintings are drawn at a smaller scale than the room (the owner: half the
+# bench, a third of the tree is too big); 0.625 makes a 60 px cell, pivot (30, 56). Anim id + YARD_OFFSET.
+YARD_SCALE, YARD_CELL, YARD_PIVOT, YARD_OFFSET = 0.625, 60, (30, 56), 100
+
+def grounded(idx, pivot_y):
+    """the lowest paw on the row above the pivot: PixelLab's frames sit 1-6 px higher in some walk and trot
+    frames, which made her float over her own shadow (the owner, 2026-10-23); in a walk some paw is always
+    down, so the lowest opaque row is the ground"""
+    ys = np.nonzero(idx.any(1))[0]
+    if not len(ys): return idx
+    dy = (pivot_y - 1) - ys.max()
+    out = np.zeros_like(idx)
+    if dy >= 0: out[dy:] = idx[:idx.shape[0] - dy]
+    else: out[:dy] = idx[-dy:]
+    return out
+
+def yard_frame(idx, full_rgb, pal_lab, outline):
+    """the 96 px frame down to the yard's 60 px: each output pixel the most common of the source colours it
+    covers (crisp, no new colours), the outline redrawn, grounded again"""
+    rgba = np.zeros(idx.shape + (4,), np.uint8)
+    rgba[..., :3] = np.array(full_rgb, np.uint8)[idx]; rgba[..., 3] = np.where(idx > 0, 255, 0)
+    small = sc.resample(rgba, 1 / YARD_SCALE, pal_lab, np.arange(SLOT, SLOT + 40))
+    small = sc.clean_outline(small, pal_lab, outline)
+    cell = np.zeros((YARD_CELL, YARD_CELL), np.uint8)
+    h, w = min(YARD_CELL, small.shape[0]), min(YARD_CELL, small.shape[1])
+    cell[:h, :w] = small[:h, :w]
+    return grounded(cell, YARD_PIVOT[1])
 
 def palette():
     master = json.load(open(os.path.join(ROOT, "assets", "palettes", "master.json"), encoding="utf-8"))["rgb"]
@@ -63,9 +91,23 @@ def save(path, idx, full):
     im = Image.fromarray(idx, "P"); im.putpalette(sum(full, [])); im.info["transparency"] = 0
     im.save(path, transparency=0)
 
+def write_set(d, anim, aid, fps, loop, seqs, n, cell, pivot, full, src):
+    if os.path.isdir(d):
+        for f in os.listdir(d): os.remove(os.path.join(d, f))
+    os.makedirs(d, exist_ok=True)
+    files = []
+    for di in sorted(seqs):
+        for i, idx in enumerate(seqs[di]):
+            fn = f"d{di}_f{i}.png"; save(os.path.join(d, fn), idx, full)
+            files.append({"dir": di, "frame": i, "file": fn, "mouth": None, "head": None})
+    man = {"anim": anim, "id": aid, "fps": fps, "loop": loop, "dirs": sorted(seqs), "frames": n, "cell": cell,
+           "scale": 1, "pivot": list(pivot), "files": files, "source": "tools/pixellab_to_sprites.py (" + ", ".join(src.values()) + ")"}
+    json.dump(man, open(os.path.join(d, "manifest.json"), "w", encoding="utf-8"), indent=1)
+
 def main():
     full, lili = palette()
     lili_lab = rgb_to_oklab(lili)
+    pal_lab = rgb_to_oklab(np.array(full, float))
     for anim, (aid, fps, loop, src) in ANIMS.items():
         d = os.path.join(ROOT, "assets", "sprites", "lili", anim)
         old_breath = {}
@@ -79,18 +121,18 @@ def main():
         assert all(len(s) == n for s in seqs.values()), anim
         for di, fr in old_breath.items():                    # 0 and 2 are the breath's low and high frames
             seqs[di] = [fr[0] if b == 0 else fr[2] for b in BREATH]
-        if os.path.isdir(d):
-            for f in os.listdir(d): os.remove(os.path.join(d, f))
-        os.makedirs(d, exist_ok=True)
-        files = []
-        for di in sorted(seqs):
-            for i, idx in enumerate(seqs[di]):
-                fn = f"d{di}_f{i}.png"; save(os.path.join(d, fn), idx, full)
-                files.append({"dir": di, "frame": i, "file": fn, "mouth": None, "head": None})
-        man = {"anim": anim, "id": aid, "fps": fps, "loop": loop, "dirs": sorted(seqs), "frames": n, "cell": CELL,
-               "scale": 1, "pivot": list(PIVOT), "files": files, "source": "tools/pixellab_to_sprites.py (" + ", ".join(src.values()) + ")"}
-        json.dump(man, open(os.path.join(d, "manifest.json"), "w", encoding="utf-8"), indent=1)
-        print(f"{anim:15s} id {aid:2d}: {n} frames x dirs {[DIRS[k] for k in sorted(seqs)]}")
+        seqs = {di: [grounded(f, PIVOT[1]) for f in s] for di, s in seqs.items()}
+        write_set(d, anim, aid, fps, loop, seqs, n, CELL, PIVOT, full, src)
+        edge = []                                            # the outline index: the commonest on the silhouettes' edge
+        for s in seqs.values():
+            for f in s:
+                b = f != 0; p = np.pad(b, 1)
+                edge.append(f[b & ~(p[:-2, 1:-1] & p[2:, 1:-1] & p[1:-1, :-2] & p[1:-1, 2:])])
+        outline = int(np.bincount(np.concatenate(edge)).argmax())
+        yard = {di: [yard_frame(f, full, pal_lab, outline) for f in s] for di, s in seqs.items()}
+        write_set(os.path.join(ROOT, "assets", "sprites", "lili_yard", anim), anim, aid + YARD_OFFSET, fps, loop, yard, n,
+                  YARD_CELL, YARD_PIVOT, full, src)
+        print(f"{anim:15s} id {aid:2d}: {n} frames x dirs {[DIRS[k] for k in sorted(seqs)]} (+ the yard's {YARD_CELL} px set, id {aid + YARD_OFFSET})")
     cat = {"_note": "The animation catalogue (spec 7.4): id = the A-number (drink 28 is new: the spec's A17 eat_drink was split, "
                     "PixelLab made eating and drinking apart), fps, dirs (the ones that exist, the rest fall back to the nearest), loop. "
                     "The sprites come from tools/pixellab_to_sprites.py (2026-10-23); tools/pack_assets.py generates common/asset_ids.h from this file."}
