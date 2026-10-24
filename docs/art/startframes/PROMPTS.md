@@ -129,3 +129,24 @@ Csatold: `Lili(9).png` (csak a stílus miatt)
 ```
 Pixel-art game props in exactly the style of the attached reference image, same 3/4 top-down camera, each item separate with wide gaps, on one flat solid pure magenta (#FF00FF) background, no shadows, no text: a colourful knotted rope dog toy with frayed fringed ends shown in 4 rotations; 2 kinds of small bone-shaped dog biscuits; 2 small dog poops; a small round grey food bowl full of brown kibble and the same bowl empty; a small round blue water bowl full of water and the same bowl empty. Every item is sized for a tiny chihuahua.
 ```
+
+## 08. A hiányzó 8 póz (2026-10-23 éjjel)
+
+A Gemini az első körben ezeket nem a kért irányból rajzolta, a PixelLab pedig átmenetekből (leül, feláll) embert csinált a kutyából, ezért ezeket is Gemini rajzolja.
+
+- Felső sor, balról jobbra: ül (W, balra, profil); ül (E, jobbra, profil); ül (SE, jobbra lefelé); áll (NW, balra elfelé)
+- Alsó sor, balról jobbra: áll, kötél a szájában (N, háttal); fekve rágja a kötelet (SW, balra lefelé); fekve rágja a jutifalatot (SW, balra lefelé); pisilő guggolás (SE, jobbra lefelé)
+
+Csatold: `Lili(9).png`, `Lili(8).png`, `Lili(6).png`, `Lili(3).png`, `Lili(2).png`
+
+```
+Use the attached images as the character reference: this is Lili, a small fawn chihuahua drawn in exactly this pixel-art style. Keep her identical in every copy: same proportions, same colours, same dark outline, white blaze on the face and chest, white paws, and her RIGHT ear (the dog's own right) folded and drooping while the left ear stands up. Never mirror her.
+
+Draw a character sheet of Lili: 8 copies of her in 2 rows of 4, on an even grid, every copy separate with wide gaps so none of them touch. Top row, left to right: 1) sitting upright on her haunches, front legs straight, calm happy face, facing left (side profile, nose pointing left); 2) sitting upright on her haunches, front legs straight, calm happy face, facing right (side profile, nose pointing right); 3) sitting upright on her haunches, front legs straight, calm happy face, facing down-right (front three-quarter view); 4) standing calmly on all four paws, tail curled up over her back, facing up-left (back three-quarter view, turned away to the upper left). Bottom row, left to right: 5) standing on all four paws with a colourful knotted rope toy with frayed fringed ends held crosswise in her mouth, facing away from the viewer (back view); 6) lying in a sphinx pose, holding a colourful knotted rope toy between her front paws, chewing one end, facing down-left (front three-quarter view); 7) lying in a sphinx pose, holding a small bone-shaped dog biscuit between her front paws, chewing it, facing down-left (front three-quarter view); 8) squatting low with her hind legs bent to pee, the way a female dog does, facing down-right (front three-quarter view).
+
+Camera: the same 3/4 top-down view as the references (looking down at about 35 degrees). Every copy at the same scale, as if she were the same dog photographed eight times; the paws of each row on one shared baseline.
+
+Background: one flat, solid, pure magenta colour (#FF00FF) everywhere. No floor, no ground shadow, no gradient, no vignette, no text, no numbers, no labels, no grid lines, no border.
+
+Style: crisp pixel art with hard pixel edges and the limited palette of the references. No blur, no painterly shading, no glow.
+```

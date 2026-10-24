@@ -301,6 +301,17 @@ Hiba: a demó a tál melletti pontokat nem érte el (446-nál megállt 451 helye
 
 Fogalmak: bináris beágyazás (EMBED), XIP (flashből futás/olvasás), mesterpéldány és származtatott méretek
 
+## 2026-10-24 | 2D vonal, 6. lépés: az éjszakai PixelLab-gyártás
+Készült: a `assets/pixellab/jobs.json` mind a 143 feladata (8 irány, átmenetek, a kötél, a keksz, a tálak, a pisilés), összesen 168 sheet a próbákkal együtt; előnézetek `docs/img/anim/pixellab_*.gif`, áttekintő oldal `docs/review/index.html`, napló `docs/logs/2026-10-24_pixellab_night.md`. Semmi nincs bekötve: előbb a gazdi nézi át.
+
+Döntés: minden a PixMiniMax modellel megy, nem a v3-mal. A PixMiniMax külön mezőben kapja a szereplőt ("a small fawn chihuahua dog") és a kiinduló pózt, így az átmeneteket (leül, feláll, lefekszik, guggol) helyesen rajzolja, a v3 ezeknél embert rajzolt a kutyára. Egy átmenet utolsó kockája új kezdőkocka lesz ("makes"), így a Gemini-lapokról hiányzó pózok (ülés W, E, SE, állás NW, guggolás SE) is megvannak.
+
+Hiba: oldal- és hátnézetben a kutya a megriadásnál a néző felé fordult (startle W, NW, NE), a "scurries away" pedig megfordította és elszaladt vele. Gyökérok: a modell a mozdulatot a legtermészetesebb irányban rajzolja, és a "fordulj el" vagy "fuss el" szót szó szerint veszi. Javítás: a leírásban a nézet és a tartás ("seen from behind ... keeps facing away", "seen from the side ... keeps facing left", "in place, does not turn around"); az első próbák `*_try1` néven megmaradtak.
+
+Hiba: egy-két indítás nem futott le (a panel épp átváltott, vagy "maximum number of concurrent jobs"), és a gépelés egyszer a vászonra ment billentyűparancsként. Gyökérok: a szerkesztő egy kész feladatnál magától átvált, a fókusz elvész. Javítás: két indítás egymás után, utána nincs gépelés, amíg a feladatok le nem futnak; minden indítás előtt nagyított ellenőrzés (első kocka, seed 0, a "Generate" gomb).
+
+Fogalmak: átmenet-animáció és láncolt kezdőkocka, nézetrögzítő prompt
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -482,3 +493,7 @@ Fogalmak: bináris beágyazás (EMBED), XIP (flashből futás/olvasás), mesterp
 **XIP (execute in place):** az ESP32-S3 a külső flash-t egy gyorsítótáron át a címtérbe képezi le, így a kód és az adat onnan közvetlenül olvasható, nem kell RAM-ba másolni. A pak 1,5 MB-ja ezért nem foglal RAM-ot; ami gyakran kell (a háttér), azt a PSRAM-os statikus réteg tárolja.
 
 **mesterpéldány és származtatott méretek:** a legnagyobb, minőségi változat (itt a 96 px-es kocka) a forrás, a kisebbek (72 és 60 px) mindig ebből készülnek újra. Így egy méretváltás csak egy szám átírása, és nem romlik a minőség az ismételt kicsinyítéstől.
+
+**átmenet-animáció és láncolt kezdőkocka:** az átmenet egyik pózból a másikba visz (állásból ülésbe); az utolsó kockája pontosan a célpóz, ezért kezdőkockaként továbbadható a következő animációnak (ülésből lihegés). Így egy hiányzó póz rajzolás nélkül előáll, és a két animáció a határon nem ugrik.
+
+**nézetrögzítő prompt:** a szöveges animációs modell a mozdulathoz magától választ nézetet (a megriadt kutya a néző felé fordul). Ha a leírás kimondja a nézetet és a tartást ("seen from behind ... keeps facing away"), a test a kezdőkocka irányában marad, és a nyolc irány egymás mellé tehető.

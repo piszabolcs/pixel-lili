@@ -1,0 +1,868 @@
+{
+ "_note": "PixelLab Animate with Text v3, 128 px start frames (assets/startframes); done = assets/pixellab/<tag>_sheet.png exists. 'makes': the last frame becomes that start frame.",
+ "jobs": [
+  {
+   "tag": "sit_down_E",
+   "start": "stand_E",
+   "action": "sitting down calmly onto her haunches, then sitting still",
+   "frames": 8,
+   "makes": "sit_E"
+  },
+  {
+   "tag": "sit_down_W",
+   "start": "stand_W",
+   "action": "sitting down calmly onto her haunches, then sitting still",
+   "frames": 8,
+   "makes": "sit_W"
+  },
+  {
+   "tag": "sit_down_SE",
+   "start": "stand_SE",
+   "action": "sitting down calmly onto her haunches, then sitting still",
+   "frames": 8,
+   "makes": "sit_SE"
+  },
+  {
+   "tag": "stand_up_NW",
+   "start": "sit_NW",
+   "action": "standing up from sitting onto all four paws, then standing still",
+   "frames": 8,
+   "makes": "stand_NW"
+  },
+  {
+   "tag": "squat_pee_SE",
+   "start": "stand_SE",
+   "action": "squatting down low to pee like a female dog, then staying still",
+   "frames": 8,
+   "makes": "pee_SE"
+  },
+  {
+   "tag": "walk_NW",
+   "start": "stand_NW",
+   "action": "walking",
+   "frames": 8
+  },
+  {
+   "tag": "walk_E",
+   "start": "stand_E",
+   "action": "walking",
+   "frames": 8
+  },
+  {
+   "tag": "trot_S",
+   "start": "stand_S",
+   "action": "trotting happily, tail up, ears bouncing",
+   "frames": 8
+  },
+  {
+   "tag": "trot_SW",
+   "start": "stand_SW",
+   "action": "trotting happily, tail up, ears bouncing",
+   "frames": 8
+  },
+  {
+   "tag": "trot_W",
+   "start": "stand_W",
+   "action": "trotting happily, tail up, ears bouncing",
+   "frames": 8
+  },
+  {
+   "tag": "trot_NW",
+   "start": "stand_NW",
+   "action": "trotting happily, tail up, ears bouncing",
+   "frames": 8
+  },
+  {
+   "tag": "trot_N",
+   "start": "stand_N",
+   "action": "trotting happily, tail up, ears bouncing",
+   "frames": 8
+  },
+  {
+   "tag": "trot_NE",
+   "start": "stand_NE",
+   "action": "trotting happily, tail up, ears bouncing",
+   "frames": 8
+  },
+  {
+   "tag": "trot_E",
+   "start": "stand_E",
+   "action": "trotting happily, tail up, ears bouncing",
+   "frames": 8
+  },
+  {
+   "tag": "run_S",
+   "start": "stand_S",
+   "action": "running fast in a full gallop, ears back, happy zoomies",
+   "frames": 8
+  },
+  {
+   "tag": "run_SW",
+   "start": "stand_SW",
+   "action": "running fast in a full gallop, ears back, happy zoomies",
+   "frames": 8
+  },
+  {
+   "tag": "run_W",
+   "start": "stand_W",
+   "action": "running fast in a full gallop, ears back, happy zoomies",
+   "frames": 8
+  },
+  {
+   "tag": "run_NW",
+   "start": "stand_NW",
+   "action": "running fast in a full gallop, ears back, happy zoomies",
+   "frames": 8
+  },
+  {
+   "tag": "run_N",
+   "start": "stand_N",
+   "action": "running fast in a full gallop, ears back, happy zoomies",
+   "frames": 8
+  },
+  {
+   "tag": "run_NE",
+   "start": "stand_NE",
+   "action": "running fast in a full gallop, ears back, happy zoomies",
+   "frames": 8
+  },
+  {
+   "tag": "run_E",
+   "start": "stand_E",
+   "action": "running fast in a full gallop, ears back, happy zoomies",
+   "frames": 8
+  },
+  {
+   "tag": "run_SE",
+   "start": "stand_SE",
+   "action": "running fast in a full gallop, ears back, happy zoomies",
+   "frames": 8
+  },
+  {
+   "tag": "idle_stand_S",
+   "start": "stand_S",
+   "action": "standing still, wagging tail, breathing calmly",
+   "frames": 8
+  },
+  {
+   "tag": "idle_stand_W",
+   "start": "stand_W",
+   "action": "standing still, wagging tail, breathing calmly",
+   "frames": 8
+  },
+  {
+   "tag": "idle_stand_NW",
+   "start": "stand_NW",
+   "action": "standing still, wagging tail, breathing calmly",
+   "frames": 8
+  },
+  {
+   "tag": "idle_stand_N",
+   "start": "stand_N",
+   "action": "standing still, wagging tail, breathing calmly",
+   "frames": 8
+  },
+  {
+   "tag": "idle_stand_NE",
+   "start": "stand_NE",
+   "action": "standing still, wagging tail, breathing calmly",
+   "frames": 8
+  },
+  {
+   "tag": "idle_stand_E",
+   "start": "stand_E",
+   "action": "standing still, wagging tail, breathing calmly",
+   "frames": 8
+  },
+  {
+   "tag": "idle_stand_SE",
+   "start": "stand_SE",
+   "action": "standing still, wagging tail, breathing calmly",
+   "frames": 8
+  },
+  {
+   "tag": "sit_down_S",
+   "start": "stand_S",
+   "action": "sitting down calmly onto her haunches, then sitting still",
+   "frames": 8
+  },
+  {
+   "tag": "sit_down_SW",
+   "start": "stand_SW",
+   "action": "sitting down calmly onto her haunches, then sitting still",
+   "frames": 8
+  },
+  {
+   "tag": "sit_down_NW",
+   "start": "stand_NW",
+   "action": "sitting down calmly onto her haunches, then sitting still",
+   "frames": 8
+  },
+  {
+   "tag": "sit_down_N",
+   "start": "stand_N",
+   "action": "sitting down calmly onto her haunches, then sitting still",
+   "frames": 8
+  },
+  {
+   "tag": "sit_down_NE",
+   "start": "stand_NE",
+   "action": "sitting down calmly onto her haunches, then sitting still",
+   "frames": 8
+  },
+  {
+   "tag": "idle_sit_blink_SW",
+   "start": "sit_SW",
+   "action": "sitting still, blinking slowly, one ear twitching",
+   "frames": 8
+  },
+  {
+   "tag": "idle_sit_blink_W",
+   "start": "sit_W",
+   "action": "sitting still, blinking slowly, one ear twitching",
+   "frames": 8
+  },
+  {
+   "tag": "idle_sit_blink_NW",
+   "start": "sit_NW",
+   "action": "sitting still, blinking slowly, one ear twitching",
+   "frames": 8
+  },
+  {
+   "tag": "idle_sit_blink_N",
+   "start": "sit_N",
+   "action": "sitting still, blinking slowly, one ear twitching",
+   "frames": 8
+  },
+  {
+   "tag": "idle_sit_blink_NE",
+   "start": "sit_NE",
+   "action": "sitting still, blinking slowly, one ear twitching",
+   "frames": 8
+  },
+  {
+   "tag": "idle_sit_blink_E",
+   "start": "sit_E",
+   "action": "sitting still, blinking slowly, one ear twitching",
+   "frames": 8
+  },
+  {
+   "tag": "idle_sit_blink_SE",
+   "start": "sit_SE",
+   "action": "sitting still, blinking slowly, one ear twitching",
+   "frames": 8
+  },
+  {
+   "tag": "play_bow_S",
+   "start": "bow_S",
+   "action": "legs still, wiggle tail and ass like happy dog, and happy face",
+   "frames": 8
+  },
+  {
+   "tag": "play_bow_W",
+   "start": "bow_W",
+   "action": "legs still, wiggle tail and ass like happy dog, and happy face",
+   "frames": 8
+  },
+  {
+   "tag": "play_bow_NW",
+   "start": "bow_NW",
+   "action": "legs still, wiggle tail and ass like happy dog, and happy face",
+   "frames": 8
+  },
+  {
+   "tag": "play_bow_N",
+   "start": "bow_N",
+   "action": "legs still, wiggle tail and ass like happy dog, and happy face",
+   "frames": 8
+  },
+  {
+   "tag": "play_bow_NE",
+   "start": "bow_NE",
+   "action": "legs still, wiggle tail and ass like happy dog, and happy face",
+   "frames": 8
+  },
+  {
+   "tag": "play_bow_E",
+   "start": "bow_E",
+   "action": "legs still, wiggle tail and ass like happy dog, and happy face",
+   "frames": 8
+  },
+  {
+   "tag": "play_bow_SE",
+   "start": "bow_SE",
+   "action": "legs still, wiggle tail and ass like happy dog, and happy face",
+   "frames": 8
+  },
+  {
+   "tag": "tug_rope_S",
+   "start": "bow_rope_S",
+   "action": "rear end up, tugging and shaking the rope toy playfully, tail wagging",
+   "frames": 8
+  },
+  {
+   "tag": "tug_rope_SW",
+   "start": "bow_rope_SW",
+   "action": "rear end up, tugging and shaking the rope toy playfully, tail wagging",
+   "frames": 8
+  },
+  {
+   "tag": "tug_rope_SE",
+   "start": "bow_rope_SE",
+   "action": "rear end up, tugging and shaking the rope toy playfully, tail wagging",
+   "frames": 8
+  },
+  {
+   "tag": "eat_treat_S",
+   "start": "bow_treat_S",
+   "action": "rear end up, head down eating the biscuit, chewing, tail wagging",
+   "frames": 8
+  },
+  {
+   "tag": "eat_treat_SW",
+   "start": "bow_treat_SW",
+   "action": "rear end up, head down eating the biscuit, chewing, tail wagging",
+   "frames": 8
+  },
+  {
+   "tag": "eat_treat_SE",
+   "start": "bow_treat_SE",
+   "action": "rear end up, head down eating the biscuit, chewing, tail wagging",
+   "frames": 8
+  },
+  {
+   "tag": "carry_trot_S",
+   "start": "carry_S",
+   "action": "trotting happily with the rope toy held in her mouth",
+   "frames": 8
+  },
+  {
+   "tag": "carry_trot_SW",
+   "start": "carry_SW",
+   "action": "trotting happily with the rope toy held in her mouth",
+   "frames": 8
+  },
+  {
+   "tag": "carry_trot_W",
+   "start": "carry_W",
+   "action": "trotting happily with the rope toy held in her mouth",
+   "frames": 8
+  },
+  {
+   "tag": "carry_trot_NW",
+   "start": "carry_NW",
+   "action": "trotting happily with the rope toy held in her mouth",
+   "frames": 8
+  },
+  {
+   "tag": "carry_trot_NE",
+   "start": "carry_NE",
+   "action": "trotting happily with the rope toy held in her mouth",
+   "frames": 8
+  },
+  {
+   "tag": "carry_trot_E",
+   "start": "carry_E",
+   "action": "trotting happily with the rope toy held in her mouth",
+   "frames": 8
+  },
+  {
+   "tag": "carry_trot_SE",
+   "start": "carry_SE",
+   "action": "trotting happily with the rope toy held in her mouth",
+   "frames": 8
+  },
+  {
+   "tag": "chew_rope_S",
+   "start": "lie_rope_S",
+   "action": "lying down, chewing the rope toy held between her paws",
+   "frames": 8
+  },
+  {
+   "tag": "chew_rope_SE",
+   "start": "lie_rope_SE",
+   "action": "lying down, chewing the rope toy held between her paws",
+   "frames": 8
+  },
+  {
+   "tag": "chew_treat_S",
+   "start": "lie_treat_S",
+   "action": "lying down, chewing the biscuit held between her paws",
+   "frames": 8
+  },
+  {
+   "tag": "chew_treat_SE",
+   "start": "lie_treat_SE",
+   "action": "lying down, chewing the biscuit held between her paws",
+   "frames": 8
+  },
+  {
+   "tag": "eat_W",
+   "start": "eat_W",
+   "action": "eating kibble from the bowl, chewing",
+   "frames": 8
+  },
+  {
+   "tag": "drink_W",
+   "start": "drink_W",
+   "action": "drinking water from the bowl, lapping with her tongue",
+   "frames": 8
+  },
+  {
+   "tag": "pee_SW",
+   "start": "pee_SW",
+   "action": "squatting still while peeing, tail slightly lifted, tiny movements",
+   "frames": 8
+  },
+  {
+   "tag": "pee_SE",
+   "start": "pee_SE",
+   "action": "squatting still while peeing, tail slightly lifted, tiny movements",
+   "frames": 8
+  },
+  {
+   "tag": "poop_SE",
+   "start": "poop_SE",
+   "action": "hunched squat while pooping, small strain, tail lifted",
+   "frames": 8
+  },
+  {
+   "tag": "poop_SW",
+   "start": "poop_SW",
+   "action": "hunched squat while pooping, small strain, tail lifted",
+   "frames": 8
+  },
+  {
+   "tag": "sleep_curl_S",
+   "start": "curl_S",
+   "action": "sleeping peacefully, body slowly rising and falling",
+   "frames": 8
+  },
+  {
+   "tag": "lie_down_S",
+   "start": "stand_S",
+   "action": "lying down on her belly with front paws forward, then resting",
+   "frames": 8
+  },
+  {
+   "tag": "lie_down_SW",
+   "start": "stand_SW",
+   "action": "lying down on her belly with front paws forward, then resting",
+   "frames": 8
+  },
+  {
+   "tag": "lie_down_SE",
+   "start": "stand_SE",
+   "action": "lying down on her belly with front paws forward, then resting",
+   "frames": 8
+  },
+  {
+   "tag": "pet_enjoy_S",
+   "start": "lie_S",
+   "action": "lying down, eyes closed, enjoying being petted, tail wagging slowly",
+   "frames": 8
+  },
+  {
+   "tag": "pet_enjoy_SW",
+   "start": "lie_SW",
+   "action": "lying down, eyes closed, enjoying being petted, tail wagging slowly",
+   "frames": 8
+  },
+  {
+   "tag": "pet_enjoy_SE",
+   "start": "lie_SE",
+   "action": "lying down, eyes closed, enjoying being petted, tail wagging slowly",
+   "frames": 8
+  },
+  {
+   "tag": "pant_smile_SW",
+   "start": "sit_SW",
+   "action": "sitting and happily panting with tongue out",
+   "frames": 8
+  },
+  {
+   "tag": "pant_smile_W",
+   "start": "sit_W",
+   "action": "sitting and happily panting with tongue out",
+   "frames": 8
+  },
+  {
+   "tag": "pant_smile_NW",
+   "start": "sit_NW",
+   "action": "sitting and happily panting with tongue out",
+   "frames": 8
+  },
+  {
+   "tag": "pant_smile_N",
+   "start": "sit_N",
+   "action": "sitting and happily panting with tongue out",
+   "frames": 8
+  },
+  {
+   "tag": "pant_smile_NE",
+   "start": "sit_NE",
+   "action": "sitting and happily panting with tongue out",
+   "frames": 8
+  },
+  {
+   "tag": "pant_smile_E",
+   "start": "sit_E",
+   "action": "sitting and happily panting with tongue out",
+   "frames": 8
+  },
+  {
+   "tag": "pant_smile_SE",
+   "start": "sit_SE",
+   "action": "sitting and happily panting with tongue out",
+   "frames": 8
+  },
+  {
+   "tag": "bark_S",
+   "start": "stand_S",
+   "action": "barking happily, mouth opening wide, head bobbing with each bark",
+   "frames": 8
+  },
+  {
+   "tag": "bark_SW",
+   "start": "stand_SW",
+   "action": "barking happily, mouth opening wide, head bobbing with each bark",
+   "frames": 8
+  },
+  {
+   "tag": "bark_W",
+   "start": "stand_W",
+   "action": "barking happily, mouth opening wide, head bobbing with each bark",
+   "frames": 8
+  },
+  {
+   "tag": "bark_NW",
+   "start": "stand_NW",
+   "action": "barking happily, mouth opening wide, head bobbing with each bark",
+   "frames": 8
+  },
+  {
+   "tag": "bark_N",
+   "start": "stand_N",
+   "action": "barking happily, mouth opening wide, head bobbing with each bark",
+   "frames": 8
+  },
+  {
+   "tag": "bark_NE",
+   "start": "stand_NE",
+   "action": "barking happily, mouth opening wide, head bobbing with each bark",
+   "frames": 8
+  },
+  {
+   "tag": "bark_E",
+   "start": "stand_E",
+   "action": "barking happily, mouth opening wide, head bobbing with each bark",
+   "frames": 8
+  },
+  {
+   "tag": "bark_SE",
+   "start": "stand_SE",
+   "action": "barking happily, mouth opening wide, head bobbing with each bark",
+   "frames": 8
+  },
+  {
+   "tag": "head_tilt_S",
+   "start": "sit_S",
+   "action": "tilting her head curiously to one side and back",
+   "frames": 8
+  },
+  {
+   "tag": "head_tilt_SW",
+   "start": "sit_SW",
+   "action": "tilting her head curiously to one side and back",
+   "frames": 8
+  },
+  {
+   "tag": "head_tilt_SE",
+   "start": "sit_SE",
+   "action": "tilting her head curiously to one side and back",
+   "frames": 8
+  },
+  {
+   "tag": "look_around_SW",
+   "start": "stand_SW",
+   "action": "looking around curiously, turning her head left and right",
+   "frames": 8
+  },
+  {
+   "tag": "look_around_SE",
+   "start": "stand_SE",
+   "action": "looking around curiously, turning her head left and right",
+   "frames": 8
+  },
+  {
+   "tag": "ask_pet_S",
+   "start": "sit_S",
+   "action": "sitting, raising one front paw, asking to be petted",
+   "frames": 8
+  },
+  {
+   "tag": "ask_pet_SW",
+   "start": "sit_SW",
+   "action": "sitting, raising one front paw, asking to be petted",
+   "frames": 8
+  },
+  {
+   "tag": "ask_pet_SE",
+   "start": "sit_SE",
+   "action": "sitting, raising one front paw, asking to be petted",
+   "frames": 8
+  },
+  {
+   "tag": "sun_sit_S",
+   "start": "sit_S",
+   "action": "sitting in the sun, eyes half closed, relaxed slow breathing",
+   "frames": 8
+  },
+  {
+   "tag": "sun_sit_SW",
+   "start": "sit_SW",
+   "action": "sitting in the sun, eyes half closed, relaxed slow breathing",
+   "frames": 8
+  },
+  {
+   "tag": "sniff_S",
+   "start": "stand_S",
+   "action": "walking slowly with her nose to the ground, sniffing",
+   "frames": 8
+  },
+  {
+   "tag": "sniff_SW",
+   "start": "stand_SW",
+   "action": "walking slowly with her nose to the ground, sniffing",
+   "frames": 8
+  },
+  {
+   "tag": "sniff_W",
+   "start": "stand_W",
+   "action": "walking slowly with her nose to the ground, sniffing",
+   "frames": 8
+  },
+  {
+   "tag": "sniff_NW",
+   "start": "stand_NW",
+   "action": "walking slowly with her nose to the ground, sniffing",
+   "frames": 8
+  },
+  {
+   "tag": "sniff_N",
+   "start": "stand_N",
+   "action": "walking slowly with her nose to the ground, sniffing",
+   "frames": 8
+  },
+  {
+   "tag": "sniff_NE",
+   "start": "stand_NE",
+   "action": "walking slowly with her nose to the ground, sniffing",
+   "frames": 8
+  },
+  {
+   "tag": "sniff_E",
+   "start": "stand_E",
+   "action": "walking slowly with her nose to the ground, sniffing",
+   "frames": 8
+  },
+  {
+   "tag": "sniff_SE",
+   "start": "stand_SE",
+   "action": "walking slowly with her nose to the ground, sniffing",
+   "frames": 8
+  },
+  {
+   "tag": "sneak_S",
+   "start": "stand_S",
+   "action": "sneaking slowly, crouched low, careful steps",
+   "frames": 8
+  },
+  {
+   "tag": "sneak_SW",
+   "start": "stand_SW",
+   "action": "sneaking slowly, crouched low, careful steps",
+   "frames": 8
+  },
+  {
+   "tag": "sneak_W",
+   "start": "stand_W",
+   "action": "sneaking slowly, crouched low, careful steps",
+   "frames": 8
+  },
+  {
+   "tag": "sneak_NW",
+   "start": "stand_NW",
+   "action": "sneaking slowly, crouched low, careful steps",
+   "frames": 8
+  },
+  {
+   "tag": "sneak_N",
+   "start": "stand_N",
+   "action": "sneaking slowly, crouched low, careful steps",
+   "frames": 8
+  },
+  {
+   "tag": "sneak_NE",
+   "start": "stand_NE",
+   "action": "sneaking slowly, crouched low, careful steps",
+   "frames": 8
+  },
+  {
+   "tag": "sneak_E",
+   "start": "stand_E",
+   "action": "sneaking slowly, crouched low, careful steps",
+   "frames": 8
+  },
+  {
+   "tag": "sneak_SE",
+   "start": "stand_SE",
+   "action": "sneaking slowly, crouched low, careful steps",
+   "frames": 8
+  },
+  {
+   "tag": "scurry_S",
+   "start": "stand_S",
+   "action": "scurrying away quickly with ears flat, looking guilty",
+   "frames": 8
+  },
+  {
+   "tag": "scurry_SW",
+   "start": "stand_SW",
+   "action": "scurrying away quickly with ears flat, looking guilty",
+   "frames": 8
+  },
+  {
+   "tag": "scurry_W",
+   "start": "stand_W",
+   "action": "scurrying away quickly with ears flat, looking guilty",
+   "frames": 8
+  },
+  {
+   "tag": "scurry_NW",
+   "start": "stand_NW",
+   "action": "scurrying away quickly with ears flat, looking guilty",
+   "frames": 8
+  },
+  {
+   "tag": "scurry_N",
+   "start": "stand_N",
+   "action": "scurrying away quickly with ears flat, looking guilty",
+   "frames": 8
+  },
+  {
+   "tag": "scurry_NE",
+   "start": "stand_NE",
+   "action": "scurrying away quickly with ears flat, looking guilty",
+   "frames": 8
+  },
+  {
+   "tag": "scurry_E",
+   "start": "stand_E",
+   "action": "scurrying away quickly with ears flat, looking guilty",
+   "frames": 8
+  },
+  {
+   "tag": "scurry_SE",
+   "start": "stand_SE",
+   "action": "scurrying away quickly with ears flat, looking guilty",
+   "frames": 8
+  },
+  {
+   "tag": "startle_S",
+   "start": "stand_S",
+   "action": "startled, jumping back in surprise",
+   "frames": 6
+  },
+  {
+   "tag": "startle_SW",
+   "start": "stand_SW",
+   "action": "startled, jumping back in surprise",
+   "frames": 6
+  },
+  {
+   "tag": "startle_W",
+   "start": "stand_W",
+   "action": "startled, jumping back in surprise",
+   "frames": 6
+  },
+  {
+   "tag": "startle_NW",
+   "start": "stand_NW",
+   "action": "startled, jumping back in surprise",
+   "frames": 6
+  },
+  {
+   "tag": "startle_N",
+   "start": "stand_N",
+   "action": "startled, jumping back in surprise",
+   "frames": 6
+  },
+  {
+   "tag": "startle_NE",
+   "start": "stand_NE",
+   "action": "startled, jumping back in surprise",
+   "frames": 6
+  },
+  {
+   "tag": "startle_E",
+   "start": "stand_E",
+   "action": "startled, jumping back in surprise",
+   "frames": 6
+  },
+  {
+   "tag": "startle_SE",
+   "start": "stand_SE",
+   "action": "startled, jumping back in surprise",
+   "frames": 6
+  },
+  {
+   "tag": "pounce_S",
+   "start": "stand_S",
+   "action": "pouncing forward playfully with both front paws",
+   "frames": 8
+  },
+  {
+   "tag": "pounce_SW",
+   "start": "stand_SW",
+   "action": "pouncing forward playfully with both front paws",
+   "frames": 8
+  },
+  {
+   "tag": "pounce_W",
+   "start": "stand_W",
+   "action": "pouncing forward playfully with both front paws",
+   "frames": 8
+  },
+  {
+   "tag": "pounce_NW",
+   "start": "stand_NW",
+   "action": "pouncing forward playfully with both front paws",
+   "frames": 8
+  },
+  {
+   "tag": "pounce_N",
+   "start": "stand_N",
+   "action": "pouncing forward playfully with both front paws",
+   "frames": 8
+  },
+  {
+   "tag": "pounce_NE",
+   "start": "stand_NE",
+   "action": "pouncing forward playfully with both front paws",
+   "frames": 8
+  },
+  {
+   "tag": "pounce_E",
+   "start": "stand_E",
+   "action": "pouncing forward playfully with both front paws",
+   "frames": 8
+  },
+  {
+   "tag": "pounce_SE",
+   "start": "stand_SE",
+   "action": "pouncing forward playfully with both front paws",
+   "frames": 8
+  }
+ ]
+}
