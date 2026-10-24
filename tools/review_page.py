@@ -5,8 +5,10 @@
 
 Every job in jobs.json, grouped by animation, one column per direction: the GIF if it is made (tools/pixellab_import.py),
 the start frame otherwise, the prompt under it. Nothing here goes into the game: the owner approves first.
+index.html links the images (light, committed); animaciok.html has them inside as data URIs (~12 MB, gitignored), so it
+also shows in viewers that get the page alone, like the app's file preview.
 """
-import html, json, os, re
+import base64, html, json, os, re
 from collections import OrderedDict
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -60,7 +62,12 @@ img.wait{{opacity:.45}} figcaption{{font-size:12px;margin-top:4px}} figcaption s
 {"".join(rows)}</body></html>"""
     os.makedirs(OUT, exist_ok=True)
     open(os.path.join(OUT, "index.html"), "w", encoding="utf-8").write(page)
-    print(f"{done} / {total} done -> docs/review/index.html")
+    def inline(m):
+        path = os.path.normpath(os.path.join(OUT, m.group(1)))
+        kind = "gif" if path.endswith(".gif") else "png"
+        return 'src="data:image/%s;base64,%s"' % (kind, base64.b64encode(open(path, "rb").read()).decode("ascii"))
+    open(os.path.join(OUT, "animaciok.html"), "w", encoding="utf-8").write(re.sub(r'src="([^"]+\.(?:gif|png))"', inline, page))
+    print(f"{done} / {total} done -> docs/review/index.html, docs/review/animaciok.html (self-contained)")
 
 if __name__ == "__main__":
     main()
