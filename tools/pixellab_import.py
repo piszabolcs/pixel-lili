@@ -14,21 +14,25 @@ Previews only: nothing goes into assets/sprites/lili or the pak until the owner 
 Animate with Text (New) returns the source twice (frame 0 and 1); the duplicate is dropped from the GIF.
 A job in assets/pixellab/jobs.json with "makes": its last frame is also saved as assets/startframes/<makes>.png,
 the start frame of later jobs (a sit-down's last frame is the sitting pose Gemini did not draw).
+The previews show the frames after tools/pixellab_norm.py (2026-10-26, the owner): every animation in the 128 px
+cell at one size, on one ground line, stand_N's tail remnant cleared; the raw frames stay as they came.
 """
 import json, os, sys
 import numpy as np
 from PIL import Image
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pixellab_norm as pn
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, "assets", "raw_renders", "pixellab")
 DOC = os.path.join(ROOT, "docs", "img", "anim")
 BG = (40, 44, 52)
-S = 4                                   # preview scale (3 for the 128 px frames)
+S = 3                                   # preview scale: every frame is in the 128 px cell (pixellab_norm)
 
 def big(f):
-    s = 3 if f.width > 96 else S
     b = Image.new("RGBA", f.size, BG + (255,)); b.alpha_composite(f)
-    return b.convert("RGB").resize((f.width * s, f.height * s), Image.NEAREST)
+    return b.convert("RGB").resize((f.width * S, f.height * S), Image.NEAREST)
 
 def run(tag):
     sheet = Image.open(os.path.join(ROOT, "assets", "pixellab", tag + "_sheet.png")).convert("RGBA")
@@ -37,9 +41,8 @@ def run(tag):
     out = os.path.join(RAW, tag); os.makedirs(out, exist_ok=True)
     for i, f in enumerate(frames):
         f.save(os.path.join(out, f"f{i:03d}.png"))
-    # the editor sometimes appends the generated frames after its empty placeholders: drop empty frames too
-    seq = frames[:1] + [f for i, f in enumerate(frames[1:], 1)
-                        if not np.array_equal(np.asarray(f), np.asarray(frames[0])) and np.asarray(f)[..., 3].any()]
+    # the editor sometimes appends the generated frames after its empty placeholders: those are dropped too
+    seq = [Image.fromarray(f, "RGBA") for f in pn.normalize(tag)]
     bigs = [big(f) for f in seq]
     bigs[0].save(os.path.join(DOC, f"pixellab_{tag}.gif"), save_all=True, append_images=bigs[1:], duration=110, loop=0)
     rows = (len(bigs) + 4) // 5; T = bigs[0].width
@@ -57,11 +60,7 @@ def run(tag):
 
 def combo(name, tags):
     """one GIF with several imported animations side by side (e.g. every direction of the walk)"""
-    seqs = []
-    for t in tags:
-        d = os.path.join(RAW, t)
-        fr = [Image.open(os.path.join(d, f)).convert("RGBA") for f in sorted(os.listdir(d)) if f.endswith(".png")]
-        seqs.append(fr[:1] + [f for f in fr[1:] if not np.array_equal(np.asarray(f), np.asarray(fr[0]))])
+    seqs = [[Image.fromarray(f, "RGBA") for f in pn.normalize(t)] for t in tags]
     n = max(len(s) for s in seqs); T = max(big(s[0]).width for s in seqs)
     out = []
     for i in range(n):

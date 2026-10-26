@@ -1,5 +1,5 @@
 {
- "_note": "PixelLab Animate with Text v3, 128 px start frames (assets/startframes); done = assets/pixellab/<tag>_sheet.png exists. 'makes': the last frame becomes that start frame.",
+ "_note": "PixelLab Animate with Text v3, 128 px start frames (assets/startframes); done = assets/pixellab/<tag>_sheet.png exists. 'makes': the last frame becomes that start frame. 'redo': the owner rejected the made one (2026-10-26), it is made again.",
  "jobs": [
   {
    "tag": "sit_down_E",
@@ -52,7 +52,8 @@
    "tag": "trot_S",
    "start": "stand_S",
    "action": "trotting happily, tail up, ears bouncing",
-   "frames": 8
+   "frames": 8,
+   "redo": "rose into the air and grew while trotting (the owner, 2026-10-26); again in place"
   },
   {
    "tag": "trot_SW",
@@ -76,7 +77,8 @@
    "tag": "trot_N",
    "start": "stand_N",
    "action": "trotting happily, tail up, ears bouncing",
-   "frames": 8
+   "frames": 8,
+   "redo": "made from stand_N before its tail hole was cleared (the owner, 2026-10-26)"
   },
   {
    "tag": "trot_NE",
@@ -118,7 +120,8 @@
    "tag": "run_N",
    "start": "stand_N",
    "action": "running fast in a full gallop, ears back, happy zoomies",
-   "frames": 8
+   "frames": 8,
+   "redo": "made from stand_N before its tail hole was cleared (the owner, 2026-10-26)"
   },
   {
    "tag": "run_NE",
@@ -160,7 +163,8 @@
    "tag": "idle_stand_N",
    "start": "stand_N",
    "action": "standing still, wagging tail, breathing calmly",
-   "frames": 8
+   "frames": 8,
+   "redo": "made from stand_N before its tail hole was cleared (the owner, 2026-10-26)"
   },
   {
    "tag": "idle_stand_NE",
@@ -202,7 +206,8 @@
    "tag": "sit_down_N",
    "start": "stand_N",
    "action": "sitting down calmly onto her haunches, then sitting still",
-   "frames": 8
+   "frames": 8,
+   "redo": "made from stand_N before its tail hole was cleared (the owner, 2026-10-26)"
   },
   {
    "tag": "sit_down_NE",
@@ -316,7 +321,8 @@
    "tag": "eat_treat_S",
    "start": "bow_treat_S",
    "action": "rear end up, head down eating the biscuit, chewing, tail wagging",
-   "frames": 8
+   "frames": 8,
+   "redo": "v3: slid backwards and up, a cloud came out (the owner, 2026-10-26); again with PixMiniMax"
   },
   {
    "tag": "eat_treat_SW",
@@ -373,10 +379,18 @@
    "frames": 8
   },
   {
+   "tag": "lie_down_rope_S",
+   "start": "carry_S",
+   "action": "lying down on her belly holding the rope toy in her mouth, then resting",
+   "frames": 8,
+   "makes": "lie_rope_S3"
+  },
+  {
    "tag": "chew_rope_S",
-   "start": "lie_rope_S",
-   "action": "lying down, chewing the rope toy held between her paws",
-   "frames": 8
+   "start": "lie_rope_S3",
+   "action": "lying down, chewing the rope toy held in her mouth",
+   "frames": 8,
+   "redo": "the rope lay on her paws and was in her mouth at the same time: the start frame had it so (the owner, 2026-10-26); now from a lie-down with the rope only in her mouth"
   },
   {
    "tag": "chew_rope_SE",
@@ -517,51 +531,33 @@
    "frames": 8
   },
   {
-   "tag": "bark_S",
+   "tag": "bark_S_v2",
    "start": "stand_S",
-   "action": "barking happily, mouth opening wide, head bobbing with each bark",
+   "action": "barking: with each bark she throws her head up high, nose pointing to the sky, mouth wide open, then back down",
    "frames": 8
   },
   {
    "tag": "bark_SW",
    "start": "stand_SW",
-   "action": "barking happily, mouth opening wide, head bobbing with each bark",
+   "action": "barking: with each bark she throws her head up high, nose pointing to the sky, mouth wide open, then back down",
    "frames": 8
   },
   {
    "tag": "bark_W",
    "start": "stand_W",
-   "action": "barking happily, mouth opening wide, head bobbing with each bark",
-   "frames": 8
-  },
-  {
-   "tag": "bark_NW",
-   "start": "stand_NW",
-   "action": "barking happily, mouth opening wide, head bobbing with each bark",
-   "frames": 8
-  },
-  {
-   "tag": "bark_N",
-   "start": "stand_N",
-   "action": "barking happily, mouth opening wide, head bobbing with each bark",
-   "frames": 8
-  },
-  {
-   "tag": "bark_NE",
-   "start": "stand_NE",
-   "action": "barking happily, mouth opening wide, head bobbing with each bark",
+   "action": "barking: with each bark she throws her head up high, nose pointing to the sky, mouth wide open, then back down",
    "frames": 8
   },
   {
    "tag": "bark_E",
    "start": "stand_E",
-   "action": "barking happily, mouth opening wide, head bobbing with each bark",
+   "action": "barking: with each bark she throws her head up high, nose pointing to the sky, mouth wide open, then back down",
    "frames": 8
   },
   {
    "tag": "bark_SE",
    "start": "stand_SE",
-   "action": "barking happily, mouth opening wide, head bobbing with each bark",
+   "action": "barking: with each bark she throws her head up high, nose pointing to the sky, mouth wide open, then back down",
    "frames": 8
   },
   {
@@ -652,7 +648,8 @@
    "tag": "sniff_N",
    "start": "stand_N",
    "action": "walking slowly with her nose to the ground, sniffing",
-   "frames": 8
+   "frames": 8,
+   "redo": "made from stand_N before its tail hole was cleared (the owner, 2026-10-26)"
   },
   {
    "tag": "sniff_NE",
@@ -700,7 +697,8 @@
    "tag": "sneak_N",
    "start": "stand_N",
    "action": "sneaking slowly, crouched low, careful steps",
-   "frames": 8
+   "frames": 8,
+   "redo": "made from stand_N before its tail hole was cleared (the owner, 2026-10-26)"
   },
   {
    "tag": "sneak_NE",
@@ -748,7 +746,8 @@
    "tag": "scurry_N",
    "start": "stand_N",
    "action": "scurrying away quickly with ears flat, looking guilty",
-   "frames": 8
+   "frames": 8,
+   "redo": "made from stand_N before its tail hole was cleared (the owner, 2026-10-26)"
   },
   {
    "tag": "scurry_NE",
@@ -796,7 +795,8 @@
    "tag": "startle_N",
    "start": "stand_N",
    "action": "startled, jumping back in surprise",
-   "frames": 6
+   "frames": 6,
+   "redo": "made from stand_N before its tail hole was cleared (the owner, 2026-10-26)"
   },
   {
    "tag": "startle_NE",
@@ -844,7 +844,8 @@
    "tag": "pounce_N",
    "start": "stand_N",
    "action": "pouncing forward playfully with both front paws",
-   "frames": 8
+   "frames": 8,
+   "redo": "made from stand_N before its tail hole was cleared (the owner, 2026-10-26)"
   },
   {
    "tag": "pounce_NE",

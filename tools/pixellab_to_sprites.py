@@ -35,7 +35,7 @@ ANIMS = {
     "play_bow":       (11, 10, True,  {"SW": "play_bow_SW_v3"}),   # v3 (2026-10-23, the owner's prompt): all four paws planted; v1 batted its paws, v2 lifted a hind leg
     "bark_head_flip": (12, 10, False, {"S": "bark_S"}),
     "eat_drink":      (17, 8,  True,  {"W": "eat_W"}),
-    "sleep_curl":     (18, 3,  True,  {"SW": "sleep_curl_SW_v2"}),
+    "sleep_curl":     (18, 3,  True,  {"SW": "sleep_curl_SW_v2"}),   # the owner rejected it on 2026-10-26 (sheet removed): the built set stays for now
     "look_around":    (23, 8,  False, {"S": "look_around_S"}),
     "drink":          (28, 8,  True,  {"W": "drink_W"}),
 }
@@ -113,6 +113,9 @@ def main():
     pal_lab = rgb_to_oklab(np.array(full, float))
     for anim, (aid, fps, loop, src) in ANIMS.items():
         d = os.path.join(ROOT, "assets", "sprites", "lili_96", anim)
+        gone = [t for t in src.values() if not os.path.exists(os.path.join(ROOT, "assets", "pixellab", t + "_sheet.png"))]
+        if gone:                                             # the owner rejected the sheet: the built set stays until a new one is approved
+            print(f"{anim:15s} kept as built ({', '.join(gone)} was rejected, 2026-10-26)"); continue
         old_breath = {}
         if anim == "idle_stand" and os.path.exists(os.path.join(d, "manifest.json")):
             man = json.load(open(os.path.join(d, "manifest.json"), encoding="utf-8"))
