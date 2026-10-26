@@ -321,7 +321,7 @@ Hiba: az NW animációk mind 20 %-kal nagyobbak voltak. Gyökérok: a `stand_up_
 
 Hiba: a `stand_N` farkának gyűrűjében világos folt maradt, minden N animáció örökölte. Gyökérok: a lyuk a forrásképen nem tiszta háttérszín volt, hanem halványabb, ezt a színkulcs nem ismerte fel, a palettázás pedig krémszínűre fordította. Javítás: a körvonallal körbezárt világos szigetet a farok oldalán átlátszóvá tesszük; a remake-eknél a nyitott résbe festett szürkés foltot is (ami nem a bundához, hanem az átlátszó háttérhez ér).
 
-Hiba: munka közben a fájljaim visszaálltak a reggeli állapotra. Gyökérok: a gazdi az asztalról az F:-re helyezte át a projektet, a fájlokat fogó két háttérfolyamatom leállítása után az áthelyezés folytatódott, és felülírta a már átmásolt mappát (a ma reggeli N remake-ek így a javítatlan `stand_N`-ből készültek). Javítás: mindent újra alkalmaztam, biztonsági commit készült (2149d73), az N animációk újra elkészültek; az ilyen áthelyezést előbb meg kell kérdezni.
+Hiba: munka közben a fájljaim visszaálltak a reggeli állapotra. Gyökérok: a mappák költöztetését (asztal -> `F:\AI`) egy másik munkamenet végezte, és az asztali példányt az én átmásolásom és módosításaim után még egyszer rámásolta az F:-re (az eredeti dátumokkal, a `.git`-tel együtt); a ma reggeli első N remake-ek így a javítatlan `stand_N`-ből készültek. Javítás: mindent újra alkalmaztam, biztonsági commit készült (2149d73), az N animációk újra elkészültek. Tanulság: egy közös mappát egyszerre csak egy munkamenet másoljon, és a módosítás előtt érdemes rögtön commitolni.
 
 Fogalmak: referencia-magasság és tűréshatár, talpvonalra igazítás, összefüggő komponens (zárt sziget)
 
