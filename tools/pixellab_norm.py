@@ -239,7 +239,8 @@ def fix_startframes():
 def check():
     """every animation's first and last frame, by name and direction, on one red ground line, with the heights"""
     jobs = json.load(open(os.path.join(ROOT, "assets", "pixellab", "jobs.json"), encoding="utf-8"))["jobs"]
-    tags = sorted(f[:-10] for f in os.listdir(os.path.join(ROOT, "assets", "pixellab")) if f.endswith("_sheet.png"))
+    tags = sorted(f[:-10] for f in os.listdir(os.path.join(ROOT, "assets", "pixellab"))
+                  if f.endswith("_sheet.png") and not f.startswith("yard_"))     # the yard's parts are not Lili
     rows = {}
     for t in tags:
         name, d, var = split(t); rows.setdefault(name, []).append(t)

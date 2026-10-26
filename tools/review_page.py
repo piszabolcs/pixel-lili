@@ -29,7 +29,8 @@ def main():
     jobs = json.load(open(os.path.join(ROOT, "assets", "pixellab", "jobs.json"), encoding="utf-8"))["jobs"]
     by_tag = {j["tag"]: j for j in jobs}
     in_game = {t for _, _, _, src in ANIMS.values() for t in src.values()}
-    sheets = [f[:-10] for f in os.listdir(os.path.join(ROOT, "assets", "pixellab")) if f.endswith("_sheet.png")]
+    sheets = [f[:-10] for f in os.listdir(os.path.join(ROOT, "assets", "pixellab"))
+              if f.endswith("_sheet.png") and not f.startswith("yard_")]       # the yard's parts have their own section
     tags = [t for t in sheets if t not in HIDDEN and os.path.exists(os.path.join(ROOT, "docs", "img", "anim", f"pixellab_{t}.gif"))]
     tags += [j["tag"] for j in jobs if j["tag"] not in sheets]          # not made yet
     groups = OrderedDict((split(j["tag"])[0], []) for j in jobs)
@@ -57,6 +58,18 @@ def main():
             action = f'<br><span>{html.escape(j["action"])}</span>' if j.get("action") else ""
             cells.append(f'<figure class="{cls}">{img}<figcaption><b>{d or "-"}</b> {state}{tags_html}{action}{why}</figcaption></figure>')
         rows.append(f'<section><h2>{html.escape(name)}</h2><div class="row">{"".join(cells)}</div></section>')
+    yard = []                                                            # tools/yard_anim_preview.py
+    anim = os.path.join(ROOT, "docs", "img", "anim")
+    if os.path.exists(os.path.join(anim, "yard_preview_summer.gif")):
+        yard.append('<figure class="wide"><img class="yard" src="../img/anim/yard_preview_summer.gif" alt="yard"><figcaption>'
+                    '<b>Nyári udvar</b> próba: szélben hajló fa, megrázkódó bokor (Lili belemegy), átrepülő verebek, pillangó'
+                    '<br><span>Semmi nincs bekötve; a fa és a bokor a meglévő takaró rétegekből készült.</span></figcaption></figure>')
+    for tag, cap in (("yard_tree_summer", "bal fa, szél"), ("yard_bush_summer", "jobb bokor, megrázkódik"),
+                     ("yard_bird", "veréb, repül"), ("yard_butterfly", "pillangó")):
+        if os.path.exists(os.path.join(anim, tag + ".gif")):
+            yard.append(f'<figure class="done"><img src="../img/anim/{tag}.gif" alt="{tag}"><figcaption><b>{cap}</b></figcaption></figure>')
+    if yard:
+        rows.insert(0, f'<section><h2>Az udvar mozgó részei (próba)</h2><div class="row">{"".join(yard)}</div></section>')
     page = f"""<!doctype html><html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lili animációk</title><style>
 :root{{--bg:#1d1f24;--fg:#e8e6e1;--mute:#9a9790;--card:#2a2d33;--ok:#7fd1a8;--warn:#e8b45c;--game:#8fb8ff}}
@@ -64,7 +77,7 @@ body{{margin:0;padding:16px;background:var(--bg);color:var(--fg);font:14px/1.4 s
 h1{{font-size:20px;margin:0 0 4px}} h2{{font-size:15px;margin:18px 0 6px}} p{{color:var(--mute);margin:0 0 8px;max-width:70em}}
 .row{{display:flex;flex-wrap:wrap;gap:8px}} figure{{margin:0;background:var(--card);border-radius:8px;padding:6px;width:200px}}
 img{{width:192px;height:192px;image-rendering:pixelated;display:block;background:#34373e;border-radius:4px}}
-img.wait{{opacity:.45}} figcaption{{font-size:12px;margin-top:4px}} figcaption span{{color:var(--mute)}}
+img.wait{{opacity:.45}} figure.wide{{width:auto;max-width:496px}} img.yard{{width:480px;height:480px;max-width:100%;height:auto}} figcaption{{font-size:12px;margin-top:4px}} figcaption span{{color:var(--mute)}}
 .done b{{color:var(--ok)}} .redo b,.why{{color:var(--warn)!important}} .redo img{{opacity:.6}} i{{color:var(--mute)}} em{{color:var(--game);font-style:normal}}
 </style></head><body><h1>Lili animációk: áttekintés</h1>
 <p>{done} / {total} kész. Minden animáció egy méretben és egy talpvonalon (a 128 px-es cella alsó sora), ahogy a játékban egymás után jönnek.

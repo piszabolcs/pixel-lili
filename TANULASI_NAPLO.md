@@ -325,6 +325,15 @@ Hiba: munka közben a fájljaim visszaálltak a reggeli állapotra. Gyökérok: 
 
 Fogalmak: referencia-magasság és tűréshatár, talpvonalra igazítás, összefüggő komponens (zárt sziget)
 
+## 2026-10-26 | 2D vonal, 8. lépés: utolsó javítások és a mozgó udvar (próba)
+Készült: a gazdi átnézte az oldalt és rendben találta; a jelzett gyengék újra: trot_S ("no motion lines": eltűnt a fül melletti fehér pamacs), startle_N kis ijedt ugrással, a scurry mind a 8 irányban ("frantic quick tiny steps, body low, ears flat back": most lapul és menekül, nem lopakodik). Udvari próba: a bal fa lombja szélben hajladozik, a jobb bokor megrázkódik (amikor Lili belemegy), verebek repülnek át, pillangó repked a virágágyás fölött; `tools/yard_anim_preview.py` -> `docs/img/anim/yard_preview_summer.gif`, és külön szekció a jóváhagyó oldal tetején. Semmi nincs bekötve.
+
+Döntés: a fa és a bokor a meglévő takaró rétegből (`assets/backgrounds/game/cover_summer_*`) készült, mert az már ki van vágva és tudjuk a helyét az udvaron; a PixMiniMax bármilyen tárgyat animál, amit első kockának kap. A madár és a pillangó nincs a képen, ezért a "Create animated object" eszköz rajzolta szövegből (64 px, 16 kocka, 10 generálás), az udvar méretére kicsinyítve.
+
+Hiba: a szerkesztő lapja kétszer lefagyott, és egyszer az egész vezérelt lapcsoport megszűnt. Gyökérok: három nehéz szerkesztőpéldány futott egyszerre (a régi lapok bezáratlanul), és a Pixelorama "Backup saved" mentése közben a lap nem válaszol. Javítás: új lapon folytattam, az elveszett két generálást újra lefuttattam; a régi lapokat a gazdinak kell bezárnia.
+
+Fogalmak: takaró réteg (cover layer)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -516,3 +525,5 @@ Fogalmak: referencia-magasság és tűréshatár, talpvonalra igazítás, össze
 **talpvonalra igazítás:** minden kocka legalsó nem átlátszó pixelét ugyanarra a sorra toljuk (itt a 128-as cella 121. sora). Helyben járásnál mindig van egy mancs a földön, ezért a legalsó pixel a talaj; így a kutya nem lebeg és nem süllyed. Ugrásnál csak az első kockát igazítjuk, a többi együtt mozog vele, hogy a felugrás megmaradjon.
 
 **összefüggő komponens (zárt sziget):** a szomszédos, azonos feltételnek megfelelő pixelek csoportja (itt: világos és nem körvonal). Ha egy csoport szélén szinte csak sötét körvonal van, akkor körbe van zárva: ez a farok gyűrűjébe szorult folt, és a feltétel alapján átlátszóvá tehető, anélkül hogy a test többi része változna.
+
+**takaró réteg (cover layer):** a háttérkép egy kivágott darabja (fa, bokor, pad), amely a játékban Lili előtt vagy mögött rajzolódik, attól függően, hogy Lili lába a réteg "talpvonala" (sort_y) felett vagy alatt van. Mivel külön kép és tudjuk a helyét, animálni is lehet: a mozgó változat a helyére kerül, a háttér többi része változatlan.
