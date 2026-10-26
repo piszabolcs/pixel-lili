@@ -312,6 +312,19 @@ Hiba: egy-két indítás nem futott le (a panel épp átváltott, vagy "maximum 
 
 Fogalmak: átmenet-animáció és láncolt kezdőkocka, nézetrögzítő prompt
 
+## 2026-10-26 | 2D vonal, 7. lépés: egy méret, egy talpvonal, tiszta hátnézet
+Készült: `tools/pixellab_norm.py`, amin minden előnézet átmegy: a 96 px-es régi sheetek a 128-as cellába kerülnek (ugyanaz a kutya, ugyanaz a talppont), az álló és ülő kutya a mesterképek magasságára skálázódik, ha 3 %-nál jobban eltér, minden kocka legalsó pixele a talpvonalra kerül (az ugrások kivételével), és a pár pixeles kóbor pöttyök eltűnnek. `--check`: `docs/img/anim/size_check.png`, minden animáció első és utolsó kockája egy piros talpvonalon. Újragenerálva PixMiniMax-szal: az ugatás fejfelcsapással (S, SW, W, E, SE), a 9 N animáció a megjavított `stand_N`-ből, a trot_S helyben, az eat_treat_S, és a kötélrágás egy "lefekszik a kötéllel a szájában" átmenet utolsó kockájából.
+
+Döntés: a magasság csak állásnál és ülésnél mérce (ott a fej és a fül adja a tetejét minden irányból, és vannak jóváhagyott mesterképek); egy meghajlásnál a farok, a kötélhordásnál a játék a legmagasabb pont, ezért azokhoz nem nyúl. Egy átmenet (leül, feláll) skálája az első és az utolsó kocka között fokozatosan vált, így pontosan akkora ülő kutyába érkezik, amekkora a következő animáció eleje. A hátulról ugatás kimarad (a gazdi: hátulról nem látszik, a fej meg daganatnak tűnt), a játék ugatás előtt a néző felé fordítja.
+
+Hiba: az NW animációk mind 20 %-kal nagyobbak voltak. Gyökérok: a `stand_up_NW` átmenet felállás közben 81-ről 95 px-re növelte a kutyát, és az utolsó kockája lett az NW kezdőkocka, így minden NW animáció ezt örökölte. Javítás: a normalizáló a 79 px-es mesterhez skáláz, a kezdőkocka is.
+
+Hiba: a `stand_N` farkának gyűrűjében világos folt maradt, minden N animáció örökölte. Gyökérok: a lyuk a forrásképen nem tiszta háttérszín volt, hanem halványabb, ezt a színkulcs nem ismerte fel, a palettázás pedig krémszínűre fordította. Javítás: a körvonallal körbezárt világos szigetet a farok oldalán átlátszóvá tesszük; a remake-eknél a nyitott résbe festett szürkés foltot is (ami nem a bundához, hanem az átlátszó háttérhez ér).
+
+Hiba: munka közben a fájljaim visszaálltak a reggeli állapotra. Gyökérok: a gazdi az asztalról az F:-re helyezte át a projektet, a fájlokat fogó két háttérfolyamatom leállítása után az áthelyezés folytatódott, és felülírta a már átmásolt mappát (a ma reggeli N remake-ek így a javítatlan `stand_N`-ből készültek). Javítás: mindent újra alkalmaztam, biztonsági commit készült (2149d73), az N animációk újra elkészültek; az ilyen áthelyezést előbb meg kell kérdezni.
+
+Fogalmak: referencia-magasság és tűréshatár, talpvonalra igazítás, összefüggő komponens (zárt sziget)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -497,3 +510,9 @@ Fogalmak: átmenet-animáció és láncolt kezdőkocka, nézetrögzítő prompt
 **átmenet-animáció és láncolt kezdőkocka:** az átmenet egyik pózból a másikba visz (állásból ülésbe); az utolsó kockája pontosan a célpóz, ezért kezdőkockaként továbbadható a következő animációnak (ülésből lihegés). Így egy hiányzó póz rajzolás nélkül előáll, és a két animáció a határon nem ugrik.
 
 **nézetrögzítő prompt:** a szöveges animációs modell a mozdulathoz magától választ nézetet (a megriadt kutya a néző felé fordul). Ha a leírás kimondja a nézetet és a tartást ("seen from behind ... keeps facing away"), a test a kezdőkocka irányában marad, és a nyolc irány egymás mellé tehető.
+
+**referencia-magasság és tűréshatár:** a méret egységesítéséhez kell egy mérce: itt a jóváhagyott mesterképek magassága (állva 79, ülve 81 px). Ami ettől legfeljebb 3 %-kal tér el, marad (a kis eltérés természetes, más a tartás); ami jobban, azt erre skálázzuk. A tűrés megóvja a jó képeket a fölösleges átméretezéstől.
+
+**talpvonalra igazítás:** minden kocka legalsó nem átlátszó pixelét ugyanarra a sorra toljuk (itt a 128-as cella 121. sora). Helyben járásnál mindig van egy mancs a földön, ezért a legalsó pixel a talaj; így a kutya nem lebeg és nem süllyed. Ugrásnál csak az első kockát igazítjuk, a többi együtt mozog vele, hogy a felugrás megmaradjon.
+
+**összefüggő komponens (zárt sziget):** a szomszédos, azonos feltételnek megfelelő pixelek csoportja (itt: világos és nem körvonal). Ha egy csoport szélén szinte csak sötét körvonal van, akkor körbe van zárva: ez a farok gyűrűjébe szorult folt, és a feltétel alapján átlátszóvá tehető, anélkül hogy a test többi része változna.
