@@ -86,7 +86,7 @@ static void fill_stripe(uint16_t *dst, int y0, int n, void *ctx) {
     int64_t t = esp_timer_get_time();
     r8_flush_rows(s_r8, dst, y0, n);
     mask_apply_rows(s_mask, dst, y0, n);
-    ui_apply_rows(s_ui, dst, y0, n);                     /* the glass status bar and the settings card (M10) */
+    if (s_ui) ui_apply_rows(s_ui, dst, y0, n);                     /* the glass status bar and the settings card (M10) */
     uint32_t *p = (uint32_t *)dst;
     for (int i = 0, m = n * LILI_PHYS_W / 2; i < m; i++) { uint32_t v = p[i]; p[i] = ((v & 0x00FF00FFu) << 8) | ((v >> 8) & 0x00FF00FFu); }
     s_fill_us += esp_timer_get_time() - t;
@@ -183,7 +183,7 @@ static void keys_poll(void) {                  /* a press = one event on the fal
     static int prev_boot = 1, prev_key3 = 1;
     int boot = gpio_get_level(PIN_BOOT), key3 = gpio_get_level(PIN_KEY3);
     if (prev_key3 && !key3) { demo_stop(); ev_push(&s_q, EV_SWITCH_VIEW, 0, 0); }   /* the tour's spots belong to its own view */
-    if (prev_boot && !boot) { ui_show(s_ui); body_owner(&s_world); }     /* BOOT: the glass status bar (spec 5.4, 7.8); the demo: the console's `demo` */
+    if (prev_boot && !boot) { if (s_ui) ui_show(s_ui); body_owner(&s_world); }     /* BOOT: the glass status bar (spec 5.4, 7.8); the demo: the console's `demo` */
     prev_boot = boot; prev_key3 = key3;
 }
 
@@ -238,11 +238,11 @@ void app_main(void) {
         const bool screen = body_poll(&s_world, &s_q, dt);      /* the mic, the IMU, the PWR key, the console, the energy states */
         ev_t ev; while (ev_pop(&s_q, &ev)) {
             ESP_LOGI(TAG, "event %s %d %d %d", ev_name((ev_type_t)ev.type), ev.a, ev.b, ev.c);
-            if (ev.type == EV_TAP && ui_tap(s_ui, &s_world, ev.a, ev.b)) continue;   /* the interface's tap, not the world's */
+            if (ev.type == EV_TAP && s_ui && ui_tap(s_ui, &s_world, ev.a, ev.b)) continue;   /* the interface's tap, not the world's */
             world_handle_event(&s_world, &ev);
         }
-        ui_tick(s_ui, dt); body_set_brightness(ui_brightness(&s_world));
-        { static int64_t bat_t; if (t0 - bat_t > 2000000) { bat_t = t0; float f; bool ch; s_ui->has_battery = battery_port_read(&f, &ch); s_ui->battery = f; s_ui->charging = ch; } }
+        if (s_ui) ui_tick(s_ui, dt); body_set_brightness(ui_brightness(&s_world));
+        { static int64_t bat_t; if (s_ui && t0 - bat_t > 2000000) { bat_t = t0; float f; bool ch; s_ui->has_battery = battery_port_read(&f, &ch); s_ui->battery = f; s_ui->charging = ch; } }
         if (demo_active()) demo_tick(&s_world, dt);
         else {
             if (s_llm) llm_tick(dt); else brain_tick(&s_world, dt);
@@ -256,7 +256,7 @@ void app_main(void) {
         int64_t t1 = esp_timer_get_time();
         if (!screen) { vTaskDelay(pdMS_TO_TICKS(60)); continue; }   /* the screen asleep: the world lives on, nothing is drawn */
         world_render_cached(&s_world, s_r8, s_bg);
-        ui_prepare(s_ui, &s_world, s_r8);
+        if (s_ui) ui_prepare(s_ui, &s_world, s_r8);
         int64_t t2 = esp_timer_get_time();
         display_port_flush_gen(fill_stripe, NULL);
         int64_t t3 = esp_timer_get_time();
