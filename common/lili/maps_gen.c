@@ -237,12 +237,11 @@ static const map_prop_t props_yard[] = {
     { "bench", 312, 388, 140, 28, RAMP_ID_WOOD, 24, 0, 416, 0 },
 };
 static const map_zone_t zones_yard[] = {
-    { "hide_bush_1", 0, 116, 364, 44, 28, 0, 0 },
     { "hide_bush_2", 0, 412, 220, 64, 32, 0, 0 },
     { "hide_bush_3", 0, 128, 112, 60, 16, 0, 0 },
 };
 
 const map_t MAPS[2] = {
     { "room", RAMP_ID_FLOOR, RAMP_ID_WALL, 166, walk_room, pts_room, props_room, 7, zones_room, 4 },
-    { "yard", RAMP_ID_GRASS, RAMP_ID_HEDGE, 100, walk_yard, pts_yard, props_yard, 7, zones_yard, 3 },
+    { "yard", RAMP_ID_GRASS, RAMP_ID_HEDGE, 100, walk_yard, pts_yard, props_yard, 7, zones_yard, 2 },
 };

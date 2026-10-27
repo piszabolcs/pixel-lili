@@ -16,6 +16,7 @@ void world_init(world_t *w, uint32_t seed) {
     w->rng = seed ? seed : 0x2545F491u;                /* xorshift must never hold 0 */
     w->view = VIEW_ROOM;
     w->season_force = -1; w->daypart_force = -1;       /* memset gave 0 = "spring": -1 means "from the date / the clock" */
+    w->shake_cover = -1;
     actor_t *lili = &w->actors[0];
     lili->present = true;
     lili->view = VIEW_ROOM;
@@ -41,15 +42,38 @@ static const pak_t *s_pak;
 void world_set_pak(const pak_t *p) { s_pak = p && p->data ? p : NULL; }
 const pak_t *world_pak(void) { return s_pak; }
 
+/* the yard cover her paws are in: the smallest whose cut-out rectangle holds (x, y) (a bush, not the tree
+   canopy above it), -1 = none */
+static int cover_at(const world_t *w, int x, int y) {
+    pak_image_t im; int best = -1; long area = 1L << 30;
+    for (int k = 0; s_pak && k < IMG_COVERS_PER_SEASON; k++)
+        if (pak_image(s_pak, IMG_COVER(world_season(w), k), &im) && x >= im.x && x < im.x + im.w && y >= im.y && y < im.y + im.h && (long)im.w * im.h < area) {
+            area = (long)im.w * im.h; best = k;
+        }
+    return best;
+}
+
 void world_tick(world_t *w, float dt) {
     w->clock_s += dt;
+    if (w->shake_cover >= 0) w->shake_t += dt;
     for (int i = 0; i < MAX_ACTORS; i++) {
         actor_t *a = &w->actors[i];
         if (!a->present) continue;
         a->anim_t += dt;
-        const float target = in_hide_zone(a) ? 0.0f : 1.0f, step = dt * 1.6f;   /* a 0.6 s fade */
+        const bool hide = in_hide_zone(a);
+        /* the owner (2026-10-27): the bush stays still, it shakes once as she goes into it */
+        if (hide && !w->bodies[i].in_hide && a->view == VIEW_YARD) { w->shake_cover = (int8_t)cover_at(w, (int)a->x, (int)a->y); w->shake_t = 0; }
+        w->bodies[i].in_hide = hide;
+        const float target = hide ? 0.0f : 1.0f, step = dt * 1.6f;   /* a 0.6 s fade */
         a->vis = a->vis < target ? (a->vis + step > target ? target : a->vis + step) : (a->vis - step < target ? target : a->vis - step);
     }
+}
+
+/* the shake: the cover's picture a pixel or two to the side and back, 0.45 s (spec 8.5's 3 frames, each twice) */
+static int shake_dx(const world_t *w, int k) {
+    static const int8_t DX[9] = { 2, -2, 1, -1, 1, -1, 0, 0, 0 };
+    if (k != w->shake_cover || w->shake_t >= 0.45f || w->shake_t < 0) return 0;
+    return DX[(int)(w->shake_t * 20.0f) % 9];
 }
 
 void world_switch_view(world_t *w) {
@@ -323,7 +347,7 @@ static void painted_fg(const world_t *w, render8_t *r) {
     pak_image_t props[IMG_COVERS_PER_SEASON + 3]; int np = 0;
     if (w->view == VIEW_YARD)                                             /* the trees, bushes and the bench she goes behind */
         for (int k = 0; k < IMG_COVERS_PER_SEASON && np < IMG_COVERS_PER_SEASON; k++)
-            if (pak_image(s_pak, IMG_COVER(world_season(w), k), &props[np])) { key[n] = props[np].sort_y; who[n++] = (int8_t)np; np++; }
+            if (pak_image(s_pak, IMG_COVER(world_season(w), k), &props[np])) { props[np].x += shake_dx(w, k); key[n] = props[np].sort_y; who[n++] = (int8_t)np; np++; }
     if (w->view == VIEW_ROOM) {
         /* the bowls stand apart (tools/bg_build.py PROP_MOVE) so she has room beside each */
         static const uint16_t P[3] = { IMG_VASE, IMG_BOWL_FOOD, IMG_BOWL_WATER };

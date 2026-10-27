@@ -23,7 +23,6 @@
     "spot_flowers":   [60, 164, 0]
   },
   "zones": {
-    "hide_bush_1": { "rect": [58, 182, 22, 14] },
     "hide_bush_2": { "rect": [206, 110, 32, 16] },
     "hide_bush_3": { "rect": [64, 56, 30, 8] }
   },

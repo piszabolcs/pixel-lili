@@ -32,6 +32,7 @@ typedef struct {
     uint8_t  n, i;                    /* how many, the next one */
     uint8_t  style;                   /* nav_style_t */
     float    speed;                   /* logical px / s along the path: it speeds up, slows into sharp turns and the goal */
+    uint8_t  in_hide;                 /* her paws are in a bush's hiding zone (a map "hide_" zone) */
 } body_t;
 
 typedef struct {
@@ -44,6 +45,8 @@ typedef struct {
     uint32_t events_seen[17];  /* per ev_type_t (17 = EV_COUNT): what has reached the world, for tests and the inspector */
     actor_t  actors[MAX_ACTORS];
     body_t   bodies[MAX_ACTORS];   /* bodies[i] moves actors[i] */
+    int8_t   shake_cover;          /* the yard cover (IMG_COVER k) that shakes once as she goes into it (spec 8.5), -1 = none */
+    float    shake_t;              /* seconds into that shake */
 } world_t;
 
 #endif

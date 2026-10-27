@@ -467,6 +467,85 @@ static int selftest_nav(void) {
     return 0;
 }
 
+/* --selftest-render [--update] (spec 6.4, M4.2): the glass's corners, the daypart's palette, the Y-sort with the
+   yard's covers, the bush that shakes once as she goes in, and the reference images: the 32 --snapshot scenes'
+   hashes against assets/ref/render_hashes.txt (a changed picture fails until a person has looked at it and
+   rerun this with --update) */
+static uint32_t fb_hash(void) { uint32_t h = 2166136261u; for (int i = 0; i < LILI_PHYS_W * LILI_PHYS_H; i++) { h ^= s_fb[i]; h *= 16777619u; } return h; }
+static int selftest_render(bool update) {
+    if (!world_painted()) { printf("note: no painted world in the pak, selftest-render skipped\n"); return 0; }
+    canvas_init(); nav_init(&s_nav); world_init(&s_world, 21);
+    actor_t *l = &s_world.actors[0];
+    s_world.season_force = 1; s_world.daypart_force = 1; frame();
+    CHECK(s_fb[0] == 0 && s_fb[LILI_PHYS_W - 1] == 0 && s_fb[(LILI_PHYS_H - 1) * LILI_PHYS_W] == 0 && s_fb[LILI_PHYS_W * LILI_PHYS_H - 1] == 0, "the four corners are under the glass's black frame");
+    long lum[2] = { 0, 0 };
+    for (int k = 0; k < 2; k++) {                                /* the afternoon, then the night: the same room, darker */
+        s_world.daypart_force = (int8_t)(k ? 3 : 1); frame();
+        for (int i = 0; i < LILI_PHYS_W * LILI_PHYS_H; i += 7) lum[k] += (s_fb[i] >> 11) + ((s_fb[i] >> 5) & 63) / 2 + (s_fb[i] & 31);
+    }
+    CHECK(lum[1] * 10 < lum[0] * 7, "the night's palette is at least 30 % darker than the afternoon's");
+    /* the Y-sort: the yard's widest cover (the bench), Lili just behind its front edge and just in front of it */
+    s_world.view = l->view = VIEW_YARD; s_world.daypart_force = 1; l->anim = ANIM_IDLE_STAND; l->dir = DIR_S; l->vis = 1;
+    pak_image_t cv, best = { 0 }; int wide = -1;
+    for (int k = 0; k < IMG_COVERS_PER_SEASON; k++) if (pak_image(&s_pak, IMG_COVER(world_season(&s_world), k), &cv) && cv.w > best.w) { best = cv; wide = k; }
+    CHECK(wide >= 0 && best.sort_y > 0, "the yard has covers with a sort line");
+    static render8_t without, with;
+    int seen[2] = { 0, 0 };
+    for (int front = 0; front < 2; front++) {
+        l->x = best.x + best.w / 2; l->y = front ? best.sort_y + 3 : best.sort_y - 3;
+        l->present = false; world_render(&s_world, &without);
+        l->present = true;  world_render(&s_world, &with);
+        for (int i = 0; i < LILI_LOG_W * LILI_LOG_H; i++) seen[front] += without.px[i] != with.px[i];
+    }
+    printf("render: Lili behind the widest yard cover %d px seen, in front of it %d px\n", seen[0], seen[1]);
+    CHECK(seen[1] > 1000 && seen[0] < seen[1] * 3 / 4, "behind a cover's sort line she is partly hidden, in front of it she is all seen");
+    /* the bush: still until she goes into it, then a short shake, then still again (the owner, 2026-10-27) */
+    const map_t *ym = &MAPS[VIEW_YARD]; const map_zone_t *hz = NULL;
+    for (int i = 0; i < ym->n_zones; i++) if (!strncmp(ym->zones[i].name, "hide", 4)) { hz = &ym->zones[i]; break; }
+    CHECK(hz, "the yard has a hiding zone");
+    l->x = hz->a + hz->c / 2; l->y = hz->b - 6; world_tick(&s_world, 0.02f);
+    CHECK(s_world.shake_cover < 0, "outside the bush nothing shakes");
+    l->present = false; world_render(&s_world, &without);        /* the still bush, without her in the picture */
+    l->present = true; l->y = hz->b + hz->d / 2; world_tick(&s_world, 0.02f);
+    CHECK(s_world.shake_cover >= 0, "stepping into the hiding zone starts the bush's shake");
+    l->present = false;
+    world_render(&s_world, &with); int moved = 0;
+    for (int i = 0; i < LILI_LOG_W * LILI_LOG_H; i++) moved += without.px[i] != with.px[i];
+    for (int i = 0; i < 30; i++) world_tick(&s_world, 1.0f / 30.0f);
+    static render8_t later; world_render(&s_world, &later); int after = 0;
+    for (int i = 0; i < LILI_LOG_W * LILI_LOG_H; i++) after += without.px[i] != later.px[i];
+    printf("render: the bush's shake moves %d px, a second later %d px differ from the still bush\n", moved, after);
+    CHECK(moved > 50 && after == 0, "the bush shakes once, then stands still again");
+    l->present = true;
+    /* the reference images */
+    static const char *REF = "../assets/ref/render_hashes.txt";
+    static const char *V[VIEW_COUNT] = { "room", "yard" };
+    char lines[64][48]; int n = 0;
+    world_init(&s_world, 3);
+    for (int v = 0; v < VIEW_COUNT; v++) {
+        const map_point_t *p = &MAPS[v].points[v == VIEW_ROOM ? SPOT_CENTER : SPOT_GRASS];
+        s_world.view = l->view = (view_t)v; l->anim = ANIM_IDLE_SIT_BLINK; l->dir = DIR_S; l->anim_t = 0; l->x = p->x; l->y = p->y;
+        for (int s = 0; s < 4; s++) for (int d = 0; d < 4; d++) {
+            s_world.season_force = (int8_t)s; s_world.daypart_force = (int8_t)d; frame();
+            snprintf(lines[n++], sizeof lines[0], "%s_%d_%d %08x", V[v], s, d, fb_hash());
+        }
+    }
+    FILE *f = update ? NULL : fopen(REF, "r");
+    if (!f) {
+        f = fopen(REF, "w"); if (!f) { printf("FAIL: cannot write %s\n", REF); return 1; }
+        for (int i = 0; i < n; i++) fprintf(f, "%s\n", lines[i]);
+        fclose(f); printf("render: %d reference hashes written to %s\n", n, REF);
+    } else {
+        char got[64]; int bad = 0, i = 0;
+        while (i < n && fgets(got, sizeof got, f)) { got[strcspn(got, "\r\n")] = 0; if (strcmp(got, lines[i])) { printf("render: %s differs (reference %s)\n", lines[i], got); bad++; } i++; }
+        fclose(f);
+        if (bad || i != n) { printf("FAIL: %d of %d scenes differ from the reference images: look at ./lilisim --snapshot, then --selftest-render --update\n", bad + (n - i), n); return 1; }
+        printf("render: %d scenes match the reference images\n", n);
+    }
+    printf("selftest-render: ok\n");
+    return 0;
+}
+
 static double now_us(void) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); return ts.tv_sec * 1e6 + ts.tv_nsec / 1e3; }
 static int bench(void) {
     canvas_init(); world_init(&s_world, 1);
@@ -613,6 +692,7 @@ int main(int argc, char **argv) {
     pak_load("../assets/build/assets.pak");
     if (argc > 1 && !strcmp(argv[1], "--selftest")) return selftest();
     if (argc > 1 && !strcmp(argv[1], "--selftest-nav")) return selftest_nav();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-render")) return selftest_render(argc > 2 && !strcmp(argv[2], "--update"));
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
     if (argc > 2 && !strcmp(argv[1], "--inspector-shot")) return inspector_shot(argv[2]);
     if (argc > 2 && !strcmp(argv[1], "--demo-record")) return demo_record(argv[2], argc > 3 ? atoi(argv[3]) : 12);

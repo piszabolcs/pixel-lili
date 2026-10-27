@@ -64,7 +64,7 @@ SELFTESTS := --selftest --selftest-hunger --selftest-shop --selftest-battery \
 # the dev repo does not track model/out (the public one does): NOMODEL=1 runs
 # the same checks without the LLM selftest, for a checkout with no model
 ifdef LILI
-SELFTESTS := --selftest --selftest-nav --bench
+SELFTESTS := --selftest --selftest-nav --selftest-render --bench
 endif
 ifdef NOMODEL
 SELFTESTS := $(filter-out --selftest-llm,$(SELFTESTS))
