@@ -32,6 +32,7 @@
 #include "plan.h"
 #include "life.h"
 #include "save.h"
+#include "brain.h"
 #include "rtc_port.h"
 #include "nvs_flash.h"
 #include "nvs.h"
@@ -103,6 +104,7 @@ static void lili_load(void) {
     s_world.clock_s = 0; s_world.epoch0 = at;
     offline_log_t lg; const int sc = clock && now > at ? life_offline(&s_world, now - at, &lg) : SCENE_GREET;
     s_world.epoch0 = now - (int64_t)s_world.clock_s;
+    if (clock && now > at) brain_owner_back(&s_world, now - at);
     ESP_LOGI(TAG, "save: away %.1f h -> %s", clock && now > at ? (now - at) / 3600.0 : 0.0, life_scene_name(sc));
 }
 
@@ -142,7 +144,7 @@ void app_main(void) {
     nav_init(s_nav);
     s_touch = touch216_init();
     lili_load();
-    if (s_pak.data) demo_start();
+    /* M6.4: from power-on she lives by her own brain; BOOT starts (and stops) the demo tour */
     memset(s_bg, 0, sizeof *s_bg);
     ESP_LOGI(TAG, "up: world %u B, canvas %u B, mask %u B, static-layer cache %u B | internal heap %u KB free", (unsigned)sizeof s_world, (unsigned)sizeof *s_r8, (unsigned)sizeof *s_mask, (unsigned)sizeof *s_bg,
              (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024);
@@ -162,7 +164,13 @@ void app_main(void) {
             world_finger(&s_world, down, tx, ty);
         }
         ev_t ev; while (ev_pop(&s_q, &ev)) { ESP_LOGI(TAG, "event %s %d %d %d", ev_name((ev_type_t)ev.type), ev.a, ev.b, ev.c); world_handle_event(&s_world, &ev); }
-        if (demo_active()) demo_tick(&s_world, dt); else plan_tick(&s_world, 0, dt);
+        if (demo_active()) demo_tick(&s_world, dt);
+        else {
+            brain_tick(&s_world, dt); plan_tick(&s_world, 0, dt);
+            if (s_world.ask_t == 0 && s_world.rule >= 0)              /* a new decision: the serial log shows what she chose */
+                ESP_LOGI(TAG, "brain: %s -> %s %s %s (margin %.2f)", BRAIN_RULES[s_world.rule].id, ACTION_NAME(s_world.plans[0].d.a[0]),
+                         ACTION_NAME(s_world.plans[0].d.a[1]), ACTION_NAME(s_world.plans[0].d.a[2]), s_world.margin);
+        }
         { static float save_t; save_t += dt; if (save_t > 300.0f && !demo_active()) { save_t = 0; lili_save(); } }   /* every 5 minutes (spec 9.7) */
         world_tick(&s_world, dt);
         int64_t t1 = esp_timer_get_time();

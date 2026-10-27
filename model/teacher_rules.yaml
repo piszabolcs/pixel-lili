@@ -1,0 +1,503 @@
+# Pixel Lili's teacher (spec 10.7, level A): the rule brain. Every template is one way Lili may answer a situation,
+# tied to a habit of spec 3.2 (H1-H15). The brain scores every template whose condition holds and whose first action
+# can run now, and picks one by softmax (tau 0.6): a score 3 higher is ~150 times likelier. tools/gen_rules.py
+# compiles this file into common/lili/brain_rules_gen.c (the simulator, the time away and the panel run the same).
+#
+# Conditions and scores are Python-syntax expressions over the brain's input fields (model/schema_lili.json):
+#   loc spot tod season day guilty pad mess bowls owner view sig rope plush sun last since   (their token names
+#   without the field prefix: owner == back_long, rope in (near, mouth), mess > 0)
+#   hunger energy happy bored lonely bladder                                                  (buckets 0..9)
+# min max log exp work. A plan has up to three slots; a|b|c = one of those (the possible ones, at random).
+# kind = the activity it is (play rest eat explore greet mischief social): spec 10.11 P11 punishes doing the same
+# kind again and again when she is bored (the engine subtracts from a template of the last kind after a long while).
+#
+# The tiers: guilt 25 > bladder 20 > the greeting 17-19 (H1: the owner home comes first, even before food or
+# sleep) > a need (16) > September 12th 15 > night sleep 14 > situations 7-10 > pastimes 3-6.
+
+# ---- H10: guilty, she hides under the bench and only peeks out (R1 lets her out) ----
+- id: guilty_hide
+  habit: H10
+  when: guilty == 1
+  score: 25
+  plan: [hide_bench, peek_bench]
+  style: scurry
+  face: guilty
+  bubble: sweat
+  urg: 9
+  kind: mischief
+- id: guilty_peek
+  habit: H10
+  when: guilty == 1 and spot == nook
+  score: 25
+  plan: [peek_bench, hide_bench]
+  style: tiptoe
+  face: guilty
+  bubble: none
+  urg: 3
+  kind: mischief
+
+# ---- H8 / H9: the bladder over 8 must go; the floor with spec 9.2's chance, the pad otherwise ----
+- id: pee_pad
+  habit: H8
+  when: bladder >= 8
+  score: 20 + 0.6 * log(1 - min(0.85, 0.05 + 0.08 * max(0, bored - 5) + 0.08 * max(0, lonely - 5) + 0.5 * (pad == full)) * (day != memorial))
+  plan: [use_pad]
+  style: trot
+  face: neutral
+  bubble: none
+  urg: 8
+  kind: rest
+- id: pee_floor
+  habit: H9
+  when: bladder >= 8 and day != memorial
+  score: 20 + 0.6 * log(max(0.001, min(0.85, 0.05 + 0.08 * max(0, bored - 5) + 0.08 * max(0, lonely - 5) + 0.5 * (pad == full))))
+  plan: [mischief_floor, hide_bench]
+  style: tiptoe
+  face: guilty
+  bubble: none
+  urg: 7
+  kind: mischief
+
+# ---- H14: hungry, she eats from the bowls by the bench ----
+- id: eat
+  habit: H14
+  when: hunger >= 7 and bowls != empty
+  score: 16
+  plan: [eat, drink|act_none, pant_idle|act_none]
+  style: trot
+  face: pant_smile
+  bubble: food
+  urg: 8
+  kind: eat
+- id: eat_peckish
+  habit: H14
+  when: hunger >= 5 and bowls != empty
+  score: 1.5 + hunger
+  plan: [eat, drink|act_none]
+  style: walk
+  face: neutral
+  bubble: food
+  urg: 5
+  kind: eat
+- id: hungry_empty
+  habit: H5
+  when: hunger >= 6 and bowls == empty
+  score: 11
+  plan: [go_bowls, huff, beg]
+  style: trot
+  face: pout
+  bubble: food
+  urg: 7
+  kind: social
+
+# ---- H11: night in the nook; worn out at any hour ----
+- id: sleep_night
+  habit: H11
+  when: tod == night and energy <= 6
+  score: 14 + (6 - energy)
+  plan: [sleep_nook]
+  style: sleepy
+  face: sleepy
+  bubble: zzz
+  urg: 2
+  kind: rest
+- id: night_settle
+  habit: H11
+  when: tod == night
+  score: 9
+  plan: [go_nook, lie_down, sleep_nook]
+  style: sleepy
+  face: sleepy
+  bubble: zzz
+  urg: 2
+  kind: rest
+- id: exhausted
+  habit: H11
+  when: energy <= 1
+  score: 15
+  plan: [sleep_nook|sleep_rug]
+  style: sleepy
+  face: sleepy
+  bubble: zzz
+  urg: 3
+  kind: rest
+- id: sleepy_day
+  habit: H11
+  when: energy <= 3 and tod != night
+  score: 9
+  plan: [lie_down|sleep_rug|nap_sunbeam, act_none]
+  style: sleepy
+  face: sleepy
+  bubble: zzz
+  urg: 2
+  kind: rest
+
+# ---- H15: September 12th, she stays close ----
+- id: memorial_close
+  habit: H15
+  when: day == memorial
+  score: 15
+  plan: [goto_front|ask_pet, follow_finger|ask_pet, pant_idle]
+  style: walk
+  face: relaxed
+  bubble: heart
+  urg: 4
+  kind: social
+
+# ---- H1: the owner is back: she brings a toy and chews it in front of them ----
+- id: greet_toy
+  habit: H1
+  when: owner in (back_short, back_long) and guilty == 0
+  score: 16.5 + 0.2 * happy + (owner == back_long)
+  plan: [pickup_rope|pickup_plush|bring_toy, bring_toy, chew_toy]
+  style: trot
+  face: pant_smile
+  bubble: heart
+  urg: 9
+  kind: greet
+- id: greet_come
+  habit: H1
+  when: owner in (back_short, back_long) and guilty == 0
+  score: 9 + 0.2 * happy
+  plan: [goto_front, wag, ask_pet]
+  style: trot
+  face: pant_smile
+  bubble: heart
+  urg: 8
+  kind: greet
+
+# ---- H6: the afternoon sun on the room's floor ----
+- id: sunbeam
+  habit: H6
+  when: tod == afternoon and sun == on and energy >= 3 and energy <= 8
+  score: 8.5
+  plan: [go_sunbeam|nap_sunbeam, pant_idle|act_none]
+  style: curious
+  face: relaxed
+  bubble: none
+  urg: 3
+  kind: rest
+
+# ---- H13: hide and seek in the yard ----
+- id: bush_hide
+  habit: H13
+  when: loc == yard and spot == bush
+  score: 8.5
+  plan: [hide_bush|peek_bush, peek_bush]
+  style: tiptoe
+  face: big_eyes
+  bubble: none
+  urg: 4
+  kind: explore
+- id: yard_hide_seek
+  habit: H13
+  when: loc == yard
+  score: 5
+  plan: [go_bush, hide_bush, peek_bush]
+  style: curious
+  face: big_eyes
+  bubble: none
+  urg: 4
+  kind: explore
+
+# ---- H3 / H12: play, happy and full of beans ----
+- id: tease_bow
+  habit: H3
+  when: happy >= 7 and rope in (near, mouth) and owner == here
+  score: 9 + 0.3 * (happy - 7)
+  plan: [play_bow|zoomies, run_with_toy|zoomies, play_bow]
+  style: trot
+  face: pant_smile
+  bubble: rope
+  urg: 7
+  kind: play
+- id: tease_bow_plush
+  habit: H3
+  when: happy >= 7 and plush in (near, mouth) and owner == here
+  score: 8.5 + 0.3 * (happy - 7)
+  plan: [play_bow|zoomies, run_with_toy|zoomies, play_bow]
+  style: trot
+  face: pant_smile
+  bubble: plush
+  urg: 7
+  kind: play
+- id: zoomies
+  habit: H12
+  when: happy >= 8 and energy >= 6
+  score: 7
+  plan: [zoomies, pant_idle]
+  style: sprint
+  face: pant_smile
+  bubble: note
+  urg: 7
+  kind: play
+- id: fetch_rope
+  habit: H12
+  when: rope in (near, far) and bored >= 5 and energy >= 4
+  score: 5 + 0.3 * bored
+  plan: [pickup_rope, run_with_toy|toss_toy|chew_toy, play_bow|act_none]
+  style: trot
+  face: pant_smile
+  bubble: rope
+  urg: 6
+  kind: play
+- id: fetch_plush
+  habit: H12
+  when: plush in (near, far) and bored >= 5 and energy >= 4
+  score: 4.8 + 0.3 * bored
+  plan: [pickup_plush, run_with_toy|toss_toy|chew_toy, play_bow|act_none]
+  style: trot
+  face: pant_smile
+  bubble: plush
+  urg: 6
+  kind: play
+- id: chew_held
+  habit: H1
+  when: rope == mouth or plush == mouth
+  score: 5.5
+  plan: [chew_toy|drop_toy_front|toss_toy, act_none]
+  style: walk
+  face: relaxed
+  bubble: none
+  urg: 3
+  kind: play
+- id: special_day_play
+  habit: H12
+  when: day in (adopt, bday) and energy >= 3
+  score: 9
+  plan: [pickup_rope|pickup_plush|zoomies, bring_toy|zoomies, play_bow]
+  style: trot
+  face: pant_smile
+  bubble: heart
+  urg: 7
+  kind: play
+
+# ---- the seasons outdoors ----
+- id: flowers
+  habit: H12
+  when: loc == yard and season in (spring, summer)
+  score: 5.5
+  plan: [sniff_flowers|chase_butterfly, chase_butterfly|act_none]
+  style: curious
+  face: ears_perk
+  bubble: none
+  urg: 4
+  kind: explore
+- id: leaves
+  habit: H12
+  when: loc == yard and season == autumn and energy >= 4
+  score: 5.5
+  plan: [chase_leaf, sniff_around]
+  style: trot
+  face: ears_perk
+  bubble: none
+  urg: 5
+  kind: play
+- id: snow
+  habit: H12
+  when: loc == yard and season == winter and energy >= 4
+  score: 5.5
+  plan: [play_snow, zoomies|act_none]
+  style: sprint
+  face: pant_smile
+  bubble: none
+  urg: 6
+  kind: play
+
+# ---- H7: lonely and bored, she sneaks onto the rug (the room's forbidden-ish comfort, the bed of the spec) ----
+- id: sneak_rug
+  habit: H7
+  when: lonely >= 7 and bored >= 6 and owner == idle
+  score: 9
+  plan: [sneak_rug]
+  style: tiptoe
+  face: neutral
+  bubble: none
+  urg: 3
+  kind: rest
+
+# ---- H2 / H4 / H5: the owner ----
+- id: follow_owner
+  habit: H2
+  when: owner == here and guilty == 0
+  score: 5 + 0.3 * lonely
+  plan: [goto_front, follow_finger|ask_pet, wag]
+  style: walk
+  face: pant_smile
+  bubble: none
+  urg: 5
+  kind: social
+- id: ask_pet
+  habit: H2
+  when: owner == here and lonely >= 4
+  score: 4 + 0.4 * lonely
+  plan: [ask_pet, wag]
+  style: walk
+  face: big_eyes
+  bubble: heart
+  urg: 5
+  kind: social
+- id: bark_called
+  habit: H4
+  when: sig in (whistle, name, shake)
+  score: 7
+  plan: [bark, goto_front]
+  style: trot
+  face: ears_perk
+  bubble: exclaim
+  urg: 8
+  kind: social
+- id: voice_tilt
+  habit: H4
+  when: sig == voice
+  score: 6
+  plan: [head_tilt, goto_front|act_none]
+  style: curious
+  face: head_tilt
+  bubble: question
+  urg: 5
+  kind: social
+- id: huff_alone
+  habit: H5
+  when: owner == idle and lonely >= 6
+  score: 4.5
+  plan: [huff, ask_pet|beg]
+  style: walk
+  face: pout
+  bubble: none
+  urg: 5
+  kind: social
+
+# ---- exploring, going out and in ----
+- id: bored_explore
+  habit: H12
+  when: bored >= 4
+  score: 3.5 + 0.3 * bored
+  plan: [sniff_around|wander|go_door, look_around|act_none]
+  style: curious
+  face: ears_perk
+  bubble: none
+  urg: 4
+  kind: explore
+- id: go_out
+  habit: H13
+  when: loc == room and tod != night and energy >= 4 and bored >= 4
+  score: 4 + 0.2 * bored
+  plan: [enter_yard, sniff_around]
+  style: trot
+  face: ears_perk
+  bubble: none
+  urg: 5
+  kind: explore
+- id: come_in_tired
+  habit: H11
+  when: loc == yard and (tod == night or energy <= 3)
+  score: 8
+  plan: [enter_room, go_nook]
+  style: walk
+  face: sleepy
+  bubble: none
+  urg: 4
+  kind: rest
+- id: come_in
+  habit: H12
+  when: loc == yard
+  score: 3.5
+  plan: [enter_room, act_none]
+  style: walk
+  face: neutral
+  bubble: none
+  urg: 3
+  kind: explore
+- id: look_out
+  habit: H12
+  when: loc == room and tod in (morning, afternoon)
+  score: 3
+  plan: [go_door, look_around]
+  style: curious
+  face: ears_perk
+  bubble: none
+  urg: 3
+  kind: explore
+
+# ---- resting and pottering about ----
+- id: evening_slow
+  habit: H11
+  when: tod == evening
+  score: 5
+  plan: [go_rug|go_nook, lie_down]
+  style: sleepy
+  face: relaxed
+  bubble: none
+  urg: 2
+  kind: rest
+- id: nap_rug
+  habit: H11
+  when: energy <= 5 and tod in (morning, afternoon)
+  score: 4.5
+  plan: [sleep_rug]
+  style: sleepy
+  face: sleepy
+  bubble: zzz
+  urg: 2
+  kind: rest
+- id: idle_sit
+  habit: H12
+  when: true
+  score: 2.5
+  plan: [sit, pant_idle|head_tilt]
+  style: walk
+  face: pant_smile
+  bubble: none
+  urg: 2
+  kind: rest
+- id: idle_lie
+  habit: H11
+  when: energy <= 6
+  score: 3 + 0.3 * (6 - energy)
+  plan: [lie_down, act_none]
+  style: walk
+  face: relaxed
+  bubble: none
+  urg: 1
+  kind: rest
+- id: wag_idle
+  habit: H12
+  when: happy >= 6
+  score: 2.8
+  plan: [wag, pant_idle]
+  style: walk
+  face: pant_smile
+  bubble: none
+  urg: 2
+  kind: social
+- id: drink
+  habit: H14
+  when: bowls != empty
+  score: 2.5 + 0.2 * hunger
+  plan: [drink, act_none]
+  style: walk
+  face: neutral
+  bubble: none
+  urg: 3
+  kind: eat
+- id: stretch_up
+  habit: H12
+  when: last == rest and since == long and energy >= 4
+  score: 6
+  plan: [stretch, wander]
+  style: walk
+  face: neutral
+  bubble: none
+  urg: 3
+  kind: explore
+- id: potter
+  habit: H12
+  when: energy >= 4 and tod != night
+  score: 3.6
+  plan: [wander|sniff_around, sit|act_none]
+  style: curious
+  face: ears_perk
+  bubble: none
+  urg: 3
+  kind: explore

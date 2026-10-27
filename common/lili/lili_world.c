@@ -5,6 +5,7 @@
 #include "toys.h"
 #include "plan.h"
 #include "life.h"
+#include "brain.h"
 #include "nav.h"
 #include <stdlib.h>
 #include <string.h>
@@ -25,6 +26,7 @@ void world_init(world_t *w, uint32_t seed) {
     w->view = VIEW_ROOM;
     w->season_force = -1; w->daypart_force = -1;       /* memset gave 0 = "spring": -1 means "from the date / the clock" */
     w->shake_cover = -1;
+    w->rule = -1;
     actor_t *lili = &w->actors[0];
     lili->present = true;
     lili->view = VIEW_ROOM;
@@ -102,6 +104,7 @@ void world_handle_event(world_t *w, const ev_t *e) {
     if (e->type < EV_COUNT) w->events_seen[e->type]++;
     if (e->type <= EV_VOICE_ACTIVITY && e->type != EV_NONE) life_owner(w);   /* the finger, the body, the voice: the owner is there */
     if (e->type == EV_TAP && world_care_tap(w, e->a, e->b)) return;   /* a bowl, the pad, a spot: the owner's care (spec 8.10) */
+    brain_signal(w, e);                                  /* the next question will say what happened (spec 10.3 F18) */
     reflex_event(w, e);                                  /* the reflexes first (spec 8.8): 0 ms, past the brain */
     switch (e->type) {
     case EV_SWITCH_VIEW: world_switch_view(w); break;

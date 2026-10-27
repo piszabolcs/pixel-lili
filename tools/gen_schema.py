@@ -40,6 +40,11 @@ def main():
     h += ["/* the input fields, in the prompt's order: <bos> F1 .. Fn => (spec 10.3) */", "enum {"] + \
          [f"    F_{n.upper()}," for n, _, _ in fields] + ["    F_COUNT", "};",
          "extern const uint8_t SCHEMA_FIELD_FIRST[F_COUNT], SCHEMA_FIELD_N[F_COUNT];", ""]
+    h += ["/* each named input token's index inside its field: the brain state's values (a bucket field's value is its number) */", "enum {"]
+    for f in s["input"]:
+        if "tokens" in f:
+            h += [f"    V_{t.upper()} = {i}," for i, t in enumerate(f["tokens"])]
+    h += ["};", ""]
     first_act = classes["act"][0]
     h += ["/* the brain's actions (spec 10.4; the rug instead of the bed: docs/decisions.md) */", "typedef enum {"] + \
          [f"    ACT_{a.upper().replace('ACT_', '')}," for a in acts] + ["    ACT_COUNT", "} action_t;",

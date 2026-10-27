@@ -56,13 +56,13 @@ static const act_t ACTS[RX_END] = {
     [ACT_WANDER]         = { 0,                     { GO(TG_RANDOM), WT(0.8f), GO(TG_RANDOM), AN(ANIM_IDLE_STAND, 1.0f) } },
     [ACT_SNIFF_AROUND]   = { 0,                     { GO(TG_RANDOM), AN(ANIM_SNIFF, 2.5f), GO(TG_RANDOM), AN(ANIM_SNIFF, 2.0f) } },
     [ACT_GO_DOOR]        = { 0,                     { GO(TG_DOOR), ON(ANIM_LOOK_AROUND) } },
-    [ACT_GO_NOOK]        = { N_ROOM,                { GO(SPOT_NOOK), DR(DIR_W), AN(ANIM_IDLE_SIT_BLINK, 2.0f) } },
-    [ACT_GO_BOWLS]       = { N_ROOM,                { GO(TG_BOWL_FOOD), DR(DIR_W), AN(ANIM_IDLE_STAND, 1.5f) } },
-    [ACT_GO_PAD]         = { N_ROOM,                { GO(SPOT_PAD), AN(ANIM_SNIFF, 1.5f) } },
-    [ACT_GO_RUG]         = { N_ROOM,                { GO(SPOT_RUG), AN(ANIM_IDLE_SIT_BLINK, 2.0f) } },
-    [ACT_GO_SUNBEAM]     = { N_ROOM | N_SUN,        { GO(TG_SUNBEAM), DR(DIR_S), AN(ANIM_SUN_SIT, 3.0f) } },
-    [ACT_GO_BUSH]        = { N_YARD,                { GO(TG_BUSH_EDGE), AN(ANIM_SNIFF, 2.0f) } },
-    [ACT_GO_TREE]        = { N_YARD,                { GO(SPOT_TREE), AN(ANIM_SNIFF, 2.0f) } },
+    [ACT_GO_NOOK]        = { 0     ,                { GO(SPOT_NOOK), DR(DIR_W), AN(ANIM_IDLE_SIT_BLINK, 2.0f) } },
+    [ACT_GO_BOWLS]       = { 0     ,                { GO(TG_BOWL_FOOD), DR(DIR_W), AN(ANIM_IDLE_STAND, 1.5f) } },
+    [ACT_GO_PAD]         = { 0     ,                { GO(SPOT_PAD), AN(ANIM_SNIFF, 1.5f) } },
+    [ACT_GO_RUG]         = { 0     ,                { GO(SPOT_RUG), AN(ANIM_IDLE_SIT_BLINK, 2.0f) } },
+    [ACT_GO_SUNBEAM]     = { N_SUN         ,        { GO(TG_SUNBEAM), DR(DIR_S), AN(ANIM_SUN_SIT, 3.0f) } },
+    [ACT_GO_BUSH]        = { 0     ,                { GO(TG_BUSH_EDGE), AN(ANIM_SNIFF, 2.0f) } },
+    [ACT_GO_TREE]        = { 0     ,                { GO(SPOT_TREE), AN(ANIM_SNIFF, 2.0f) } },
     [ACT_GO_TOY]         = { N_TOY_VIEW,            { GO(TG_TOY), AN(ANIM_SNIFF, 1.0f) } },
     /* through the door (spec 8.4: she goes out, the camera stays) */
     [ACT_ENTER_YARD]     = { N_ROOM,                { GO(TG_DOOR), VIEW, GO(TG_INSIDE), ON(ANIM_LOOK_AROUND) } },
@@ -89,18 +89,18 @@ static const act_t ACTS[RX_END] = {
     [ACT_PANT_IDLE]      = { 0,                     { AN(ANIM_PANT_SMILE, 3.0f) } },
     [ACT_STRETCH]        = { 0,                     { ON(ANIM_PLAY_BOW), AN(ANIM_IDLE_STAND, 1.0f) } },
     /* needs */
-    [ACT_EAT]            = { N_ROOM | N_FOOD,       { GO(TG_BOWL_FOOD), DR(DIR_W), AN(ANIM_EAT_DRINK, 4.0f), FX(FX_EAT) } },
-    [ACT_DRINK]          = { N_ROOM | N_WATER,      { GO(TG_BOWL_WATER), DR(DIR_W), AN(ANIM_DRINK, 3.0f), FX(FX_DRINK) } },
-    [ACT_USE_PAD]        = { N_ROOM,                { GO(SPOT_PAD), ON(ANIM_SQUAT), AN(ANIM_PEE, 3.0f), FX(FX_PAD) } },
-    [ACT_MISCHIEF_FLOOR] = { N_ROOM | N_NO_MEMORIAL,{ GO(TG_FLOOR_AWAY), ON(ANIM_SQUAT), AN(ANIM_PEE, 2.0f), FX(FX_MESS), ON(ANIM_LOOK_AROUND) } },
-    [ACT_SLEEP_NOOK]     = { N_ROOM,                { GO(SPOT_NOOK), ON(ANIM_LIE_DOWN), AN(ANIM_SLEEP_CURL, 10.0f) } },
-    [ACT_SLEEP_RUG]      = { N_ROOM,                { GO(SPOT_RUG), ON(ANIM_LIE_DOWN), AN(ANIM_SLEEP_CURL, 10.0f) } },
-    [ACT_NAP_SUNBEAM]    = { N_ROOM | N_SUN,        { GO(TG_SUNBEAM), DR(DIR_S), AN(ANIM_SUN_SIT, 3.0f), AN(ANIM_SLEEP_CURL, 6.0f) } },
+    [ACT_EAT]            = { N_FOOD         ,       { GO(TG_BOWL_FOOD), DR(DIR_W), AN(ANIM_EAT_DRINK, 4.0f), FX(FX_EAT) } },
+    [ACT_DRINK]          = { N_WATER         ,      { GO(TG_BOWL_WATER), DR(DIR_W), AN(ANIM_DRINK, 3.0f), FX(FX_DRINK) } },
+    [ACT_USE_PAD]        = { 0     ,                { GO(SPOT_PAD), ON(ANIM_SQUAT), AN(ANIM_PEE, 3.0f), FX(FX_PAD) } },
+    [ACT_MISCHIEF_FLOOR] = { N_NO_MEMORIAL         ,{ GO(TG_FLOOR_AWAY), ON(ANIM_SQUAT), AN(ANIM_PEE, 2.0f), FX(FX_MESS), ON(ANIM_LOOK_AROUND) } },
+    [ACT_SLEEP_NOOK]     = { 0     ,                { GO(SPOT_NOOK), ON(ANIM_LIE_DOWN), AN(ANIM_SLEEP_CURL, 10.0f) } },
+    [ACT_SLEEP_RUG]      = { 0     ,                { GO(SPOT_RUG), ON(ANIM_LIE_DOWN), AN(ANIM_SLEEP_CURL, 10.0f) } },
+    [ACT_NAP_SUNBEAM]    = { N_SUN         ,        { GO(TG_SUNBEAM), DR(DIR_S), AN(ANIM_SUN_SIT, 3.0f), AN(ANIM_SLEEP_CURL, 6.0f) } },
     /* sneaking and hiding */
     [ACT_LOOK_AROUND]    = { 0,                     { ON(ANIM_LOOK_AROUND) } },
-    [ACT_SNEAK_RUG]      = { N_ROOM,                { ON(ANIM_LOOK_AROUND), ST(STYLE_TIPTOE), GO(SPOT_RUG), ON(ANIM_LIE_DOWN), AN(ANIM_SLEEP_CURL, 6.0f) } },   /* H7 on the rug */
+    [ACT_SNEAK_RUG]      = { 0     ,                { ON(ANIM_LOOK_AROUND), ST(STYLE_TIPTOE), GO(SPOT_RUG), ON(ANIM_LIE_DOWN), AN(ANIM_SLEEP_CURL, 6.0f) } },   /* H7 on the rug */
     [ACT_LEAVE_RUG]      = { N_ROOM | N_ON_RUG,     { ON(ANIM_STARTLE), ST(STYLE_SCURRY), GO(SPOT_CENTER), AN(ANIM_IDLE_STAND, 1.0f) } },
-    [ACT_HIDE_BENCH]     = { N_ROOM,                { ST(STYLE_SCURRY), GO(SPOT_NOOK), DR(DIR_W), HIDE(1), WT(3.0f) } },
+    [ACT_HIDE_BENCH]     = { 0     ,                { ST(STYLE_SCURRY), GO(SPOT_NOOK), DR(DIR_W), HIDE(1), WT(3.0f) } },
     [ACT_PEEK_BENCH]     = { N_ROOM | N_HIDDEN,     { PEEK(3.0f), ON(ANIM_LOOK_AROUND) } },                /* A21 not made yet */
     [ACT_HIDE_BUSH]      = { N_YARD,                { GO(TG_BUSH_HIDE), HIDE(2), AN(ANIM_IDLE_SIT_BLINK, 3.0f) } },
     [ACT_PEEK_BUSH]      = { N_YARD,                { GO(TG_BUSH_EDGE), DR(DIR_S), ON(ANIM_LOOK_AROUND) } },
@@ -108,7 +108,7 @@ static const act_t ACTS[RX_END] = {
     [ACT_CHASE_LEAF]     = { N_YARD | N_AUTUMN,     { ST(STYLE_TROT), GO(TG_RANDOM), ON(ANIM_POUNCE), GO(TG_RANDOM), ON(ANIM_POUNCE) } },
     [ACT_CHASE_BUTTERFLY]= { N_YARD | N_WARM,       { ST(STYLE_TROT), GO(TG_RANDOM), ON(ANIM_POUNCE), GO(TG_RANDOM_FAR), ON(ANIM_POUNCE) } },
     [ACT_PLAY_SNOW]      = { N_YARD | N_WINTER,     { ON(ANIM_PLAY_BOW), ST(STYLE_SPRINT), GO(TG_RANDOM_FAR), AN(ANIM_SNIFF, 2.0f) } },
-    [ACT_SNIFF_FLOWERS]  = { N_YARD | N_WARM,       { GO(SPOT_FLOWERS), AN(ANIM_SNIFF, 3.0f) } },
+    [ACT_SNIFF_FLOWERS]  = { N_WARM         ,       { GO(SPOT_FLOWERS), AN(ANIM_SNIFF, 3.0f) } },
     [ACT_NONE]           = { 0,                     { { P_END, 0, 0, 0 } } },
     /* the reflexes (spec 8.8): R1 forgiven, R2 called, R3 petted, R4 a toy thrown, R5 chased, R6 greeting, R7 shaken, R8 a voice, R9 a tap */
     [RX_FORGIVEN]        = { 0, { UNHIDE, FX(FX_FORGIVE), ST(STYLE_TROT), GO(TG_FRONT), DR(DIR_S), AN(ANIM_PANT_SMILE, 2.5f) } },
@@ -236,6 +236,23 @@ static bool target(world_t *w, int actor, int tg, int16_t *x, int16_t *y) {
     return false;
 }
 
+/* which view a walk target is in: the spots of one map only, the room's bowls / sunbeam / floor, the yard's bushes */
+static view_t target_view(const world_t *w, int actor, int tg) {
+    const view_t here = w->actors[actor].view, there = (view_t)(1 - here);
+    if (tg < SPOT_COUNT) return MAPS[here].points[tg].z < 0 && MAPS[there].points[tg].z >= 0 ? there : here;
+    if (tg == TG_BOWL_FOOD || tg == TG_BOWL_WATER || tg == TG_SUNBEAM || tg == TG_FLOOR_AWAY) return VIEW_ROOM;
+    if (tg == TG_BUSH_HIDE || tg == TG_BUSH_EDGE) return VIEW_YARD;
+    return here;
+}
+/* out of one door, in at the other (spec 8.4: the camera stays where it is) */
+static void through_door(world_t *w, int actor) {
+    actor_t *a = &w->actors[actor]; plan_t *p = &w->plans[actor];
+    const view_t to = (view_t)(1 - a->view);
+    const map_point_t *d = &MAPS[to].points[to == VIEW_ROOM ? SPOT_DOOR : SPOT_DOOR_YARD];
+    a->view = to; a->x = d->x; a->y = d->y; a->vis = 0; p->hide = 0;
+    int t = toy_held(w, actor); if (t >= 0) w->things.toys[t].view = to;
+}
+
 static float once_len(uint16_t anim) {                        /* a one-shot animation's length in seconds */
     sprite_set_t s; const pak_t *p = world_pak();
     const uint16_t src = ANIM_REVERSE_OF(anim) ? ANIM_REVERSE_OF(anim) : anim;
@@ -317,6 +334,16 @@ int plan_tick(world_t *w, int actor, float dt) {
         switch (q->op) {
         case P_END: goto next_act;
         case P_GOTO:
+            if (p->rep >= 10 || target_view(w, actor, q->arg) != a->view) {   /* the place is in the other view: the door first */
+                if (p->rep < 10) {
+                    const map_point_t *d = &MAPS[a->view].points[a->view == VIEW_ROOM ? SPOT_DOOR : SPOT_DOOR_YARD];
+                    if (p->hide == 1) p->hide = 0;
+                    nav_plan(a->view, a->x, a->y, d->x, d->y, b); p->rep = 10;
+                }
+                if (p->rep == 10) { if (nav_follow(a, b, dt)) { p->rep = 11; p->hide = 3; p->t = 0; } break; }
+                if (p->t >= 0.5f) { through_door(w, actor); p->rep = 0; }
+                break;
+            }
             if (p->rep == 0) {                                     /* start the walk */
                 int16_t gx, gy;
                 if (!target(w, actor, q->arg, &gx, &gy)) { done = true; break; }
@@ -331,7 +358,9 @@ int plan_tick(world_t *w, int actor, float dt) {
             if (toy_held(w, actor) == TOY_ROPE && (a->anim == ANIM_TROT || a->anim == ANIM_WALK)) set_anim(a, ANIM_CARRY_TROT);   /* the rope is in those frames */
             break;
         case P_ANIM: set_anim(a, q->anim); done = p->t >= q->t; break;
-        case P_ONCE: set_anim(a, q->anim); done = p->t >= once_len(q->anim); break;
+        case P_ONCE:                                               /* already in that pose: no getting up to lie down again */
+            if ((q->anim == ANIM_LIE_DOWN && (a->anim == ANIM_SLEEP_CURL || a->anim == ANIM_CHEW_TOY)) || (q->anim == ANIM_SIT_DOWN && a->anim == ANIM_IDLE_SIT_BLINK)) { done = true; break; }
+            set_anim(a, q->anim); done = p->t >= once_len(q->anim); break;
         case P_WAIT: done = p->t >= q->t; break;
         case P_DIR:  a->dir = (dir8_t)q->arg; done = true; break;
         case P_LOOK: { int16_t lx, ly; if (target(w, actor, q->arg, &lx, &ly) && (lx != (int)a->x || ly != (int)a->y)) a->dir = nav_dir(lx - a->x, ly - a->y); done = true; break; }
@@ -354,13 +383,7 @@ int plan_tick(world_t *w, int actor, float dt) {
         }
         case P_VIEW:                                               /* out of the door; 0.5 s later at the other one */
             if (p->rep == 0) { p->hide = 3; p->rep = 1; }
-            if (p->t >= 0.5f) {
-                const view_t to = (view_t)(1 - a->view);
-                const map_point_t *d = &MAPS[to].points[to == VIEW_ROOM ? SPOT_DOOR : SPOT_DOOR_YARD];
-                a->view = to; a->x = d->x; a->y = d->y; a->vis = 0; p->hide = 0;
-                int t = toy_held(w, actor); if (t >= 0) w->things.toys[t].view = to;
-                done = true;
-            }
+            if (p->t >= 0.5f) { through_door(w, actor); done = true; }
             break;
         case P_HIDE:   p->hide = q->arg; done = true; break;
         case P_UNHIDE: p->hide = 0; done = true; break;

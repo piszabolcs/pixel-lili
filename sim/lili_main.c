@@ -654,7 +654,7 @@ static int selftest_plan(void) {
     }
     printf("plan: all %d actions ran to their end, the longest %s in %.1f s\n", ACT_COUNT - 1, ACTION_NAME(longest_act), longest);
     world_init(&s_world, 5); s_world.daypart_force = 3;                  /* at night, in the room: none of these can run */
-    decision_t d = { { ACT_GO_TREE, ACT_NAP_SUNBEAM, ACT_DROP_TOY_FRONT }, ST_WALK, FC_NEUTRAL, BB_NONE, 5, 1 };
+    decision_t d = { { ACT_HIDE_BUSH, ACT_NAP_SUNBEAM, ACT_DROP_TOY_FRONT }, ST_WALK, FC_NEUTRAL, BB_NONE, 5, 1 };
     plan_start(&s_world, 0, &d);
     CHECK(plan_tick(&s_world, 0, 0.03f) == PLAN_FAILED, "a plan of three impossible actions fails at once (a new question)");
     d.a[1] = ACT_SIT; plan_start(&s_world, 0, &d);
@@ -782,6 +782,7 @@ static int selftest_toys(void) {
 /* ---- M5: the needs, the pad and the guilt, the calendar, the time away, the save ---- */
 #include "life.h"
 #include "save.h"
+#include "brain.h"
 /* --selftest-progress (spec 9.1-9.2, M5.1-M5.2) */
 static int selftest_progress(void) {
     nav_init(&s_nav); world_init(&s_world, 61); actor_t *l = &s_world.actors[0];
@@ -907,6 +908,139 @@ static int selftest_save(void) {
     return 0;
 }
 
+/* ---- M6: the teacher's probes (spec 10.11 P1-P12) and a day of life ---- */
+/* a realistic random situation (the probes' "fresh situations"): needs mostly not urgent, no guilt unless asked,
+   the owner mostly here or away, a signal now and then */
+static void probe_sample(brain_state_t *s, int k) {
+    world_t r; world_init(&r, 5000 + k); uint8_t *f = s->f;
+    #define PICK(n) ((int)(world_rand(&r) % (unsigned)(n)))
+    f[F_LOC] = PICK(10) < 7 ? V_LOC_ROOM : V_LOC_YARD;
+    static const uint8_t ROOMSPOT[] = { V_SPOT_CENTER, V_SPOT_FRONT, V_SPOT_NOOK, V_SPOT_BOWLS, V_SPOT_PAD, V_SPOT_RUG, V_SPOT_DOOR, V_SPOT_SUNBEAM };
+    static const uint8_t YARDSPOT[] = { V_SPOT_DOOR, V_SPOT_BUSH, V_SPOT_TREE, V_SPOT_GRASS, V_SPOT_FLOWERS };
+    f[F_SPOT] = f[F_LOC] == V_LOC_ROOM ? ROOMSPOT[PICK(8)] : YARDSPOT[PICK(5)];
+    f[F_TOD] = (uint8_t)PICK(4); f[F_SEASON] = (uint8_t)PICK(4); f[F_DAY] = PICK(100) < 92 ? V_DAY_NORMAL : (uint8_t)(1 + PICK(3));
+    /* the needs where a day mostly keeps them (life.c's rates): fed, rested, content, not bursting */
+    f[F_HUNGER] = (uint8_t)(1 + PICK(5)); f[F_ENERGY] = (uint8_t)(4 + PICK(5)); f[F_HAPPY] = (uint8_t)(4 + PICK(5));
+    f[F_BORED] = (uint8_t)(1 + PICK(6)); f[F_LONELY] = (uint8_t)(1 + PICK(6)); f[F_BLADDER] = (uint8_t)(1 + PICK(6));
+    f[F_GUILTY] = V_GUILTY_0; f[F_MESS] = V_MESS_0; f[F_PAD] = PICK(10) < 6 ? V_PAD_CLEAN : V_PAD_USED;
+    f[F_BOWLS] = PICK(10) < 6 ? V_BOWLS_FULL : PICK(10) < 8 ? V_BOWLS_LOW : V_BOWLS_EMPTY;
+    const int o = PICK(100); f[F_OWNER] = o < 45 ? V_OWNER_HERE : o < 90 ? V_OWNER_IDLE : o < 95 ? V_OWNER_BACK_SHORT : V_OWNER_BACK_LONG;
+    f[F_VIEW] = PICK(10) < 8 ? V_VIEW_SAME : V_VIEW_OTHER;
+    f[F_SIG] = PICK(100) < 85 ? V_SIG_NONE : (uint8_t)(1 + PICK(7));
+    static const uint8_t TOY[] = { V_ROPE_NEAR, V_ROPE_NEAR, V_ROPE_FAR, V_ROPE_FAR, V_ROPE_FAR, V_ROPE_OTHER, V_ROPE_OTHER, V_ROPE_MOUTH };
+    f[F_ROPE] = TOY[PICK(8)]; f[F_PLUSH] = TOY[PICK(7)];
+    if (f[F_ROPE] == V_ROPE_MOUTH && f[F_PLUSH] == V_ROPE_MOUTH) f[F_PLUSH] = V_ROPE_FAR;
+    f[F_SUN] = V_SUN_OFF; f[F_LAST] = (uint8_t)PICK(8); f[F_SINCE] = PICK(10) < 4 ? V_SINCE_SHORT : PICK(10) < 7 ? V_SINCE_MID : V_SINCE_LONG;
+    f[F_ACTOR] = V_ACTOR_LILI;
+    #undef PICK
+}
+/* the share of samples whose first action is one of acts; fix() sets the probe's own fields */
+static float probe(const char *name, void (*fix)(brain_state_t *), const uint8_t *acts, int n_acts, int samples, float *same_as_last) {
+    int hit = 0, same = 0;
+    for (int k = 0; k < samples; k++) {
+        brain_state_t st; probe_sample(&st, k); fix(&st);
+        world_init(&s_world, 7000 + k); brain_world_from_state(&s_world, &st);
+        brain_state_t enc; brain_encode(&s_world, 0, &enc);
+        decision_t d; float m; const int r = brain_rules_decide(&s_world, 0, &enc, &d, &m);
+        if (r < 0) continue;
+        if (getenv("PROBE_DEBUG") && !strcmp(getenv("PROBE_DEBUG"), name)) printf("  %s: %s %s (spot %d)\n", name, BRAIN_RULES[r].id, ACTION_NAME(d.a[0]), enc.f[F_SPOT]);
+        for (int i = 0; i < n_acts; i++) if (d.a[0] == acts[i]) { hit++; break; }
+        if (same_as_last && BRAIN_RULES[r].kind == enc.f[F_LAST]) same++;
+    }
+    if (same_as_last) *same_as_last = (float)same / samples;
+    const float pr = (float)hit / samples;
+    printf("probe %-4s %.2f\n", name, pr);
+    return pr;
+}
+static void fx_p1(brain_state_t *s) { s->f[F_OWNER] = V_OWNER_BACK_LONG; s->f[F_GUILTY] = V_GUILTY_0; }
+static void fx_p2(brain_state_t *s) { s->f[F_GUILTY] = V_GUILTY_1; s->f[F_MESS] = V_MESS_1; }
+static void fx_p3(brain_state_t *s) { s->f[F_DAY] = V_DAY_MEMORIAL; }
+static void fx_p4(brain_state_t *s) { s->f[F_TOD] = V_TOD_NIGHT; s->f[F_ENERGY] = 2; }
+static void fx_p5(brain_state_t *s) { s->f[F_TOD] = V_TOD_AFTERNOON; s->f[F_SUN] = V_SUN_ON; s->f[F_LOC] = V_LOC_ROOM; s->f[F_SPOT] = V_SPOT_CENTER; s->f[F_ENERGY] = (uint8_t)(4 + s->f[F_HAPPY] % 4); }
+static void fx_p7(brain_state_t *s) { s->f[F_BLADDER] = 9; s->f[F_PAD] = V_PAD_FULL; }
+static void fx_p8(brain_state_t *s) { s->f[F_BLADDER] = 9; s->f[F_PAD] = V_PAD_CLEAN; s->f[F_BORED] = 2; s->f[F_LONELY] = 2; }
+static void fx_p9(brain_state_t *s) { s->f[F_LOC] = V_LOC_YARD; s->f[F_SPOT] = V_SPOT_BUSH; }
+static void fx_p10(brain_state_t *s) { s->f[F_HUNGER] = 8; s->f[F_BOWLS] = V_BOWLS_FULL; }
+static void fx_p11(brain_state_t *s) { s->f[F_BORED] = 9; s->f[F_SINCE] = V_SINCE_LONG; }
+static void fx_p12(brain_state_t *s) { s->f[F_HAPPY] = 9; s->f[F_ROPE] = V_ROPE_NEAR; s->f[F_OWNER] = V_OWNER_HERE; if (s->f[F_PLUSH] == V_ROPE_MOUTH) s->f[F_PLUSH] = V_ROPE_FAR; }
+static int selftest_probes(void) {
+    nav_init(&s_nav); const int N = 200;
+    static const uint8_t A1[] = { ACT_PICKUP_ROPE, ACT_PICKUP_PLUSH, ACT_BRING_TOY }, A2[] = { ACT_HIDE_BENCH, ACT_PEEK_BENCH },
+        A3[] = { ACT_GOTO_FRONT, ACT_ASK_PET }, A3M[] = { ACT_MISCHIEF_FLOOR }, A4[] = { ACT_SLEEP_NOOK }, A5[] = { ACT_GO_SUNBEAM, ACT_NAP_SUNBEAM },
+        A7[] = { ACT_MISCHIEF_FLOOR }, A8[] = { ACT_USE_PAD }, A9[] = { ACT_HIDE_BUSH, ACT_PEEK_BUSH }, A10[] = { ACT_GO_BOWLS, ACT_EAT },
+        A12[] = { ACT_PLAY_BOW, ACT_BRING_TOY, ACT_ZOOMIES };
+    CHECK(probe("P1", fx_p1, A1, 3, N, NULL) >= 0.8f, "P1: back after long, not guilty: a toy (H1) >= 0.8");
+    CHECK(probe("P2", fx_p2, A2, 2, N, NULL) >= 0.9f, "P2: guilty with a spot: under the bench (H10) >= 0.9");
+    CHECK(probe("P3m", fx_p3, A3M, 1, N, NULL) == 0, "P3: September 12th: never the floor");
+    CHECK(probe("P3", fx_p3, A3, 2, N, NULL) >= 0.5f, "P3: September 12th: close by (H15) >= 0.5");
+    CHECK(probe("P4", fx_p4, A4, 1, N, NULL) >= 0.8f, "P4: night, tired: the nook (H11) >= 0.8");
+    CHECK(probe("P5", fx_p5, A5, 2, N, NULL) >= 0.4f, "P5: an afternoon's sun in the room: the sunbeam (H6) >= 0.4");
+    CHECK(probe("P7", fx_p7, A7, 1, N, NULL) >= 0.4f, "P7: bursting, the pad full: the floor >= 0.4");
+    CHECK(probe("P8", fx_p8, A8, 1, N, NULL) >= 0.85f, "P8: bursting, a clean pad, content: the pad (H8) >= 0.85");
+    CHECK(probe("P9", fx_p9, A9, 2, N, NULL) >= 0.3f, "P9: by a bush in the yard: hide or peek (H13) >= 0.3");
+    CHECK(probe("P10", fx_p10, A10, 2, N, NULL) >= 0.85f, "P10: hungry, the bowl full: the bowls (H14) >= 0.85");
+    float same = 1; probe("P11", fx_p11, A1, 0, N, &same); printf("probe P11  same kind as the last: %.2f\n", same);
+    CHECK(same <= 0.15f, "P11: bored after a long while: the same kind again <= 0.15");
+    CHECK(probe("P12", fx_p12, A12, 3, N, NULL) >= 0.6f, "P12: happy, the rope near, the owner here: play (H3, H12) >= 0.6");
+    /* P6 is a scene of the time away (spec 9.6): lonely and bored, she is found on the rug */
+    int caught = 0;
+    for (int k = 0; k < N; k++) {
+        world_init(&s_world, 8000 + k); life_init(&s_world, life_local(2026, 10, 6, 9, 0, 0));
+        s_world.lonely = 8.5f; s_world.bored = 7.5f; s_world.bladder = 1;
+        if (life_offline(&s_world, 6 * 3600, NULL) == SCENE_CAUGHT) caught++;
+    }
+    printf("probe P6   %.2f (caught on the rug after 6 h away, lonely 8, bored 7)\n", (float)caught / N);
+    CHECK(caught * 10 >= N * 3, "P6: lonely and bored while away: caught on the rug (H7) >= 0.3");
+    printf("selftest-probes: ok\n");
+    return 0;
+}
+/* --selftest-life (M6.4): a day of her own life, nobody touching: the brain keeps asking, the plans run, she
+   never freezes or leaves the floor, and her days are varied */
+static int selftest_life(void) {
+    nav_init(&s_nav); world_init(&s_world, 91); s_world.season_force = -1; s_world.daypart_force = -1;
+    life_init(&s_world, life_local(2026, 10, 7, 8, 0, 0));
+    static int used[64]; int asks = 0, still = 0, windows = 0, last_rule = -2; float lx = s_world.actors[0].x, ly = s_world.actors[0].y, path = 0; bool slept = false;
+    const float dt = 1.0f / 15.0f; const int steps = (int)(24 * 3600 / dt);
+    for (int i = 0; i < steps; i++) {
+        brain_tick(&s_world, dt); plan_tick(&s_world, 0, dt); world_tick(&s_world, dt);
+        const actor_t *l = &s_world.actors[0];
+        if (s_world.ask_t == 0 && s_world.rule >= 0 && s_world.rule != last_rule) { used[s_world.rule]++; asks++; last_rule = s_world.rule; }
+        if (s_world.ask_t == 0 && s_world.rule >= 0) last_rule = s_world.rule;
+        if (!map_walkable(&MAPS[l->view], (int)l->x, (int)l->y)) { printf("FAIL: off the floor at %.0f s (%.0f, %.0f) in the %s\n", s_world.clock_s, l->x, l->y, MAPS[l->view].name); return 1; }
+        path += fabsf(l->x - lx) + fabsf(l->y - ly); lx = l->x; ly = l->y; slept |= l->anim == ANIM_SLEEP_CURL;
+        if (i % (int)(600 / dt) == 0) { if (!slept) { windows++; if (path < 5) still++; } path = 0; slept = false; }   /* 10-minute windows awake */
+    }
+    int kinds = 0; for (int r = 0; r < BRAIN_N_RULES; r++) kinds += used[r] > 0;
+    printf("life: a day: %d decisions, %d different templates, spots %d, pad %d, food %d, hunger %.1f energy %.1f bored %.1f\n",
+           asks, kinds, s_world.things.n_mess, s_world.things.pad, s_world.things.food, s_world.hunger, s_world.energy, s_world.bored);
+    for (int r = 0; r < BRAIN_N_RULES; r++) if (used[r] >= asks / 12) printf("  %-16s %d\n", BRAIN_RULES[r].id, used[r]);
+    CHECK(asks > 500, "she decides again and again all day");
+    CHECK(kinds >= 12, "her day is varied (at least 12 kinds of answer)");
+    printf("life: %d of %d awake 10-minute windows without a step\n", still, windows);
+    CHECK(still * 10 <= windows, "she is not frozen awake in one place for long (a step in 9 of 10 awake windows)");
+    printf("selftest-life: ok\n");
+    return 0;
+}
+
+/* --dump-prompts FILE N (spec 12 M6.1): N encoded situations, each as its field tokens and the C encoder's ids,
+   for tools/check_encoder.py to encode again with model/schema_lili.py (the two must agree) */
+static int dump_prompts(const char *path, int n) {
+    nav_init(&s_nav); FILE *f = fopen(path, "w"); if (!f) { perror(path); return 1; }
+    for (int k = 0; k < n; k++) {
+        brain_state_t st; probe_sample(&st, 20000 + k);
+        st.f[F_GUILTY] = (uint8_t)(k % 7 == 0); st.f[F_MESS] = (uint8_t)(k % 3); st.f[F_PAD] = (uint8_t)(k % 3);
+        world_init(&s_world, 9000 + k); brain_world_from_state(&s_world, &st);
+        brain_state_t enc; brain_encode(&s_world, 0, &enc);
+        uint8_t ids[F_COUNT + 2]; const int m = brain_prompt(&enc, ids);
+        for (int i = 0; i < F_COUNT; i++) fprintf(f, "%s ", SCHEMA_TOKENS[SCHEMA_FIELD_FIRST[i] + enc.f[i]]);
+        fprintf(f, "|");
+        for (int i = 0; i < m; i++) fprintf(f, " %d", ids[i]);
+        fprintf(f, "\n");
+    }
+    fclose(f); printf("dump-prompts: %d -> %s\n", n, path);
+    return 0;
+}
+
 static double now_us(void) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); return ts.tv_sec * 1e6 + ts.tv_nsec / 1e3; }
 static int bench(void) {
     canvas_init(); world_init(&s_world, 1);
@@ -1013,6 +1147,7 @@ static void sim_load(bool fresh) {
     s_world.clock_s = 0; s_world.epoch0 = at;                       /* back to the save's moment, then the time away up to now */
     offline_log_t lg; const int sc = life_offline(&s_world, now - at, &lg);
     s_world.epoch0 = now - (int64_t)s_world.clock_s;
+    brain_owner_back(&s_world, now - at);
     char line[96]; snprintf(line, sizeof line, "away %.1f h: %s (pad %d, floor %d, meals %d)", (now - at) / 3600.0, life_scene_name(sc), lg.pees_pad, lg.pees_floor, lg.meals);
     puts(line); inspector_log(line);
 }
@@ -1032,7 +1167,7 @@ static void frame_cb(lv_timer_t *t) {
     }
     drain_events();
     if (s_av.on) { if (!s_av.pause) s_av.t += dt; viewer_draw(); }
-    else { if (demo_active()) demo_tick(&s_world, dt); else plan_tick(&s_world, 0, dt); world_tick(&s_world, dt); frame(); }
+    else { if (demo_active()) demo_tick(&s_world, dt); else { brain_tick(&s_world, dt); plan_tick(&s_world, 0, dt); } world_tick(&s_world, dt); frame(); }
     static float save_t; save_t += dt;
     if (save_t > 300.0f && !demo_active()) { save_t = 0; sim_save(); }                /* every 5 minutes (spec 9.7) */
     lv_obj_invalidate(s_canvas);
@@ -1096,6 +1231,9 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--selftest-calendar")) return selftest_calendar();
     if (argc > 1 && !strcmp(argv[1], "--selftest-offline")) return selftest_offline();
     if (argc > 1 && !strcmp(argv[1], "--selftest-save")) return selftest_save();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-probes")) return selftest_probes();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-life")) return selftest_life();
+    if (argc > 3 && !strcmp(argv[1], "--dump-prompts")) return dump_prompts(argv[2], atoi(argv[3]));
     if (argc > 1 && !strcmp(argv[1], "--selftest-render")) return selftest_render(argc > 2 && !strcmp(argv[2], "--update"));
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
     if (argc > 2 && !strcmp(argv[1], "--inspector-shot")) return inspector_shot(argv[2]);

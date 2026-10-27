@@ -96,9 +96,10 @@ void life_after_action(world_t *w, int actor, int act) {
     case ACT_PICKUP_ROPE: case ACT_PICKUP_PLUSH: case ACT_BRING_TOY: case ACT_CHEW_TOY: case ACT_PLAY_BOW: case ACT_ZOOMIES:
     case ACT_RUN_WITH_TOY: case ACT_TOSS_TOY: case ACT_CHASE_LEAF: case ACT_CHASE_BUTTERFLY: case ACT_PLAY_SNOW:
         w->bored = clamp10(w->bored - 3); w->happy = clamp10(w->happy + 0.5f); w->plays++; kind(w, LAST_PLAY); break;
-    case ACT_WANDER: case ACT_SNIFF_AROUND: case ACT_GO_DOOR: case ACT_GO_BUSH: case ACT_GO_TREE: case ACT_SNIFF_FLOWERS:
-    case ACT_LOOK_AROUND: case ACT_ENTER_YARD: case ACT_ENTER_ROOM: case ACT_PEEK_BUSH: case ACT_GO_TOY:
-        w->bored = clamp10(w->bored - 1); kind(w, LAST_EXPLORE); break;
+    case ACT_WANDER: case ACT_SNIFF_AROUND: case ACT_GO_BUSH: case ACT_GO_TREE: case ACT_SNIFF_FLOWERS: case ACT_ENTER_YARD:
+        w->bored = clamp10(w->bored - 1); kind(w, LAST_EXPLORE); break;                     /* real exploring: a little less bored */
+    case ACT_GO_DOOR: case ACT_LOOK_AROUND: case ACT_ENTER_ROOM: case ACT_PEEK_BUSH: case ACT_GO_TOY:
+        kind(w, LAST_EXPLORE); break;
     case ACT_SLEEP_NOOK: case ACT_SLEEP_RUG: case ACT_NAP_SUNBEAM: case ACT_SIT: case ACT_LIE_DOWN: case ACT_SNEAK_RUG:
     case ACT_GO_SUNBEAM: case ACT_GO_RUG: case ACT_GO_NOOK: case ACT_PANT_IDLE:
         kind(w, LAST_REST); break;
