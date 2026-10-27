@@ -17,6 +17,7 @@
 #include "brain.h"
 #include "lili_demo.h"
 #include "driver/gpio.h"
+#include "nvs.h"
 #include "driver/usb_serial_jtag.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -44,6 +45,34 @@ static uint8_t s_bright_active, s_state = BODY_ACTIVE;
 static void audio_task(void *arg) {
     (void)arg; static int16_t l[WH_N], r[WH_N];
     for (;;) { if (mic_read(l, r, WH_N, 200) == WH_N) whistle_frame(l, r); else vTaskDelay(1); }
+}
+
+/* the summer time (spec 5.6): the RTC keeps the local time, so at the change (the last Sunday of March / October) it
+   is an hour off; NVS "dst" remembers which regime its hours are in, and the clock is moved once when the date has
+   crossed into the other (checked at power-on and every minute; settime marks the regime it was set in) */
+static uint8_t s_dst = 0xFF;
+static void dst_store(uint8_t v) {
+    nvs_handle_t h; s_dst = v;
+    if (nvs_open("lili", NVS_READWRITE, &h) == ESP_OK) { nvs_set_u8(h, "dst", v); nvs_commit(h); nvs_close(h); }
+}
+static void dst_check(world_t *w) {
+    int64_t t = (int64_t)time(NULL);
+    if (t < 1700000000) return;                                     /* no clock yet */
+    if (s_dst == 0xFF) {
+        nvs_handle_t h; uint8_t v = 0xFF;
+        if (nvs_open("lili", NVS_READONLY, &h) == ESP_OK) { if (nvs_get_u8(h, "dst", &v) != ESP_OK) v = 0xFF; nvs_close(h); }
+        if (v == 0xFF) { dst_store(life_is_dst(t)); return; }       /* the first time: the clock is taken as right */
+        s_dst = v;
+    }
+    int shift = 0;
+    if (s_dst == 1 && !life_is_dst(t - 3600)) shift = -3600;         /* the end of summer: back an hour */
+    else if (s_dst == 0 && life_is_dst(t + 3600)) shift = 3600;      /* its start: on an hour */
+    if (!shift) return;
+    const time_t nt = (time_t)(t + shift); struct tm tm; gmtime_r(&nt, &tm);
+    pcf_rtc_write(&tm);
+    if (w) w->epoch0 += shift;
+    dst_store(shift > 0);
+    ESP_LOGI(TAG, "summer time %s: the clock moved %+d h", shift > 0 ? "began" : "ended", shift / 3600);
 }
 
 void body_init(void) {
@@ -86,7 +115,7 @@ static void console(world_t *w, char *line) {
     if (!strcmp(cmd, "help")) ESP_LOGI(TAG, "help | time | settime YYYY-MM-DDTHH:MM:SS | status | brain rules|model | demo | whistle | shake | wake");
     else if (!strcmp(cmd, "time")) { lili_date_t d; life_date(world_now(w), &d); ESP_LOGI(TAG, "world %04d-%02d-%02d %02d:%02d:%02d", d.year, d.month, d.day, d.hour, d.minute, d.second); pcf_rtc_log(); }
     else if (!strcmp(cmd, "settime") && arg) {                        /* spec 5.6 (b), D-11: the RTC and the world's clock */
-        if (pcf_rtc_set_iso(arg)) { w->epoch0 = (int64_t)time(NULL) - (int64_t)w->clock_s; ESP_LOGI(TAG, "time set: %s", arg); }
+        if (pcf_rtc_set_iso(arg)) { w->epoch0 = (int64_t)time(NULL) - (int64_t)w->clock_s; w->clock_ok = true; dst_store(life_is_dst((int64_t)time(NULL))); ESP_LOGI(TAG, "time set: %s", arg); }
         else ESP_LOGW(TAG, "settime: YYYY-MM-DDTHH:MM:SS");
     } else if (!strcmp(cmd, "status")) {
         char p[64]; plan_describe(w, 0, p, sizeof p);
@@ -132,6 +161,7 @@ bool body_poll(world_t *w, ev_queue_t *q, float dt) {
                 else if (len < (int)sizeof line - 1) line[len++] = ch;
             }
     }
+    { static int64_t dst_t; if (now - dst_t > 60000000) { dst_t = now; dst_check(w); } }   /* the summer time, once a minute */
     /* the energy states */
     for (int i = 0; i < q->count; i++) {                               /* an owner's event wakes and keeps her up */
         const uint8_t t = q->q[(q->head + i) % EV_QUEUE_LEN].type;

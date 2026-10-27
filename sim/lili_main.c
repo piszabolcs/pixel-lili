@@ -834,6 +834,9 @@ static int selftest_calendar(void) {
     CHECK(life_daypart_of(7) == 0 && life_daypart_of(12) == 0 && life_daypart_of(13) == 1 && life_daypart_of(17) == 1 && life_daypart_of(18) == 2 &&
           life_daypart_of(21) == 2 && life_daypart_of(22) == 3 && life_daypart_of(6) == 3, "the dayparts' borders (spec 9.3)");
     CHECK(life_season_of(3) == 0 && life_season_of(5) == 0 && life_season_of(6) == 1 && life_season_of(9) == 2 && life_season_of(12) == 3 && life_season_of(2) == 3, "the seasons by month (spec 9.4)");
+    CHECK(!life_is_dst(life_local(2026, 3, 29, 1, 59, 59)) && life_is_dst(life_local(2026, 3, 29, 2, 0, 0)) && life_is_dst(life_local(2026, 7, 1, 12, 0, 0)) &&
+          life_is_dst(life_local(2026, 10, 25, 2, 59, 59)) && !life_is_dst(life_local(2026, 10, 25, 3, 0, 0)) && !life_is_dst(life_local(2026, 10, 27, 14, 0, 0)) &&
+          life_is_dst(life_local(2027, 3, 28, 2, 0, 0)) && !life_is_dst(life_local(2027, 3, 27, 12, 0, 0)), "EU summer time: 2026-03-29 02:00 to 10-25 03:00, 2027 from 03-28");
     CHECK(life_day_of(1, 15) == DAY_ADOPT && life_day_of(6, 27) == DAY_BDAY && life_day_of(9, 12) == DAY_MEMORIAL && life_day_of(9, 13) == DAY_NORMAL, "the special days (spec 9.5, D-04)");
     world_init(&s_world, 71); s_world.season_force = -1; s_world.daypart_force = -1;
     life_init(&s_world, life_local(2026, 7, 3, 15, 0, 0));

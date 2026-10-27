@@ -15,6 +15,7 @@ int     life_daypart_of(int hour);                           /* 0 morning 07-12,
 int     life_season_of(int month);                           /* 0 spring Mar-May .. 3 winter Dec-Feb */
 int     life_day_of(int month, int day);                     /* DAY_*: Jan 15 (D-04), Jun 27, Sep 12 */
 int64_t world_now(const world_t *w);                         /* the world's local time now */
+bool    life_is_dst(int64_t local_s);                        /* EU summer time (the panel's clock follows it: body_216.c) */
 int     world_day(const world_t *w);                         /* DAY_* today (forced in the sim, else the date) */
 
 /* ---- the needs (spec 9.1) ---- */

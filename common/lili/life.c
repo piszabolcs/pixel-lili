@@ -35,6 +35,17 @@ void life_date(int64_t s, lili_date_t *d) {
 int life_daypart_of(int h) { return h >= 7 && h < 13 ? 0 : h >= 13 && h < 18 ? 1 : h >= 18 && h < 22 ? 2 : 3; }
 int life_season_of(int m) { return m >= 3 && m <= 5 ? 0 : m >= 6 && m <= 8 ? 1 : m >= 9 && m <= 11 ? 2 : 3; }
 int life_day_of(int m, int d) { return m == 1 && d == 15 ? DAY_ADOPT : m == 6 && d == 27 ? DAY_BDAY : m == 9 && d == 12 ? DAY_MEMORIAL : DAY_NORMAL; }
+/* EU summer time (spec 5.6: CET-1CEST,M3.5.0,M10.5.0/3): from the last Sunday of March 02:00 to the last Sunday
+   of October 03:00, local time (as the clock showed it before the change) */
+bool life_is_dst(int64_t s) {
+    lili_date_t d; life_date(s, &d);
+    if (d.month < 3 || d.month > 10) return false;
+    if (d.month > 3 && d.month < 10) return true;
+    const int64_t d31 = days_from_civil(d.year, d.month, 31);
+    const int wd31 = (int)(((d31 + 4) % 7 + 7) % 7);           /* 0 = Sunday (1970-01-01 was a Thursday) */
+    const int64_t at = (d31 - wd31) * 86400 + (d.month == 3 ? 2 : 3) * 3600;
+    return d.month == 3 ? s >= at : s < at;
+}
 int64_t world_now(const world_t *w) { return w->epoch0 + (int64_t)w->clock_s; }
 int world_day(const world_t *w) {
     if (w->day_force >= 0 && w->day_force <= DAY_MEMORIAL) return w->day_force;
