@@ -239,3 +239,18 @@ A `docs/DEVICE.md` NEM sorolja fel a parancsokat (flash szabályok + folyamatban
 
 ## Módosított átvett fájlok (Pixel Lili)
 1. `firmware/main/display_port.h`, `display_port_sh8601.c`: **új függvény** `display_port_flush_gen(fill, ctx)` (M2.6, 2026-10-21) a 2.16-ra: a hívó callbackje tölti a DMA csíkot (24 sor, a vezeték bájtsorrendjében), így nincs 460 KB-os RGB565 keretpuffer. A meglévő függvények nem változtak; a nem-square buildekben üres.
+
+## Átvétel a Lili-firmware-be (2026-10-27)
+
+Változtatás nélkül, a pocket-tank fájljaira hivatkozva (nem másolatként) fordulnak a `firmware/lili` buildbe:
+
+1. `common/llm/q4_model.c` (a 4 bites LLM-motor): a Lili-agy (`common/lili/brain_llm.c`) ezen fut, a modell a pocket-tank "version 3" formátumában (`model/export_lili_q4.py`), egy sématrailerrel a végén, amit a motor nem olvas.
+2. `firmware/components/tankcore/rtc_port_pcf85063.c` (az RTC a rendszerórába).
+3. `firmware/main/battery_port_axp2101.c` (a PMIC: az akku töltöttsége az állapotsávban).
+4. `firmware/main/display_port_sh8601.c` (ahogy eddig is).
+
+A diag firmware saját fájljai (M1, nem a pocket-tankéi): `mic_es7210.c`, `whistle.c`, `imu_qmi.c`, `rtc_pcf.c`; a `font5x9.c` másolata a `common/lili/font5x9.c`.
+
+A pocket-tank `touch_port_ft3168.c` olvasási és felengedési szabálya alapján új, kisebb meghajtó készült: `firmware/lili/main/touch_216.c`.
+
+**A panel flash-térképe:** a pocket-tank halas modelljének helyén (0x290000, 8 MB) most Lili modellje van (`firmware/lili/partitions.csv` `model`). A pocket-tankra visszatéréshez a halas modellt is újra kell flashelni; a gyári mentés megvan (`backup/factory_216_2026-10-18.bin`).
