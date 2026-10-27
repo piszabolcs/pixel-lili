@@ -44,5 +44,6 @@ enum {
     RAMP_ID_COUNT
 };
 extern const map_t MAPS[2];
+extern const char *const SPOT_NAMES[SPOT_COUNT];   /* the JSON's names, for tests and logs */
 
 #endif

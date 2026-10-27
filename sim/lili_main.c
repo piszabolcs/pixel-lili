@@ -374,10 +374,11 @@ static int selftest(void) {
 
 /* ---------- the demo tour: common/lili/lili_demo.c (the panel runs the same script) ---------- */
 #include "lili_demo.h"
-static demo_scratch_t s_demo_scr;                     /* the path search's 86 KB work area */
+#include "nav.h"
+static nav_scratch_t s_nav;                           /* the path search's work area (nav.h) */
 /* --demo-record DIR [fps]: one round of the tour, headless, as DIR/f00000.ppm ... (tools: ffmpeg -> mp4) */
 static int demo_record(const char *dir, int fps) {
-    canvas_init(); world_init(&s_world, 42); demo_init(&s_demo_scr); demo_start();
+    canvas_init(); world_init(&s_world, 42); nav_init(&s_nav); demo_start();
     const float dt = 1.0f / (float)fps;
     char path[512]; int n = 0;
     snprintf(path, sizeof path, "%s/log.txt", dir); FILE *lg = fopen(path, "w");   /* frame, step, x, y, anim, vis: to find a moment */
@@ -409,6 +410,60 @@ static int snapshot(const char *dir) {
         }
     }
     printf("snapshot: %d scenes -> %s\n", n, dir);
+    return 0;
+}
+
+/* --selftest-nav (spec 6.4, M4.1): every point of both maps is reachable from the door and back, no path goes
+   through a wall or a thing, the steering arrives on the spot without flickering between two directions, the
+   gaits keep their order, an unreachable goal gives the nearest reachable place */
+static int selftest_nav(void) {
+    nav_init(&s_nav); world_init(&s_world, 11);
+    actor_t *a = &s_world.actors[0]; body_t *b = &s_world.bodies[0];
+    int legs = 0, worst_turns = 0; float worst_s = 0;
+    for (int v = 0; v < VIEW_COUNT; v++) {
+        const map_t *m = &MAPS[v];
+        const map_point_t *door = &m->points[v == VIEW_ROOM ? SPOT_DOOR : SPOT_DOOR_YARD];
+        CHECK(door->z >= 0 && nav_clear((view_t)v, door->x, door->y, 0), "each view has its door spot on the floor");
+        for (int s = 0; s < SPOT_COUNT; s++) {
+            const map_point_t *p = &m->points[s];
+            if (p->z < 0 || s == SPOT_DOOR || s == SPOT_DOOR_YARD) continue;
+            for (int back = 0; back < 2; back++) {               /* the door to the spot, then the spot to the door */
+                const map_point_t *from = back ? p : door, *to = back ? door : p;
+                memset(b, 0, sizeof *b); b->style = STYLE_TROT;
+                if (!nav_plan((view_t)v, from->x, from->y, to->x, to->y, b) || !b->n) {
+                    printf("FAIL: %s: %s -> %s has no path\n", m->name, SPOT_NAMES[back ? s : SPOT_DOOR], SPOT_NAMES[back ? SPOT_DOOR : s]); return 1;
+                }
+                float px = from->x, py = from->y;
+                for (int i = 0; i < b->n; i++) {                 /* every leg on the floor: no wall, no bench, no bush trunk */
+                    if (!nav_line_clear((view_t)v, px, py, b->path[i][0], b->path[i][1], 0)) { printf("FAIL: %s: the path to %s crosses a blocked cell at leg %d\n", m->name, SPOT_NAMES[s], i); return 1; }
+                    px = b->path[i][0]; py = b->path[i][1];
+                }
+                CHECK(b->path[b->n - 1][0] == to->x && b->path[b->n - 1][1] == to->y, "the path ends on the spot itself");
+                a->view = (view_t)v; a->x = from->x; a->y = from->y; a->dir = DIR_S;
+                int turns = 0; float t = 0; dir8_t last = a->dir;
+                while (!nav_follow(a, b, 1.0f / 30.0f) && t < 30.0f) {
+                    t += 1.0f / 30.0f;
+                    if (!map_walkable(m, (int)a->x, (int)a->y)) { printf("FAIL: %s: she stepped off the floor at (%.0f, %.0f)\n", m->name, a->x, a->y); return 1; }
+                    if (a->dir != last) { turns++; last = a->dir; }
+                }
+                CHECK(t < 30.0f && a->x == to->x && a->y == to->y, "she arrives on the spot within 30 s");
+                CHECK(a->anim == ANIM_TROT, "the gait's animation plays on the way");
+                if (turns > worst_turns) worst_turns = turns;
+                if (t > worst_s) worst_s = t;
+                legs++;
+            }
+        }
+    }
+    printf("nav: %d legs between the doors and every spot, the longest %.1f s, at most %d turns\n", legs, worst_s, worst_turns);
+    CHECK(worst_turns <= 12, "no flicker: a few turns per leg, not one per frame");
+    for (int st = 1; st < STYLE_COUNT; st++) CHECK(nav_speed((nav_style_t)st, VIEW_ROOM) > nav_speed((nav_style_t)(st - 1), VIEW_ROOM), "the gaits get faster in spec 8.4's order");
+    CHECK(nav_speed(STYLE_WALK, VIEW_YARD) < nav_speed(STYLE_WALK, VIEW_ROOM), "the same gait covers fewer px in the smaller yard");
+    CHECK(nav_anim(STYLE_SPRINT) == ANIM_RUN && nav_anim(STYLE_TIPTOE) == ANIM_TIPTOE && nav_anim(STYLE_SCURRY) == ANIM_SCURRY, "each gait has its animation");
+    CHECK(nav_dir(0, 10) == DIR_S && nav_dir(-10, 0) == DIR_W && nav_dir(10, -10) == DIR_NE, "a screen vector's direction");
+    CHECK(nav_dir_hyst(DIR_S, 5.5f, 10) == DIR_S && nav_dir(5.5f, 10) == DIR_SE && nav_dir_hyst(DIR_S, 10, 10) == DIR_SE, "the facing keeps until the vector is clearly past the sector (29 degrees: SE without hysteresis, still S with it; 45 turns SE)");
+    memset(b, 0, sizeof *b);                                     /* a goal in a wall: false, and the path ends at the nearest floor */
+    CHECK(!nav_plan(VIEW_ROOM, 240, 300, 5, 5, b) && b->n > 0 && nav_clear(VIEW_ROOM, b->path[b->n - 1][0], b->path[b->n - 1][1], 0), "an unreachable goal: the nearest reachable place");
+    printf("selftest-nav: ok\n");
     return 0;
 }
 
@@ -557,6 +612,7 @@ static int inspector_shot(const char *path) {
 int main(int argc, char **argv) {
     pak_load("../assets/build/assets.pak");
     if (argc > 1 && !strcmp(argv[1], "--selftest")) return selftest();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-nav")) return selftest_nav();
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
     if (argc > 2 && !strcmp(argv[1], "--inspector-shot")) return inspector_shot(argv[2]);
     if (argc > 2 && !strcmp(argv[1], "--demo-record")) return demo_record(argv[2], argc > 3 ? atoi(argv[3]) : 12);
@@ -573,7 +629,7 @@ int main(int argc, char **argv) {
     world_init(&s_world, (uint32_t)time(NULL));
     ev_init(&s_q);
     ui_build();
-    demo_init(&s_demo_scr);
+    nav_init(&s_nav);
     if (argc > 1 && !strcmp(argv[1], "--demo")) demo_start();      /* the window with the tour already running (G stops it) */
     if (argc > 1 && !strcmp(argv[1], "--anim-viewer")) {           /* optional: the animation to start at, by name */
         s_av.on = true;

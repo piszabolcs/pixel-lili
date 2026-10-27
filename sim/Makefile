@@ -46,7 +46,7 @@ CFLAGS  := $(ROUNDF) -O2 -std=c11 $(ARCH) -I. -I../common -I../common/llm -DLV_C
 LDFLAGS := $(ARCH) $(SDL_LIBS) -lm
 
 ifdef LILI
-APP_SRCS  := lili_main.c inspector.c ../common/lili/events.c ../common/lili/lili_world.c ../common/lili/lili_demo.c ../common/lili/render8.c ../common/lili/palette.c ../common/lili/palette_gen.c ../common/lili/pak.c ../common/lili/mask.c ../common/lili/maps_gen.c
+APP_SRCS  := lili_main.c inspector.c ../common/lili/events.c ../common/lili/lili_world.c ../common/lili/lili_demo.c ../common/lili/nav.c ../common/lili/render8.c ../common/lili/palette.c ../common/lili/palette_gen.c ../common/lili/pak.c ../common/lili/mask.c ../common/lili/maps_gen.c
 CFLAGS    += -I../common/lili
 else
 APP_SRCS  := main.c advisor_llm.c persist_port_sim.c net_port_sim.c ../common/tank.c ../common/update.c ../common/advisor.c ../common/render.c ../common/icons.c ../common/progression.c ../common/setup.c ../common/audio.c ../common/notice.c ../common/sounds.c ../common/battery.c ../common/llm/q4_model.c ../common/llm/word_tok.c ../common/llm/advisor_core.c
@@ -64,7 +64,7 @@ SELFTESTS := --selftest --selftest-hunger --selftest-shop --selftest-battery \
 # the dev repo does not track model/out (the public one does): NOMODEL=1 runs
 # the same checks without the LLM selftest, for a checkout with no model
 ifdef LILI
-SELFTESTS := --selftest --bench
+SELFTESTS := --selftest --selftest-nav --bench
 endif
 ifdef NOMODEL
 SELFTESTS := $(filter-out --selftest-llm,$(SELFTESTS))
@@ -107,7 +107,7 @@ ifdef LILI
 # the maps are data: edit assets/maps/*.json, this regenerates the C (never edit maps_gen.*)
 ../common/lili/maps_gen.c ../common/lili/maps_gen.h: ../tools/gen_maps.py ../common/lili/config.h $(wildcard ../assets/maps/*.json)
 	python3 ../tools/gen_maps.py
-$(BUILD)/common/lili/lili_world.o $(BUILD)/common/lili/lili_demo.o $(BUILD)/lili_main.o: ../common/lili/maps_gen.h
+$(BUILD)/common/lili/lili_world.o $(BUILD)/common/lili/lili_demo.o $(BUILD)/common/lili/nav.o $(BUILD)/lili_main.o: ../common/lili/maps_gen.h
 -include $(filter-out $(BUILD)/lvgl/%,$(OBJS:.o=.d))
 else
 -include $(OBJS:.o=.d)

@@ -9,11 +9,7 @@
 #include "lili_world.h"
 #include "map.h"
 
-/* the path search's work area: 3 x 14 400 cells x 2 B = 86 KB, so the caller places it (PSRAM on the panel) */
-typedef struct { int16_t prev[MAP_GW * MAP_GH], queue[MAP_GW * MAP_GH], cells[MAP_GW * MAP_GH]; } demo_scratch_t;
-
-void demo_init(demo_scratch_t *scratch);       /* once, before demo_start; NULL = no tour */
-void demo_start(void);
+void demo_start(void);                         /* nothing without nav_init (the walks need the path search) */
 void demo_stop(void);
 bool demo_active(void);
 int  demo_step(void);                          /* the script's current step, -1 = stopped */

@@ -3,7 +3,7 @@ set(PT ${CMAKE_CURRENT_LIST_DIR}/../../main)
 set(LILI ${CMAKE_CURRENT_LIST_DIR}/../../../common/lili)
 idf_component_register(
     SRCS lili_main.c
-         ${LILI}/lili_world.c ${LILI}/lili_demo.c ${LILI}/render8.c ${LILI}/palette.c ${LILI}/palette_gen.c ${LILI}/pak.c ${LILI}/mask.c ${LILI}/maps_gen.c ${LILI}/events.c
+         ${LILI}/lili_world.c ${LILI}/lili_demo.c ${LILI}/nav.c ${LILI}/render8.c ${LILI}/palette.c ${LILI}/palette_gen.c ${LILI}/pak.c ${LILI}/mask.c ${LILI}/maps_gen.c ${LILI}/events.c
          ${PT}/display_port_sh8601.c
     INCLUDE_DIRS "." ${PT} ${CMAKE_CURRENT_LIST_DIR}/../../../common ${LILI}
     REQUIRES esp_driver_spi esp_driver_i2c esp_driver_gpio esp_lcd nvs_flash esp_timer esp_psram esp_hw_support esp_partition

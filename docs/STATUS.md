@@ -2,6 +2,35 @@
 
 Frissítve: 2026-10-27
 
+<!-- overview -->
+## Áttekintés: mi van kész, mi nincs (2026-10-27, folyamatosan frissítve)
+
+Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a gazdi jóváhagyására vár; **hiányzik** = nincs meg, és miért.
+
+| Mérföldkő | Állapot | Megjegyzés |
+|---|---|---|
+| M0 környezet, fork | kész | |
+| M1 hardver validáció | kész | |
+| M2 váz (renderelő, maszk, térképek, inspector, panel) | kész | |
+| M3.1-M3.4 gyártósor, paletta, Lili | kész | 2D vonal: PixelLab-animációk (decisions.md) |
+| M3.5 A01-A09 | kész, [G] vár | `docs/review/m3_5.html`, `./lilisim --anim-viewer`; a panelen 32-33 fps |
+| M3.6 A10-A27 | kész, [G] vár | `docs/review/m3_6.html`; 33 animáció a pakban (3,97 MB). **Hiányzik** (nincs PixelLab-sheet): A13 puffogás, A14 felvétel/leejtés, A21 kukucskálás, A22 ugrás az ágyra |
+| M3.7 szoba, udvar, évszakok, napszakok | kész, [G] vár | `docs/review/m3_7.html` (`--snapshot`). **Hiányzik:** évszakos díszek és a különleges napok díszei (új grafika kell) |
+| M3.8 játékok, foltok, pelenka, UI ikonok | hiányzik | új grafika kell (PixelLab); a tálak megvannak |
+| M4 világ, mozgás, reflexek | folyamatban | |
+| M5 igények, idő, mentés, energia | nincs elkezdve | |
+| M6 szabálymotor agy | nincs elkezdve | |
+| M7 LLM tanítása | nincs elkezdve | |
+| M8 agy az eszközön | nincs elkezdve | |
+| M9 hang | nincs elkezdve | M9.1 [G]: videók kellenek |
+| M10 felület | nincs elkezdve | |
+| M11 hosszútávú teszt, v1.0 | nincs elkezdve | M11.1 [G] |
+
+**Kérdések a gazdinak (este):**
+1. Jók az M3.5, M3.6, M3.7 oldalak animációi és jelenetei?
+2. Elkészítsem PixelLabbal a hiányzó animációkat (puffogás, felvétel/leejtés, kukucskálás, ugrás) és az M3.8 grafikáit (kötél, plüss, foltok, pelenka, ikonok)? Ez kreditet használ, és mindegyik előbb jóváhagyásra jön.
+<!-- /overview -->
+
 ## Kész
 - **M0.1** Fejlesztői környezet: WSL2 Ubuntu 24.04.5 a `D:\WSL\Ubuntu-24.04`-en (tükrözött hálózat, systemd), build-essential (gcc 13.3), SDL2 2.30, cmake 3.28, ninja 1.11, ffmpeg 6.1, uv 0.13; ESP-IDF **v5.4.1** (`~/esp/esp-idf`, `install.sh esp32s3`, `idf.py --version` OK); `nvidia-smi` a WSL-ben látja az RTX 5060-at (driver 617.14); `.venv` Python 3.11 + **torch 2.11.0+cu128**, `torch.cuda.is_available()` = True, sm 12.0. Windowson: usbipd-win 5.3, uv, VS Code WSL bővítmény.
 - **M0.2** A repó a pocket-tank `a3184fc` klónja, `upstream` remote beállítva; `CLAUDE.md`, `PIXEL_LILI_SPEC.md`, `docs/`, `reference/` bent. **Helye (2026-10-26 óta): `F:\AI\Project\Lili_project\pixel-lili`** (WSL-ből `/mnt/f/AI/Project/Lili_project/pixel-lili`; előtte az asztalon volt). A gazdi döntése (2026-10-18): **GitHub nincs**, a repó csak helyi; a félig létrehozott üres privát `piszabolcs/pixel-lili` repó érintetlen, bármikor törölhető. A WSL-ben csak a fordító környezet él: `~/esp/esp-idf`, `~/dev/lili-venv` (PyTorch), `~/dev/pocket-tank` (referencia-klón).

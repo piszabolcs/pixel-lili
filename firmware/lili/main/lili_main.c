@@ -26,6 +26,7 @@
 #include "events.h"
 #include "pak.h"
 #include "lili_demo.h"
+#include "nav.h"
 
 static const char *TAG = "lili";
 #define PIN_BOOT 0
@@ -42,7 +43,7 @@ static mask_t    *s_mask;                      /* PSRAM: the glass's quadrant ta
 static bgcache_t *s_bg;                        /* PSRAM: the static layer (floor, wall, flat props), drawn once per view */
 static ev_queue_t s_q;
 static pak_t     s_pak;                        /* the pack, in place in its flash partition (through the cache) */
-static demo_scratch_t *s_demo;                 /* PSRAM: the tour's path search (86 KB) */
+static nav_scratch_t *s_nav;                   /* PSRAM: the path search (nav.h, ~200 KB) */
 static int64_t   s_fill_us;                    /* time spent making stripes (this window) */
 
 static void *psram(size_t n) { return heap_caps_aligned_alloc(64, (n + 63) & ~(size_t)63, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
@@ -91,8 +92,8 @@ void app_main(void) {
     esp_err_t e = nvs_flash_init();
     if (e == ESP_ERR_NVS_NO_FREE_PAGES || e == ESP_ERR_NVS_NEW_VERSION_FOUND) { nvs_flash_erase(); nvs_flash_init(); }
     keys_init();
-    s_r8 = psram(sizeof *s_r8); s_mask = psram(sizeof *s_mask); s_bg = psram(sizeof *s_bg); s_demo = psram(sizeof *s_demo);
-    if (!s_r8 || !s_mask || !s_bg || !s_demo) { ESP_LOGE(TAG, "no PSRAM for the canvas"); return; }
+    s_r8 = psram(sizeof *s_r8); s_mask = psram(sizeof *s_mask); s_bg = psram(sizeof *s_bg); s_nav = psram(sizeof *s_nav);
+    if (!s_r8 || !s_mask || !s_bg || !s_nav) { ESP_LOGE(TAG, "no PSRAM for the canvas"); return; }
     if (!display_port_init()) ESP_LOGE(TAG, "no display: the board was not told");
     display_port_set_madctl(LILI_MADCTL);      /* the hardware turns the picture: no cost per frame (the glass mask is the same in all four corners) */
     int64_t tp = esp_timer_get_time();
@@ -106,7 +107,7 @@ void app_main(void) {
     mask_init(s_mask);
     world_init(&s_world, esp_random());
     ev_init(&s_q);
-    demo_init(s_demo);
+    nav_init(s_nav);
     if (s_pak.data) demo_start();
     memset(s_bg, 0, sizeof *s_bg);
     ESP_LOGI(TAG, "up: world %u B, canvas %u B, mask %u B, static-layer cache %u B | internal heap %u KB free", (unsigned)sizeof s_world, (unsigned)sizeof *s_r8, (unsigned)sizeof *s_mask, (unsigned)sizeof *s_bg,

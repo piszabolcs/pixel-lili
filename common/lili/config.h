@@ -25,6 +25,9 @@
 
 /* ---- the actors (spec 11.5: Bella-ready, one dog in v1) ---- */
 #define MAX_ACTORS           1
+/* spec 8.4's gait speeds are for the 240 design grid's dog; the painted world's Lili (0.75 of her 128 px
+   masters) strides this much of that per second: the demo's walk the owner saw on 2026-10-23 (38 px/s) */
+#define LILI_NAV_SPEED_SCALE 0.6f
 
 /* ---- switches (spec 4.6) ---- */
 #define CONFIG_LILI_THOUGHT_BUBBLES 1
