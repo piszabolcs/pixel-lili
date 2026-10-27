@@ -3,12 +3,12 @@
 
     py -3.12 tools/yard_anim_preview.py        assets/pixellab/yard_*_sheet.png -> docs/img/anim/yard_preview_summer.gif
 
-PixelLab trials, nothing of it is in the game: the left tree's crown sways in the wind (PixMiniMax, the
-cover layer as the first frame), the right bush rustles when Lili pushes into it (played once, then still),
+PixelLab trials, nothing of it is in the game: the right bush rustles when Lili pushes into it (PixMiniMax, the
+cover layer as the first frame; played once, then still: the owner, 2026-10-27, it does not move otherwise),
 sparrows fly across the sky and a butterfly flutters over the flower bed (Create animated object, 64 px,
-16 frames, scaled down to the yard's size). The tree and the bush sheets were made from the cover layers
-padded into a bigger cell (tools: the PAD table says where the layer sat), so a frame goes back to the cover's
-own place in the 480 x 480 yard.
+16 frames, scaled down to the yard's size). The bush sheet was made from the cover layer padded into a bigger
+cell (the PAD table says where the layer sat), so a frame goes back to the cover's own place in the 480 x 480 yard.
+The swaying tree was tried too and dropped (the owner, 2026-10-27: not nice).
 """
 import json, os
 import numpy as np
@@ -18,15 +18,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PX = os.path.join(ROOT, "assets", "pixellab")
 GAME = os.path.join(ROOT, "assets", "backgrounds", "game")
 # sheet tag -> (cover layer, its padding inside the PixelLab cell: x, y)
-PAD = {"yard_tree_summer": ("cover_summer_left_tree", (7, 0)), "yard_bush_summer": ("cover_summer_right_bush", (9, 25))}
+PAD = {"yard_bush_summer": ("cover_summer_right_bush", (9, 25))}
 FRAMES, MS = 64, 90                        # the GIF: 64 frames at 90 ms (~5.8 s loop)
-
-CELL_W = {"yard_tree_summer": 160}            # the cell width when it is not the sheet's height
 
 def sheet(tag):
     """the sheet's frames, empty ones (the editor's placeholders) left out; frame 0 is the start frame"""
     s = Image.open(os.path.join(PX, tag + "_sheet.png")).convert("RGBA")
-    w = CELL_W.get(tag, s.height)
+    w = s.height
     cells = [s.crop((i * w, 0, (i + 1) * w, s.height)) for i in range(s.width // w)]
     return [c for c in cells if np.asarray(c)[..., 3].any()]
 
@@ -48,14 +46,13 @@ def small(frames, size):
 
 def main():
     yard = Image.open(os.path.join(GAME, "yard_summer.png")).convert("RGBA")
-    tree, bush = sheet("yard_tree_summer"), sheet("yard_bush_summer")
-    tx, ty = place("yard_tree_summer"); bx, by = place("yard_bush_summer")
+    bush = sheet("yard_bush_summer")
+    bx, by = place("yard_bush_summer")
     birds = small(sheet("yard_bird"), 22) if os.path.exists(os.path.join(PX, "yard_bird_sheet.png")) else []
     fly = small(sheet("yard_butterfly"), 14) if os.path.exists(os.path.join(PX, "yard_butterfly_sheet.png")) else []
     out = []
     for t in range(FRAMES):
         f = yard.copy()
-        f.alpha_composite(tree[1 + (t // 2) % (len(tree) - 1)], (tx, ty))              # the crown sways, 2 GIF frames each
         k = t - 24                                                                       # Lili pushes into the bush at t = 24
         f.alpha_composite(bush[1 + k] if 0 <= k < len(bush) - 1 else bush[0], (bx, by))
         for i, (x0, y0, v) in enumerate(((500, 26, -8), (640, 48, -7))):                 # two sparrows crossing the sky, facing left
@@ -71,9 +68,9 @@ def main():
         out.append(f.convert("RGB"))
     dst = os.path.join(ROOT, "docs", "img", "anim", "yard_preview_summer.gif")
     out[0].save(dst, save_all=True, append_images=out[1:], duration=MS, loop=0)
-    print(f"-> {dst} ({len(tree) - 1} tree, {len(bush) - 1} bush, {len(birds)} bird, {len(fly)} butterfly frames)")
+    print(f"-> {dst} ({len(bush) - 1} bush, {len(birds)} bird, {len(fly)} butterfly frames)")
     # each part alone, 2x on the yard's grass, for the review page
-    for tag in ("yard_tree_summer", "yard_bush_summer", "yard_bird", "yard_butterfly"):
+    for tag in ("yard_bush_summer", "yard_bird", "yard_butterfly"):
         if not os.path.exists(os.path.join(PX, tag + "_sheet.png")): continue
         fr = sheet(tag); fr = fr[1:] if tag in PAD else fr
         w, h = fr[0].size; s = 2 if max(w, h) > 100 else 3

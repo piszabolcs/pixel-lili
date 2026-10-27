@@ -334,6 +334,13 @@ Hiba: a szerkesztő lapja kétszer lefagyott, és egyszer az egész vezérelt la
 
 Fogalmak: takaró réteg (cover layer)
 
+## 2026-10-27 | M3.5, 1. lépés: belefér-e? A pak keretének mérése
+Készült: `tools/pak_budget.py` minden jóváhagyott animációt végigvisz a játék átalakításán (egy méret és talpvonal, Lili palettája, a szobai 0,75-ös és az udvari 0,625-ös méret, RLE a 12 bájtos kockarekorddal), és összeveti a korlátokkal. Mérve: a hátterek 1046 KB, az M3.5 kilenc animációja (A01-A09) mindkét méretben 1273 KB, vele a pak 2320 KB; az összes jóváhagyott sprite 2924 KB, a teljes pak 3971 KB. A kockák közötti különbség (delta) RLE-je az álló és ülő animációkon a harmadára csökkent, a járáson és futáson semmit nem hozott (12 animáción összesen 75 %). Az udvarról a gazdi döntött: a hajladozó fa kikerült, a bokor csak egyszer rezzen, amikor Lili belemegy, egyelőre statikus hátterek.
+
+Döntés: a pak most az app képébe van linkelve, oda legfeljebb 2267 KB fér (2,5 MB-os partíció, 292 KB kód), tehát az M3.5 animációival már nem férne be. Ezért a következő lépés a spec 5.10 szerinti saját asset-partíció (5568 KB), ebbe a teljes pak is belefér. A spec 5.11 terve (bootkor a PSRAM-ba másolva, 2 MB) a mért mérettel nem tartható; javaslat: a pakot a partícióról memóriába leképezve (mmap) olvassuk, ahogy ma is közvetlenül a flashből olvassuk. Ez a gazdi jóváhagyására vár.
+
+Fogalmak: delta-kódolás (kockák közötti különbség), memóriába leképezés (mmap)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -527,3 +534,7 @@ Fogalmak: takaró réteg (cover layer)
 **összefüggő komponens (zárt sziget):** a szomszédos, azonos feltételnek megfelelő pixelek csoportja (itt: világos és nem körvonal). Ha egy csoport szélén szinte csak sötét körvonal van, akkor körbe van zárva: ez a farok gyűrűjébe szorult folt, és a feltétel alapján átlátszóvá tehető, anélkül hogy a test többi része változna.
 
 **takaró réteg (cover layer):** a háttérkép egy kivágott darabja (fa, bokor, pad), amely a játékban Lili előtt vagy mögött rajzolódik, attól függően, hogy Lili lába a réteg "talpvonala" (sort_y) felett vagy alatt van. Mivel külön kép és tudjuk a helyét, animálni is lehet: a mozgó változat a helyére kerül, a háttér többi része változatlan.
+
+**delta-kódolás (kockák közötti különbség):** egy animációs kockát nem önmagában tárolunk, hanem csak azt, ami az előzőhöz képest változott; a változatlan pixel egy "ugyanaz" jel, amit az RLE egy futamba sűrít. Ahol alig mozog valami (légzés, pislogás), sokat nyer, ahol az egész test elmozdul (futás), semmit. Ára: egy kocka csak az előző ismeretében fejthető vissza.
+
+**memóriába leképezés (mmap):** a flash egy tartományát a processzor címtartományába vetítjük (az ESP32-S3 MMU-ja 64 KB-os lapokkal), így közönséges mutatóval olvasható, mintha RAM lenne, a használt részt a gyorsítótár hozza be. Nem foglal RAM-ot, ezért egy 4 MB-os pak sem veszi el a PSRAM-ot; az LLM modellje is így olvasódik.

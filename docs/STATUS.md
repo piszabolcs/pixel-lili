@@ -1,6 +1,6 @@
 # Állapot
 
-Frissítve: 2026-10-26 (este)
+Frissítve: 2026-10-27
 
 ## Kész
 - **M0.1** Fejlesztői környezet: WSL2 Ubuntu 24.04.5 a `D:\WSL\Ubuntu-24.04`-en (tükrözött hálózat, systemd), build-essential (gcc 13.3), SDL2 2.30, cmake 3.28, ninja 1.11, ffmpeg 6.1, uv 0.13; ESP-IDF **v5.4.1** (`~/esp/esp-idf`, `install.sh esp32s3`, `idf.py --version` OK); `nvidia-smi` a WSL-ben látja az RTX 5060-at (driver 617.14); `.venv` Python 3.11 + **torch 2.11.0+cu128**, `torch.cuda.is_available()` = True, sm 12.0. Windowson: usbipd-win 5.3, uv, VS Code WSL bővítmény.
@@ -36,7 +36,7 @@ Frissítve: 2026-10-26 (este)
 - **PixelLab éjszakai gyártás (2026-10-24):** a `jobs.json` mind a 143 animációja kész (168 sheet a próbákkal, PixMiniMax), 8 irányban: járás, ügetés, futás, álló és ülő idle, meghajlás, lihegés, ugatás, szaglászás, lopakodás, surranás, megriadás, ugrás (pounce), fejbillentés, körülnézés, simiért kérés, napozás, simogatás, alvás, a kötél és a keksz, evés, ivás, pisilés, kakilás, és az átmenetek (leül, feláll, lefekszik, guggol). **Próbáld ki:** nyisd meg a `docs/review/index.html`-t (minden animáció GIF-ként, irányonként), és jelöld, mi mehet be. Napló és minőségi megjegyzések: `docs/logs/2026-10-24_pixellab_night.md`. **Semmi nincs bekötve** a jóváhagyásig.
 - **PixelLab, 1. jóváhagyási kör (2026-10-26):** a gazdi visszajelzése alapján: egy méret és egy talpvonal minden animációnak (`tools/pixellab_norm.py`, ellenőrzőlap `docs/img/anim/size_check.png`; az NW-k 20 %-kal nagyobbak voltak, a trot_S és a sniff_E felemelkedett), a `stand_N` farokgyűrűjének foltja kivéve, a 9 N animáció újra, az ugatás fejfelcsapással (S, SW, W, E, SE; hátulról nincs), trot_S helyben, eat_treat_S és a kötélrágás újra, a carry_trot_S a PixMiniMax-os, az elvetett változatok törölve. **Próbáld ki:** `docs/review/animaciok.html` (önálló, minden GIF benne). **Semmi nincs bekötve**; a beépítésre váró javaslat a gazdi döntésére vár (ivás: drink_W_pmm, ugatás S: bark_S_v2, a walk N foltja, az alvás SW cseréje).
 - **PixelLab, javítások és udvari próba (2026-10-26 késő este):** trot_S, startle_N és a scurry mind a 8 irányban újra (a gazdi által jelzett gyengék). **Udvari próba:** szélben hajló fa, megrázkódó bokor, verebek, pillangó, `docs/img/anim/yard_preview_summer.gif` (`tools/yard_anim_preview.py`), a jóváhagyó oldal tetején. **Próbáld ki:** `docs/review/animaciok.html`. Semmi nincs bekötve.
-- **M3.5 [G]** animációk 1. köre (A01-A09) a modellen, `--anim-viewer` a szimulátorban.
+- **M3.5 [G] (folyamatban, 2026-10-27):** animációk 1. köre (A01-A09) a jóváhagyott PixelLab-kockákból mind a 8 irányban, `--anim-viewer` a szimulátorban. **1. lépés kész:** a pak kerete mérve (`tools/pak_budget.py`, stats.md): az M3.5 pakja 2,3 MB, az app képébe (max. 2,27 MB) már nem fér, ezért a pak a spec 5.10 saját asset-partíciójára költözik (5,4 MB); a teljes jóváhagyott készlet 3,9 MB. Hiányzik: trot_SE (a legközelebbi irányra esik vissza), a felállás a leülés visszafelé. **A gazdi (2026-10-27):** statikus hátterek, a fa animáció elvetve, a bokor csak egyszer rezzen, ha Lili belemegy (M4.2), madarak és pillangó később.
 - **M3 Blender gyártósor** (a gazdi Blender 5.2.2 LTS-t telepített).
 - Később (D-07): "Lili" névfelismerés.
 

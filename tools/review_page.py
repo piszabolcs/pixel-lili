@@ -62,9 +62,9 @@ def main():
     anim = os.path.join(ROOT, "docs", "img", "anim")
     if os.path.exists(os.path.join(anim, "yard_preview_summer.gif")):
         yard.append('<figure class="wide"><img class="yard" src="../img/anim/yard_preview_summer.gif" alt="yard"><figcaption>'
-                    '<b>Nyári udvar</b> próba: szélben hajló fa, megrázkódó bokor (Lili belemegy), átrepülő verebek, pillangó'
-                    '<br><span>Semmi nincs bekötve; a fa és a bokor a meglévő takaró rétegekből készült.</span></figcaption></figure>')
-    for tag, cap in (("yard_tree_summer", "bal fa, szél"), ("yard_bush_summer", "jobb bokor, megrázkódik"),
+                    '<b>Nyári udvar</b> próba: a bokor egyszer megrázkódik, amikor Lili belemegy; átrepülő verebek, pillangó'
+                    '<br><span>Semmi nincs bekötve; a bokor a meglévő takaró rétegből készült. A hajladozó fát elvetetted (2026-10-27).</span></figcaption></figure>')
+    for tag, cap in (("yard_bush_summer", "jobb bokor, megrázkódik"),
                      ("yard_bird", "veréb, repül"), ("yard_butterfly", "pillangó")):
         if os.path.exists(os.path.join(anim, tag + ".gif")):
             yard.append(f'<figure class="done"><img src="../img/anim/{tag}.gif" alt="{tag}"><figcaption><b>{cap}</b></figcaption></figure>')
