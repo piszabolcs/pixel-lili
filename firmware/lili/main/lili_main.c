@@ -241,7 +241,8 @@ void app_main(void) {
             if (ev.type == EV_TAP && s_ui && ui_tap(s_ui, &s_world, ev.a, ev.b)) continue;   /* the interface's tap, not the world's */
             world_handle_event(&s_world, &ev);
         }
-        if (s_ui) ui_tick(s_ui, dt); body_set_brightness(ui_brightness(&s_world));
+        if (s_ui) ui_tick(s_ui, dt);
+        body_set_brightness(ui_brightness(&s_world));
         { static int64_t bat_t; if (s_ui && t0 - bat_t > 2000000) { bat_t = t0; float f; bool ch; s_ui->has_battery = battery_port_read(&f, &ch); s_ui->battery = f; s_ui->charging = ch; } }
         if (demo_active()) demo_tick(&s_world, dt);
         else {
