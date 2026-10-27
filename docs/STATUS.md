@@ -25,21 +25,28 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 | M4.6 játékfizika | kész, [G] vár | `--selftest-toys`; a dobás érzete a panelen kipróbálandó |
 | M4.7 gondozási koppintások | kész | tál, pelenka, folt, csillogás, az utolsó folt után R1 |
 | M5.1-M5.5 igények, pelenka, naptár, távollét, mentés | kész | `--selftest-progress/-calendar/-offline/-save`; a panelen RTC és NVS-mentés |
-| M5.6 energiaállapotok (DIM, DESK, POCKET, PWR, felvételre üdvözlés) | hiányzik | IMU- és PMIC-kód kell, és a panelen kézzel kipróbálni [G] |
+| M5.6 energiaállapotok | kész, [G] vár | ACTIVE -> 60 mp -> DIM -> 10 perc az asztalon -> kijelző ki; zsebben azonnal ki; ujj, gomb, felvétel, fütty ébreszt, 15 perc után üdvözöl; PWR = kijelző ki/be (`motion.c`, `--selftest-motion`). A valódi könnyű alvás (WoM-ébresztés) még nincs; a panelen kipróbálandó |
 | M6.1-M6.5 szabálymotor agy | kész | séma, kódoló (C = Python 1000/1000), 46 sablon (H1-H15), életciklus, habozás; P1-P12 mind teljesül; a panelen bekapcsoláskor Lili a saját agyával él (BOOT: demó) |
 | M6.6 egy hét élet a panelen | [G] vár | a gazdi szerint "ez Lili"? a viselkedés a `model/teacher_rules.yaml`-ben hangolható |
 | M7.1-M7.4 LLM tanítása | kész | 184 ezer pár (`lilisim --dump-traces`), egyik szokás sem 1 % alatt; S, M tanítva az RTX 5060-on (3-4 perc); S: A1 87 %, top-2 93,6 %, P1-P12 mind teljesül (`model/eval_lili.py`). A vizualizáló Gradio-felület nem készült el |
 | M7.5 B szintű tanár (Ollama) | hiányzik | opcionális |
 | M8.1-M8.4 agy az eszközön | kész | S modell, 4 bit, 2,76 MB, sématrailer; C motor: 100 % érvényes válasz, Q4 = fp32 99,2 % a határozott esetekben; a panelen Core 1-en, **1,7 mp/döntés**, 33-37 fps; egy óra élet a modellel a szimulátorban (`--selftest-llm`). A panelen bekapcsoláskor a modell dönt, ha van a partíción, különben a szabálymotor |
-| M9 hang | nincs elkezdve | M9.1 [G]: videók kellenek |
-| M10 felület | nincs elkezdve | |
-| M11 hosszútávú teszt, v1.0 | nincs elkezdve | M11.1 [G] |
+| M9.1-M9.2 Lili hangja | hiányzik | [G] a gazdi videói kellenek; a lejátszás (ES8311) a mikrofonnal közös I2S buszon duplex beállítást kér, ezt a hanggal együtt csinálom |
+| M9.3 fütty és hang a játékban | kész, [G] vár | a diag füttydetektora a panelen -> R2 (előjön), hangra fejbillentés (R8, a küszöb hangolandó); a panelen kipróbálandó (füttyents!) |
+| M9.4 névfelismerés | hiányzik | kísérleti, alapból ki (D-07) |
+| M10.1-M10.3, M10.5-M10.7 felület | kész | üveg állapotsáv (idő, akku, Lili 3 mutatója, hang, fogaskerék; 27,7 fps amíg látszik), beállítások lap (fényerő, hang, buborékok, keresési segítség, idő), magyar ékezetes pixelbetű, keresési segítség (mancsnyom), első indulás; `--selftest-ui` |
+| M10.4 gondolatbuborékok | kész, [G] vár | 9 ikon a fej fölött 2,5 mp-ig; D-09: a panelen is be van kapcsolva, a beállításokban kikapcsolható; a gazdi dönt |
+| M11.1 7 napos próba a panelen | [G] vár | |
+| M11.2 egy év a szimulátorban | részben | 447 ezer döntés 13 mp alatt, hiba nélkül, minden évszakban változatos; a különleges napok képei hiányoznak (grafika) |
+| M11.3 hibajavítás, README, v1.0 | részben | magyar README képernyőképekkel kész; a v1.0 címke az M11.1 után |
 
 **Kérdések a gazdinak (este):**
 1. Jók az M3.5, M3.6, M3.7 oldalak animációi és jelenetei, és a bokor rezzenése?
 2. Elkészítsem PixelLabbal a hiányzó animációkat (puffogás, felvétel/leejtés, kukucskálás) és az M3.8 grafikáit (kötél, plüss, foltok, pelenka állapotai, ikonok)? Ez kreditet használ, és mindegyik előbb jóváhagyásra jön.
-3. Az RTC egy órával siet (még nyári idő): `py -3.12 tools/rtc_sync.py` (a diag firmware-rel), vagy szólj, és teszek a Lili-firmware-be egy `settime` parancsot.
+3. Az RTC-t a konzol `settime` parancsával téli időre állítottam (egy órával sietett).
 4. A panelen: koppints Lilire, simogasd (oda-vissza húzás rajta), húzd fel az ujjad az alsó szélről; a soros konzol (`py -3.12 tools/serial_log.py --seconds 60`) kiírja, mit ismert fel. Jó helyen van-e az érintés?
+5. Füttyents a panel közelében: Lilinek elő kell jönnie (R2). Rázd meg: megriad és ugat. Tedd le az asztalra 3 mp-re, aztán vedd fel: felébred. A BOOT gomb az állapotsáv, a PWR a kijelző ki/be.
+6. A panelen a modell vezérli Lilit (a konzolon `brain rules` a szabálymotorra vált). A gondolatbuborékok maradjanak bekapcsolva a panelen (D-09)?
 <!-- /overview -->
 
 ## Kész
