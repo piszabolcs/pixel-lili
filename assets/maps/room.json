@@ -18,7 +18,7 @@
     "bowl_water":   [168, 217, 0],
     "spot_pad":     [42, 208, 0],
     "spot_deco":    [90, 214, 0],
-    "rope_start":   [80, 196, 0],
+    "rope_start":   [140, 182, 0],
     "plush_start":  [150, 130, 0]
   },
   "zones": {

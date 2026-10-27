@@ -15,6 +15,7 @@ void     world_set_pak(const pak_t *p);
 const pak_t *world_pak(void);
 void     world_tick(world_t *w, float dt);             /* the body: physics, plans, needs (later layers) */
 void     world_switch_view(world_t *w);                /* KEY3 / Tab / an edge swipe */
+void     world_finger(world_t *w, bool down, int x, int y);   /* the finger on the glass, each frame (follow_finger) */
 uint32_t world_rand(world_t *w);                       /* the one PRNG (xorshift32), seeded */
 void     world_handle_event(world_t *w, const ev_t *e);/* the one door in: reflexes and plans hang here from M4 on */
 

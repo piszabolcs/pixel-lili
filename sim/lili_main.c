@@ -376,6 +376,8 @@ static int selftest(void) {
 #include "lili_demo.h"
 #include "nav.h"
 #include "gesture.h"
+#include "plan.h"
+#include "toys.h"
 static nav_scratch_t s_nav;                           /* the path search's work area (nav.h) */
 /* --demo-record DIR [fps]: one round of the tour, headless, as DIR/f00000.ppm ... (tools: ffmpeg -> mp4) */
 static int demo_record(const char *dir, int fps) {
@@ -608,6 +610,64 @@ static int selftest_gesture(void) {
     return 0;
 }
 
+/* --selftest-plan (spec 8.7, M4.4): every action of the brain's vocabulary, set up where its precondition
+   holds, runs to its end (not failed, within its time limits) with her on the floor all the way; an impossible
+   one is skipped and a plan of only impossible ones fails at once; the toys fly, bounce and stop inside the walls */
+static void plan_setup(int act) {
+    world_init(&s_world, 100 + act); actor_t *l = &s_world.actors[0];
+    s_world.season_force = 2; s_world.daypart_force = 1;          /* autumn afternoon: the sun is on the floor */
+    const bool yard = act == ACT_ENTER_ROOM || act == ACT_GO_BUSH || act == ACT_GO_TREE || act == ACT_HIDE_BUSH || act == ACT_PEEK_BUSH ||
+                      act == ACT_CHASE_LEAF || act == ACT_CHASE_BUTTERFLY || act == ACT_PLAY_SNOW || act == ACT_SNIFF_FLOWERS;
+    if (act == ACT_CHASE_BUTTERFLY || act == ACT_SNIFF_FLOWERS) s_world.season_force = 1;
+    if (act == ACT_PLAY_SNOW) s_world.season_force = 3;
+    if (yard) { const map_point_t *p = &MAPS[VIEW_YARD].points[SPOT_GRASS]; s_world.view = l->view = VIEW_YARD; l->x = p->x; l->y = p->y; }
+    if (act == ACT_BRING_TOY || act == ACT_DROP_TOY_FRONT || act == ACT_RUN_WITH_TOY || act == ACT_TOSS_TOY) toy_pick(&s_world, TOY_ROPE, 0);
+    if (act == ACT_PEEK_BENCH) s_world.plans[0].hide = 1;
+    if (act == ACT_LEAVE_RUG) { const map_point_t *p = &MAPS[VIEW_ROOM].points[SPOT_RUG]; l->x = p->x; l->y = p->y; }
+    if (act == ACT_FOLLOW_FINGER) world_finger(&s_world, true, 300, 380);
+}
+static int selftest_plan(void) {
+    nav_init(&s_nav); float longest = 0; int longest_act = 0;
+    for (int act = 0; act < ACT_COUNT; act++) {
+        if (act == ACT_NONE) continue;
+        plan_setup(act);
+        if (!plan_possible(&s_world, 0, act)) { printf("FAIL: %s is not possible in its own setup\n", ACTION_NAME(act)); return 1; }
+        plan_one(&s_world, 0, act, ST_TROT);
+        const actor_t *l = &s_world.actors[0]; float t = 0; int st = PLAN_RUNNING;
+        while ((st = plan_tick(&s_world, 0, 1.0f / 30.0f)) == PLAN_RUNNING && t < 3 * PLAN_STEP_LIMIT_S) {
+            world_tick(&s_world, 1.0f / 30.0f); t += 1.0f / 30.0f;
+            if (!map_walkable(&MAPS[l->view], (int)l->x, (int)l->y)) { printf("FAIL: %s: she is off the floor at (%.0f, %.0f) in the %s\n", ACTION_NAME(act), l->x, l->y, MAPS[l->view].name); return 1; }
+        }
+        if (st != PLAN_DONE) { printf("FAIL: %s ended %s after %.1f s\n", ACTION_NAME(act), st == PLAN_FAILED ? "failed" : "still running", t); return 1; }
+        if (t > longest) { longest = t; longest_act = act; }
+        if (act == ACT_ENTER_YARD) CHECK(l->view == VIEW_YARD, "enter_yard: she is in the yard");
+        if (act == ACT_ENTER_ROOM) CHECK(l->view == VIEW_ROOM, "enter_room: she is in the room");
+        if (act == ACT_PICKUP_ROPE) CHECK(toy_held(&s_world, 0) == TOY_ROPE, "pickup_rope: the rope is in her mouth");
+        if (act == ACT_DROP_TOY_FRONT) CHECK(toy_held(&s_world, 0) < 0, "drop_toy_front: her mouth is empty");
+        if (act == ACT_EAT) CHECK(s_world.things.food == 2, "eat: one serving less");
+        if (act == ACT_USE_PAD) CHECK(s_world.things.pad == 1, "use_pad: the pad is used");
+        if (act == ACT_MISCHIEF_FLOOR) CHECK(s_world.things.n_mess == 1 && s_world.things.guilty, "mischief_floor: a spot, and she is guilty");
+        if (act == ACT_HIDE_BENCH) CHECK(s_world.plans[0].hide == 1, "hide_bench: she is under the bench");
+    }
+    printf("plan: all %d actions ran to their end, the longest %s in %.1f s\n", ACT_COUNT - 1, ACTION_NAME(longest_act), longest);
+    world_init(&s_world, 5); s_world.daypart_force = 3;                  /* at night, in the room: none of these can run */
+    decision_t d = { { ACT_GO_TREE, ACT_NAP_SUNBEAM, ACT_DROP_TOY_FRONT }, ST_WALK, FC_NEUTRAL, BB_NONE, 5, 1 };
+    plan_start(&s_world, 0, &d);
+    CHECK(plan_tick(&s_world, 0, 0.03f) == PLAN_FAILED, "a plan of three impossible actions fails at once (a new question)");
+    d.a[1] = ACT_SIT; plan_start(&s_world, 0, &d);
+    int st = PLAN_RUNNING; for (int i = 0; i < 300 && st == PLAN_RUNNING; i++) { st = plan_tick(&s_world, 0, 0.03f); world_tick(&s_world, 0.03f); }
+    CHECK(st == PLAN_DONE && (s_world.plans[0].skipped & 1) && (s_world.plans[0].skipped & 4), "the impossible ones are skipped, the possible one runs");
+    /* the toys (spec 8.9): a throw flies, bounces, slides and stops on the floor of its own view */
+    world_init(&s_world, 6); toy_t *ty = &s_world.things.toys[TOY_PLUSH];
+    ty->x = 240; ty->y = 300; toy_throw(&s_world, TOY_PLUSH, 3000, -400);
+    CHECK(ty->vz > 0 && ty->vx > 0 && ty->vx <= 220.0f * LILI_K + 1, "a flick's speed is scaled and capped");
+    float maxz = 0; for (int i = 0; i < 300; i++) { toys_tick(&s_world, 1.0f / 30.0f); if (ty->z > maxz) maxz = ty->z; CHECK(nav_clear(VIEW_ROOM, (int)ty->x, (int)ty->y, 0), "the toy stays on the room's floor"); }
+    printf("toy: highest %.1f px, at rest at (%.0f, %.0f), z %.1f, v (%.2f, %.2f, %.2f)\n", maxz, ty->x, ty->y, ty->z, ty->vx, ty->vy, ty->vz);
+    CHECK(maxz > 6 && ty->z == 0 && ty->vx == 0 && ty->vy == 0, "it flies up, comes down and stops");
+    printf("selftest-plan: ok\n");
+    return 0;
+}
+
 static double now_us(void) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); return ts.tv_sec * 1e6 + ts.tv_nsec / 1e3; }
 static int bench(void) {
     canvas_init(); world_init(&s_world, 1);
@@ -703,10 +763,11 @@ static void frame_cb(lv_timer_t *t) {
         world_gesture_ctx(&s_world, &gc);
         const bool fd = inspector_finger(&fx, &fy);
         gesture_feed(&g, &gc, fd, fx, fy, now, &s_q);
+        world_finger(&s_world, fd, fx, fy);
     }
     drain_events();
     if (s_av.on) { if (!s_av.pause) s_av.t += dt; viewer_draw(); }
-    else { demo_tick(&s_world, dt); world_tick(&s_world, dt); frame(); }
+    else { if (demo_active()) demo_tick(&s_world, dt); else plan_tick(&s_world, 0, dt); world_tick(&s_world, dt); frame(); }
     lv_obj_invalidate(s_canvas);
     if (dt > 0) s_fps = s_fps > 0 ? 0.9f * s_fps + 0.1f / dt : 1.0f / dt;
     s_frame_ms = (float)((now_us() - t0) / 1000.0);
@@ -761,6 +822,7 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--selftest")) return selftest();
     if (argc > 1 && !strcmp(argv[1], "--selftest-nav")) return selftest_nav();
     if (argc > 1 && !strcmp(argv[1], "--selftest-gesture")) return selftest_gesture();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-plan")) return selftest_plan();
     if (argc > 1 && !strcmp(argv[1], "--selftest-render")) return selftest_render(argc > 2 && !strcmp(argv[2], "--update"));
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
     if (argc > 2 && !strcmp(argv[1], "--inspector-shot")) return inspector_shot(argv[2]);

@@ -36,6 +36,36 @@ typedef struct {
     uint8_t  in_hide;                 /* her paws are in a bush's hiding zone (a map "hide_" zone) */
 } body_t;
 
+/* the things in the world (spec 8.9, 8.10, 9.2): the two toys, the bowls, the pad, the spots on the floor */
+enum { TOY_ROPE = 0, TOY_PLUSH, TOY_COUNT };
+typedef struct {
+    view_t  view;
+    float   x, y, z, vx, vy, vz;      /* logical px, px / s; z height above the floor */
+    int8_t  held_by;                  /* the actor carrying it in her mouth, -1 = loose */
+} toy_t;
+#define MESS_MAX 4
+typedef struct {
+    toy_t   toys[TOY_COUNT];
+    uint8_t food, water;              /* the bowls: 0 empty .. 3 full (a refill is 3 servings, spec 8.10) */
+    uint8_t pad;                      /* 0 clean, 1 used, 2 full */
+    uint8_t n_mess; int16_t mess[MESS_MAX][2];   /* the spots on the room's floor (H9) */
+    bool    guilty;                   /* H10: she made a spot and has not been forgiven (the last spot cleaned) */
+} things_t;
+
+/* what the brain decided (spec 10.4): three actions, the gait, the face, the bubble, the urgency */
+typedef struct { uint8_t a[3], style, face, bubble, urg; float margin; } decision_t;
+enum { PLAN_IDLE = 0, PLAN_RUNNING, PLAN_DONE, PLAN_FAILED };
+/* the plan executor's place in a decision (plan.c) */
+typedef struct {
+    decision_t d;
+    uint8_t  status, ai, pi;          /* PLAN_*, the action (0..2), its primitive */
+    uint8_t  skipped, rep;            /* the actions skipped (bits), a primitive's repeat count */
+    float    t, step_t;               /* seconds in the primitive, in the action (its time limit, spec 8.7) */
+    int16_t  gx, gy;                  /* the current walk's goal */
+    uint8_t  hide;                    /* 0 out, 1 under the bench (the nook), 2 in a bush */
+    float    peek_t;                  /* > 0: peeking out of her hiding place for this long */
+} plan_t;
+
 typedef struct {
     uint32_t seed;             /* every random number comes from here (spec 4.6: deterministic selftests) */
     uint32_t rng;
@@ -48,6 +78,10 @@ typedef struct {
     body_t   bodies[MAX_ACTORS];   /* bodies[i] moves actors[i] */
     int8_t   shake_cover;          /* the yard cover (IMG_COVER k) that shakes once as she goes into it (spec 8.5), -1 = none */
     float    shake_t;              /* seconds into that shake */
+    things_t things;
+    plan_t   plans[MAX_ACTORS];    /* plans[i] drives bodies[i] */
+    bool     finger_down;          /* the finger on the glass (follow_finger), set by the platform each frame */
+    int16_t  finger_x, finger_y;
 } world_t;
 
 #endif

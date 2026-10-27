@@ -29,6 +29,7 @@
 #include "nav.h"
 #include "gesture.h"
 #include "touch_216.h"
+#include "plan.h"
 
 static const char *TAG = "lili";
 #define PIN_BOOT 0
@@ -129,9 +130,10 @@ void app_main(void) {
             world_gesture_ctx(&s_world, &gc);
             const bool down = touch216_read(&tx, &ty);
             gesture_feed(&g, &gc, down, tx, ty, (uint32_t)(t0 / 1000), &s_q);
+            world_finger(&s_world, down, tx, ty);
         }
         ev_t ev; while (ev_pop(&s_q, &ev)) { ESP_LOGI(TAG, "event %s %d %d %d", ev_name((ev_type_t)ev.type), ev.a, ev.b, ev.c); world_handle_event(&s_world, &ev); }
-        demo_tick(&s_world, dt);
+        if (demo_active()) demo_tick(&s_world, dt); else plan_tick(&s_world, 0, dt);
         world_tick(&s_world, dt);
         int64_t t1 = esp_timer_get_time();
         world_render_cached(&s_world, s_r8, s_bg);

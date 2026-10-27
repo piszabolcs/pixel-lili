@@ -1,0 +1,57 @@
+{
+ "_note": "Pixel Lili's brain schema v1 (spec 10.3-10.4): the single source of the vocabulary. tools/gen_schema.py generates common/lili/schema_gen.[ch] (the C enums and names) and model/schema_lili.py (the Python encoder) from this file, so C and Python cannot drift apart. Changes against the spec (docs/decisions.md 2026-10-19, the rug instead of the bed): spot_bed / spot_on_bed -> spot_rug; go_bed -> go_rug, sleep_bed -> sleep_rug, jump_on_bed -> sneak_rug (H7: she tiptoes onto the rug and lies down there, looking round), jump_off_bed -> leave_rug. The spec's list says 54 actions; it names 53 (act_none included).",
+ "version": 1,
+ "special": ["<pad>", "<bos>", "<eos>", "=>", "<unk>"],
+ "input": [
+  {"field": "loc", "tokens": ["loc_room", "loc_yard"]},
+  {"field": "spot", "tokens": ["spot_center", "spot_front", "spot_nook", "spot_bowls", "spot_pad", "spot_rug", "spot_door", "spot_sunbeam", "spot_bush", "spot_tree", "spot_grass", "spot_flowers"]},
+  {"field": "tod", "tokens": ["tod_morning", "tod_afternoon", "tod_evening", "tod_night"]},
+  {"field": "season", "tokens": ["season_spring", "season_summer", "season_autumn", "season_winter"]},
+  {"field": "day", "tokens": ["day_normal", "day_adopt", "day_bday", "day_memorial"]},
+  {"field": "hunger", "buckets": 10},
+  {"field": "energy", "buckets": 10},
+  {"field": "happy", "buckets": 10},
+  {"field": "bored", "buckets": 10},
+  {"field": "lonely", "buckets": 10},
+  {"field": "bladder", "buckets": 10},
+  {"field": "guilty", "tokens": ["guilty_0", "guilty_1"]},
+  {"field": "pad", "tokens": ["pad_clean", "pad_used", "pad_full"]},
+  {"field": "mess", "tokens": ["mess_0", "mess_1", "mess_many"]},
+  {"field": "bowls", "tokens": ["bowls_full", "bowls_low", "bowls_empty"]},
+  {"field": "owner", "tokens": ["owner_here", "owner_back_short", "owner_back_long", "owner_idle"]},
+  {"field": "view", "tokens": ["view_same", "view_other"]},
+  {"field": "sig", "tokens": ["sig_none", "sig_whistle", "sig_name", "sig_voice", "sig_shake", "sig_pet", "sig_tap", "sig_toy_thrown"]},
+  {"field": "rope", "tokens": ["rope_mouth", "rope_near", "rope_far", "rope_other"]},
+  {"field": "plush", "tokens": ["plush_mouth", "plush_near", "plush_far", "plush_other"]},
+  {"field": "sun", "tokens": ["sun_on", "sun_off"]},
+  {"field": "last", "tokens": ["last_play", "last_rest", "last_eat", "last_explore", "last_greet", "last_mischief", "last_social", "last_none"]},
+  {"field": "since", "tokens": ["since_short", "since_mid", "since_long"]},
+  {"field": "actor", "tokens": ["actor_lili"]}
+ ],
+ "output": [
+  {"slot": "a1", "class": "act"},
+  {"slot": "a2", "class": "act"},
+  {"slot": "a3", "class": "act"},
+  {"slot": "style", "class": "st"},
+  {"slot": "face", "class": "fc"},
+  {"slot": "bubble", "class": "bb"},
+  {"slot": "urg", "class": "urg"}
+ ],
+ "classes": {
+  "act": {
+   "move": ["goto_front", "follow_finger", "wander", "sniff_around", "go_door", "go_nook", "go_bowls", "go_pad", "go_rug", "go_sunbeam", "go_bush", "go_tree", "go_toy"],
+   "view": ["enter_yard", "enter_room"],
+   "play": ["pickup_rope", "pickup_plush", "bring_toy", "drop_toy_front", "chew_toy", "play_bow", "zoomies", "run_with_toy", "toss_toy"],
+   "body": ["sit", "lie_down", "bark", "huff", "head_tilt", "wag", "beg", "ask_pet", "pant_idle", "stretch"],
+   "needs": ["eat", "drink", "use_pad", "mischief_floor", "sleep_nook", "sleep_rug", "nap_sunbeam"],
+   "sneak": ["look_around", "sneak_rug", "leave_rug", "hide_bench", "peek_bench", "hide_bush", "peek_bush"],
+   "season": ["chase_leaf", "chase_butterfly", "play_snow", "sniff_flowers"],
+   "filler": ["act_none"]
+  },
+  "st": ["st_walk", "st_trot", "st_sprint", "st_tiptoe", "st_scurry", "st_sleepy", "st_curious"],
+  "fc": ["fc_neutral", "fc_pant_smile", "fc_big_eyes", "fc_ears_perk", "fc_relaxed", "fc_head_tilt", "fc_guilty", "fc_sleepy", "fc_bliss", "fc_pout"],
+  "bb": ["bb_none", "bb_heart", "bb_note", "bb_question", "bb_exclaim", "bb_sweat", "bb_zzz", "bb_food", "bb_rope", "bb_plush"],
+  "urg": {"buckets": 9, "from": 1}
+ },
+ "vocab_size": 256
+}

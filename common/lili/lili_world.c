@@ -2,6 +2,10 @@
  * (spec 7.7: nothing waits for the art). Platform-free C99, no malloc. */
 #include "lili_world.h"
 #include "maps_gen.h"
+#include "toys.h"
+#include "plan.h"
+#include "nav.h"
+#include <stdlib.h>
 #include <string.h>
 
 uint32_t world_rand(world_t *w) {                      /* xorshift32: fast, tiny, and the same sequence on every platform */
@@ -25,6 +29,8 @@ void world_init(world_t *w, uint32_t seed) {
     lili->dir = DIR_S;
     lili->anim = ANIM_IDLE_STAND;
     lili->vis = 1.0f;
+    toys_init(w);
+    w->things.food = w->things.water = 3;                /* the bowls start full, the pad clean */
 }
 
 /* deep in a bush (a "hide_" zone of the map she is in) she fades out, out of it she fades back in
@@ -56,15 +62,18 @@ static int cover_at(const world_t *w, int x, int y) {
 void world_tick(world_t *w, float dt) {
     w->clock_s += dt;
     if (w->shake_cover >= 0) w->shake_t += dt;
+    toys_tick(w, dt);
     for (int i = 0; i < MAX_ACTORS; i++) {
         actor_t *a = &w->actors[i];
         if (!a->present) continue;
         a->anim_t += dt;
         const bool hide = in_hide_zone(a);
+        const plan_t *pl = &w->plans[i];
+        const bool gone = hide || (pl->hide == 1 && pl->peek_t <= 0) || pl->hide == 3;   /* under the bench, or out of the door */
         /* the owner (2026-10-27): the bush stays still, it shakes once as she goes into it */
         if (hide && !w->bodies[i].in_hide && a->view == VIEW_YARD) { w->shake_cover = (int8_t)cover_at(w, (int)a->x, (int)a->y); w->shake_t = 0; }
         w->bodies[i].in_hide = hide;
-        const float target = hide ? 0.0f : 1.0f, step = dt * 1.6f;   /* a 0.6 s fade */
+        const float target = gone ? 0.0f : 1.0f, step = dt * 1.6f;   /* a 0.6 s fade */
         a->vis = a->vis < target ? (a->vis + step > target ? target : a->vis + step) : (a->vis - step < target ? target : a->vis - step);
     }
 }
@@ -75,6 +84,8 @@ static int shake_dx(const world_t *w, int k) {
     if (k != w->shake_cover || w->shake_t >= 0.45f || w->shake_t < 0) return 0;
     return DX[(int)(w->shake_t * 20.0f) % 9];
 }
+
+void world_finger(world_t *w, bool down, int x, int y) { w->finger_down = down; if (down) { w->finger_x = (int16_t)x; w->finger_y = (int16_t)y; } }
 
 void world_switch_view(world_t *w) {
     w->view = (view_t)((w->view + 1) % VIEW_COUNT);
@@ -87,6 +98,15 @@ void world_handle_event(world_t *w, const ev_t *e) {
     case EV_TIME_SKIP:   if (e->a > 0) w->clock_s += (float)e->a; break;
     case EV_SET_SEASON:  w->season_force = (int8_t)(e->a < 0 || e->a > 3 ? -1 : e->a); break;
     case EV_SET_DAYPART: w->daypart_force = (int8_t)(e->a < 0 || e->a > 3 ? -1 : e->a); break;
+    /* the toys under the finger (spec 5.3 DRAG_TOY, 8.9): a flick throws it, a drag carries it, a drop lets it fall */
+    case EV_FLICK:       if (e->c >= 0 && e->c < TOY_COUNT && w->things.toys[e->c].held_by < 0) toy_throw(w, e->c, e->a, e->b); break;
+    case EV_DRAG:        if (e->c >= 0 && e->c < TOY_COUNT && w->things.toys[e->c].held_by < 0) {
+                             toy_t *t = &w->things.toys[e->c];
+                             if (nav_clear(w->view, e->a, e->b, 0)) { t->x = e->a; t->y = e->b; }
+                             t->z = 6; t->vx = t->vy = t->vz = 0;                     /* lifted a little while it is held */
+                         }
+                         break;
+    case EV_DROP:        if (e->c >= 0 && e->c < TOY_COUNT) w->things.toys[e->c].vz = 0; break;   /* it falls from where it is */
     default: break;      /* the finger, the body and the voice: counted above; the reflexes (M4.5) will answer them */
     }
 }
@@ -342,6 +362,45 @@ static bool prop_in_use(const world_t *w, uint16_t img) {
     return false;
 }
 
+
+/* ---- the toys and the spots on the floor (placeholder shapes until M3.8's art): drawn in Lili's 40 palette slots
+   (144..183, the same colours in every background's palette), picked by brightness from the canvas's own LUT ---- */
+static int lum565(uint16_t c) { return ((c >> 11) & 31) * 2 + ((c >> 5) & 63) + (c & 31); }
+static void lili_slots(const render8_t *r, uint8_t *dark, uint8_t *mid, uint8_t *light, uint8_t *warm) {
+    int dl = 1 << 30, ll = -1, wm = -(1 << 30), best_mid = 1 << 30; *dark = *mid = *light = *warm = 144;
+    for (int i = 144; i < 184; i++) {
+        const uint16_t c = r->lut[i]; const int L = lum565(c), R = (c >> 11) & 31, B = c & 31;
+        if (L < dl) { dl = L; *dark = (uint8_t)i; }
+        if (L > ll) { ll = L; *light = (uint8_t)i; }
+        if (R * 2 - B * 2 - abs(L - 90) / 4 > wm) { wm = R * 2 - B * 2 - abs(L - 90) / 4; *warm = (uint8_t)i; }
+        if (abs(L - 70) < best_mid) { best_mid = abs(L - 70); *mid = (uint8_t)i; }
+    }
+}
+static void draw_toy(const world_t *w, render8_t *r, int k) {
+    const toy_t *t = &w->things.toys[k];
+    if (t->held_by >= 0 && k == TOY_ROPE && w->actors[t->held_by].anim == ANIM_CARRY_TROT) return;   /* those frames carry the rope */
+    uint8_t dark, mid, light, warm; lili_slots(r, &dark, &mid, &light, &warm);
+    const int x = (int)t->x, y = (int)(t->y - t->z);
+    if (k == TOY_ROPE) {                                     /* a knotted rope: a light bar with warm stripes, knots at the ends */
+        r8_fill(r, x - 9, y - 4, 18, 5, dark); r8_fill(r, x - 8, y - 3, 16, 3, light);
+        for (int i = -6; i <= 6; i += 4) r8_fill(r, x + i, y - 3, 2, 3, warm);
+        r8_fill(r, x - 11, y - 5, 4, 7, dark); r8_fill(r, x - 10, y - 4, 2, 5, warm);
+        r8_fill(r, x + 7, y - 5, 4, 7, dark); r8_fill(r, x + 8, y - 4, 2, 5, warm);
+    } else {                                                 /* a little plush: a round brown body, a light face, two ears */
+        r8_fill(r, x - 6, y - 11, 12, 11, dark); r8_fill(r, x - 5, y - 10, 10, 9, mid); r8_fill(r, x - 3, y - 7, 6, 4, light);
+        r8_fill(r, x - 6, y - 13, 3, 3, dark); r8_fill(r, x + 3, y - 13, 3, 3, dark);
+        r8_fill(r, x - 2, y - 6, 1, 1, dark); r8_fill(r, x + 1, y - 6, 1, 1, dark);
+    }
+}
+static void draw_mess(const world_t *w, render8_t *r) {
+    if (w->view != VIEW_ROOM) return;
+    uint8_t dark, mid, light, warm; lili_slots(r, &dark, &mid, &light, &warm);
+    for (int i = 0; i < w->things.n_mess; i++) {             /* a puddle: a flat warm ellipse */
+        const int x = w->things.mess[i][0], y = w->things.mess[i][1];
+        r8_fill(r, x - 8, y - 2, 16, 4, warm); r8_fill(r, x - 11, y - 1, 22, 2, warm); r8_fill(r, x - 5, y - 2, 6, 1, light);
+    }
+}
+
 static void painted_fg(const world_t *w, render8_t *r) {
     enum { MAXD = 16 }; int16_t key[MAXD]; int8_t who[MAXD]; int n = 0;  /* who: prop slot, or -1 - actor */
     pak_image_t props[IMG_COVERS_PER_SEASON + 3]; int np = 0;
@@ -356,13 +415,17 @@ static void painted_fg(const world_t *w, render8_t *r) {
     }
     for (int a = 0; a < MAX_ACTORS && n < MAXD; a++)
         if (w->actors[a].present && w->actors[a].view == w->view) { key[n] = (int16_t)w->actors[a].y; who[n++] = (int8_t)(-1 - a); }
+    for (int t = 0; t < TOY_COUNT && n < MAXD; t++)
+        if (w->things.toys[t].view == w->view) { key[n] = (int16_t)w->things.toys[t].y; who[n++] = (int8_t)(-10 - t); }
     for (int i = 1; i < n; i++)
         for (int j = i; j > 0 && key[j - 1] > key[j]; j--) {
             int16_t tk = key[j]; key[j] = key[j - 1]; key[j - 1] = tk;
             int8_t tw = who[j]; who[j] = who[j - 1]; who[j - 1] = tw;
         }
+    draw_mess(w, r);                                                      /* flat on the floor: under everything */
     for (int i = 0; i < n; i++) {
         if (who[i] >= 0) pak_image_blit(r, &props[who[i]]);
+        else if (who[i] <= -10) draw_toy(w, r, -10 - who[i]);
         else painted_actor(w, r, &w->actors[-1 - who[i]]);
     }
 }
@@ -439,6 +502,11 @@ void world_gesture_ctx(const world_t *w, gesture_ctx_t *c) {
             c->lili = (g_rect_t){ (int16_t)(a->x - 22), (int16_t)(a->y - a->z - 38), (int16_t)(a->x + 22), (int16_t)(a->y - a->z + 2) };
         }
         c->bowing = a->anim == ANIM_PLAY_BOW;
+    }
+    for (int t = 0; t < TOY_COUNT; t++) {                            /* the loose toys here, where they are drawn */
+        const toy_t *ty = &w->things.toys[t];
+        if (ty->view != w->view || ty->held_by >= 0 || c->n_toys >= GESTURE_TOYS_MAX) continue;
+        c->toy_x[c->n_toys] = (int16_t)ty->x; c->toy_y[c->n_toys] = (int16_t)(ty->y - ty->z - 4); c->n_toys++;
     }
     /* the door: the room's door picture, the yard's house door at the bottom (spot_door_yard, a finger wide around it) */
     const map_t *m = world_map(w, w->view);
