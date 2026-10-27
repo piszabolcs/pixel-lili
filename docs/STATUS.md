@@ -5,7 +5,7 @@ Frissítve: 2026-10-27
 <!-- overview -->
 ## Áttekintés: mi van kész, mi nincs (2026-10-27, folyamatosan frissítve)
 
-Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a gazdi jóváhagyására vár; **hiányzik** = nincs meg, és miért.
+Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a gazdi jóváhagyására vagy kipróbálására vár; **hiányzik** = nincs meg, és miért.
 
 | Mérföldkő | Állapot | Megjegyzés |
 |---|---|---|
@@ -14,12 +14,18 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 | M2 váz (renderelő, maszk, térképek, inspector, panel) | kész | |
 | M3.1-M3.4 gyártósor, paletta, Lili | kész | 2D vonal: PixelLab-animációk (decisions.md) |
 | M3.5 A01-A09 | kész, [G] vár | `docs/review/m3_5.html`, `./lilisim --anim-viewer`; a panelen 32-33 fps |
-| M3.6 A10-A27 | kész, [G] vár | `docs/review/m3_6.html`; 33 animáció a pakban (3,97 MB). **Hiányzik** (nincs PixelLab-sheet): A13 puffogás, A14 felvétel/leejtés, A21 kukucskálás, A22 ugrás az ágyra |
+| M3.6 A10-A27 | kész, [G] vár | `docs/review/m3_6.html`; 33 animáció a pakban (3,97 MB). **Hiányzik** (nincs PixelLab-sheet): A13 puffogás, A14 felvétel/leejtés, A21 kukucskálás; az A22 (ágy) tárgytalan, szőnyeg van |
 | M3.7 szoba, udvar, évszakok, napszakok | kész, [G] vár | `docs/review/m3_7.html` (`--snapshot`). **Hiányzik:** évszakos díszek és a különleges napok díszei (új grafika kell) |
-| M3.8 játékok, foltok, pelenka, UI ikonok | hiányzik | új grafika kell (PixelLab); a tálak megvannak |
-| M4 világ, mozgás, reflexek | folyamatban | |
-| M5 igények, idő, mentés, energia | nincs elkezdve | |
-| M6 szabálymotor agy | nincs elkezdve | |
+| M3.8 játékok, foltok, pelenka, UI ikonok | hiányzik | új grafika kell (PixelLab); addig kódból rajzolt helyőrző kötél, plüss, folt, csillogás |
+| M4.1 navigáció | kész | `--selftest-nav`: 32 út ajtó és minden pont között, A*, simítás, kormányzás, hiszterézis |
+| M4.2 Y-rendezés, takarók, bokor | kész, [G] vár | a bokor egyszer rezzen (`docs/img/anim/m4_2_bush_shake.gif`); `--selftest-render` referenciaképekkel. A sarokülő alatti kukucskáláshoz kivágott ülőlap és az A21 kell |
+| M4.3 gesztusok | kész, [G] vár | mind a 7 gesztus, `--selftest-gesture`; a panelen az érintés él, **ujjal kipróbálni** (a soros konzol írja az eseményeket) |
+| M4.4 terv-végrehajtó | kész | mind az 53 akció (`model/schema_lili.json`), `--selftest-plan`; az inspectorban akcióválasztó |
+| M4.5 reflexek R1-R9 | kész | `--selftest-reflex`, prioritásokkal |
+| M4.6 játékfizika | kész, [G] vár | `--selftest-toys`; a dobás érzete a panelen kipróbálandó |
+| M4.7 gondozási koppintások | kész | tál, pelenka, folt, csillogás, az utolsó folt után R1 |
+| M5 igények, idő, mentés, energia | következik | |
+| M6 szabálymotor agy | M6.1 elkezdve | a séma és a generátor kész (`tools/gen_schema.py`) |
 | M7 LLM tanítása | nincs elkezdve | |
 | M8 agy az eszközön | nincs elkezdve | |
 | M9 hang | nincs elkezdve | M9.1 [G]: videók kellenek |
@@ -27,8 +33,9 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 | M11 hosszútávú teszt, v1.0 | nincs elkezdve | M11.1 [G] |
 
 **Kérdések a gazdinak (este):**
-1. Jók az M3.5, M3.6, M3.7 oldalak animációi és jelenetei?
-2. Elkészítsem PixelLabbal a hiányzó animációkat (puffogás, felvétel/leejtés, kukucskálás, ugrás) és az M3.8 grafikáit (kötél, plüss, foltok, pelenka, ikonok)? Ez kreditet használ, és mindegyik előbb jóváhagyásra jön.
+1. Jók az M3.5, M3.6, M3.7 oldalak animációi és jelenetei, és a bokor rezzenése?
+2. Elkészítsem PixelLabbal a hiányzó animációkat (puffogás, felvétel/leejtés, kukucskálás) és az M3.8 grafikáit (kötél, plüss, foltok, pelenka állapotai, ikonok)? Ez kreditet használ, és mindegyik előbb jóváhagyásra jön.
+3. A panelen: koppints Lilire, simogasd (oda-vissza húzás rajta), húzd fel az ujjad az alsó szélről; a soros konzol (`py -3.12 tools/serial_log.py --seconds 60`) kiírja, mit ismert fel. Jó helyen van-e az érintés?
 <!-- /overview -->
 
 ## Kész
