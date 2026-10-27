@@ -24,8 +24,10 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 | M4.5 reflexek R1-R9 | kész | `--selftest-reflex`, prioritásokkal |
 | M4.6 játékfizika | kész, [G] vár | `--selftest-toys`; a dobás érzete a panelen kipróbálandó |
 | M4.7 gondozási koppintások | kész | tál, pelenka, folt, csillogás, az utolsó folt után R1 |
-| M5 igények, idő, mentés, energia | következik | |
-| M6 szabálymotor agy | M6.1 elkezdve | a séma és a generátor kész (`tools/gen_schema.py`) |
+| M5.1-M5.5 igények, pelenka, naptár, távollét, mentés | kész | `--selftest-progress/-calendar/-offline/-save`; a panelen RTC és NVS-mentés |
+| M5.6 energiaállapotok (DIM, DESK, POCKET, PWR, felvételre üdvözlés) | hiányzik | IMU- és PMIC-kód kell, és a panelen kézzel kipróbálni [G] |
+| M6.1-M6.5 szabálymotor agy | kész | séma, kódoló (C = Python 1000/1000), 46 sablon (H1-H15), életciklus, habozás; P1-P12 mind teljesül; a panelen bekapcsoláskor Lili a saját agyával él (BOOT: demó) |
+| M6.6 egy hét élet a panelen | [G] vár | a gazdi szerint "ez Lili"? a viselkedés a `model/teacher_rules.yaml`-ben hangolható |
 | M7 LLM tanítása | nincs elkezdve | |
 | M8 agy az eszközön | nincs elkezdve | |
 | M9 hang | nincs elkezdve | M9.1 [G]: videók kellenek |
@@ -35,7 +37,8 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 **Kérdések a gazdinak (este):**
 1. Jók az M3.5, M3.6, M3.7 oldalak animációi és jelenetei, és a bokor rezzenése?
 2. Elkészítsem PixelLabbal a hiányzó animációkat (puffogás, felvétel/leejtés, kukucskálás) és az M3.8 grafikáit (kötél, plüss, foltok, pelenka állapotai, ikonok)? Ez kreditet használ, és mindegyik előbb jóváhagyásra jön.
-3. A panelen: koppints Lilire, simogasd (oda-vissza húzás rajta), húzd fel az ujjad az alsó szélről; a soros konzol (`py -3.12 tools/serial_log.py --seconds 60`) kiírja, mit ismert fel. Jó helyen van-e az érintés?
+3. Az RTC egy órával siet (még nyári idő): `py -3.12 tools/rtc_sync.py` (a diag firmware-rel), vagy szólj, és teszek a Lili-firmware-be egy `settime` parancsot.
+4. A panelen: koppints Lilire, simogasd (oda-vissza húzás rajta), húzd fel az ujjad az alsó szélről; a soros konzol (`py -3.12 tools/serial_log.py --seconds 60`) kiírja, mit ismert fel. Jó helyen van-e az érintés?
 <!-- /overview -->
 
 ## Kész
