@@ -7,11 +7,11 @@
   2
  ],
  "frames": 8,
- "cell_w": 56,
- "cell_h": 59,
+ "cell_w": 61,
+ "cell_h": 62,
  "pivot": [
-  28,
-  59
+  30,
+  62
  ],
  "files": [
   {
@@ -71,5 +71,5 @@
    "head": null
   }
  ],
- "source": "tools/pixellab_to_sprites.py (drink_W)"
+ "source": "tools/pixellab_to_sprites.py (drink_W_pmm)"
 }

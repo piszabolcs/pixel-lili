@@ -4,44 +4,72 @@
  "fps": 3,
  "loop": true,
  "dirs": [
-  1
+  0
  ],
- "frames": 4,
- "cell": 72,
- "scale": 1,
+ "frames": 8,
+ "cell_w": 57,
+ "cell_h": 36,
  "pivot": [
-  36,
-  68
+  28,
+  36
  ],
  "files": [
   {
-   "dir": 1,
+   "dir": 0,
    "frame": 0,
-   "file": "d1_f0.png",
+   "file": "d0_f0.png",
    "mouth": null,
    "head": null
   },
   {
-   "dir": 1,
+   "dir": 0,
    "frame": 1,
-   "file": "d1_f1.png",
+   "file": "d0_f1.png",
    "mouth": null,
    "head": null
   },
   {
-   "dir": 1,
+   "dir": 0,
    "frame": 2,
-   "file": "d1_f2.png",
+   "file": "d0_f2.png",
    "mouth": null,
    "head": null
   },
   {
-   "dir": 1,
+   "dir": 0,
    "frame": 3,
-   "file": "d1_f3.png",
+   "file": "d0_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 4,
+   "file": "d0_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 5,
+   "file": "d0_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 6,
+   "file": "d0_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 7,
+   "file": "d0_f7.png",
    "mouth": null,
    "head": null
   }
  ],
- "source": "tools/pixellab_to_sprites.py (sleep_curl_SW_v2)"
+ "source": "tools/pixellab_to_sprites.py (sleep_curl_S)"
 }

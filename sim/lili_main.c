@@ -76,13 +76,19 @@ static void placeholder_mode(bool on) {
     if (on) { pal_master(pal); r8_set_palette(&s_r8, pal); }
 }
 /* the animations in spec 7.4's order: A01-A09 (M3.5; sit down, then stand up, the same frames backwards),
-   then the ones already in the game; the A key and the --anim-viewer step through it */
+   A10-A27 (M3.6), then the ones beyond the spec's list; the A key and the --anim-viewer step through it */
 static const struct { uint16_t id; const char *name; } ANIMS[] = {
     { ANIM_IDLE_STAND, "idle_stand" }, { ANIM_IDLE_SIT_BLINK, "idle_sit_blink" }, { ANIM_SIT_DOWN, "sit_down" },
     { ANIM_STAND_UP, "stand_up" }, { ANIM_WALK, "walk" }, { ANIM_TROT, "trot" }, { ANIM_RUN, "run" },
     { ANIM_TIPTOE, "tiptoe" }, { ANIM_SCURRY, "scurry" }, { ANIM_PANT_SMILE, "pant_smile" },
-    { ANIM_PLAY_BOW, "play_bow" }, { ANIM_BARK_HEAD_FLIP, "bark_head_flip" }, { ANIM_EAT_DRINK, "eat_drink" },
-    { ANIM_DRINK, "drink" }, { ANIM_SLEEP_CURL, "sleep_curl" }, { ANIM_LOOK_AROUND, "look_around" } };
+    { ANIM_HEAD_TILT, "head_tilt" }, { ANIM_PLAY_BOW, "play_bow" }, { ANIM_BARK_HEAD_FLIP, "bark_head_flip" },
+    { ANIM_CHEW_TOY, "chew_toy" }, { ANIM_PET_ENJOY, "pet_enjoy" }, { ANIM_EAT_DRINK, "eat_drink" },
+    { ANIM_SLEEP_CURL, "sleep_curl" }, { ANIM_SUN_SIT, "sun_sit" }, { ANIM_SQUAT, "squat" },
+    { ANIM_LOOK_AROUND, "look_around" }, { ANIM_SNIFF, "sniff" }, { ANIM_STARTLE, "startle" },
+    { ANIM_POUNCE, "pounce" }, { ANIM_ASK_PET, "ask_pet" }, { ANIM_DRINK, "drink" },
+    { ANIM_LIE_DOWN, "lie_down" }, { ANIM_PEE, "pee" }, { ANIM_POOP, "poop" }, { ANIM_TUG_ROPE, "tug_rope" },
+    { ANIM_EAT_TREAT, "eat_treat" }, { ANIM_CARRY_TROT, "carry_trot" }, { ANIM_LIE_DOWN_ROPE, "lie_down_rope" },
+    { ANIM_CHEW_TREAT, "chew_treat" } };
 enum { N_ANIMS = (int)(sizeof ANIMS / sizeof ANIMS[0]) };
 static const map_prop_t *prop_named(const map_t *m, const char *name) {
     for (int i = 0; i < m->n_props; i++) if (!strcmp(m->props[i].name, name)) return &m->props[i];
@@ -215,6 +221,10 @@ static int selftest(void) {
                 sprite_set_t a;
                 if (!pak_sprite_set(&s_pak, (uint16_t)(FIRST[i] + off), &a) || a.dir_mask != 0xFF || a.n_frames != 8) { printf("FAIL: animation %d: not 8 frames in all 8 directions\n", FIRST[i] + off); return 1; }
             }
+            for (int i = 0; i < N_ANIMS; i++) {                          /* M3.6: every animation the sim lists is in the pack, in both sizes */
+                sprite_set_t a; const uint16_t id = ANIM_REVERSE_OF(ANIMS[i].id) ? ANIM_REVERSE_OF(ANIMS[i].id) : ANIMS[i].id;
+                if (!pak_sprite_set(&s_pak, id, &a) || !pak_sprite_set(&s_pak, (uint16_t)(id + ANIM_YARD_OFFSET), &a)) { printf("FAIL: %s (%d) is not in the pack in both sizes\n", ANIMS[i].name, id); return 1; }
+            }
             for (int id = 1; id < ANIM_YARD_OFFSET * 2; id++) {          /* every set the pack has: a cropped cell that holds its pivot and fits the shadow's buffer */
                 sprite_set_t a;
                 if (!pak_sprite_set(&s_pak, (uint16_t)id, &a)) continue;
@@ -240,7 +250,7 @@ static int selftest(void) {
             CHECK(paws, "the paws stand on the pivot row");
             r8_clear(&s_r8, 0); pak_blit(&s_r8, &set, &fr, 2, 2); pak_blit(&s_r8, &set, &fr, LILI_LOG_W - 2, LILI_LOG_H - 2);   /* clipped at both corners: no crash */
             CHECK(pak_frame(&set, DIR_NE, 15, &fr), "a frame index wraps");
-            sprite_set_t one; CHECK(pak_sprite_set(&s_pak, ANIM_PLAY_BOW, &one) && one.dir_mask == (1 << DIR_SW) && pak_frame(&one, DIR_NE, 0, &fr), "a direction the set lacks falls back to the nearest it has");
+            sprite_set_t one; CHECK(pak_sprite_set(&s_pak, ANIM_EAT_DRINK, &one) && one.dir_mask == (1 << DIR_W) && pak_frame(&one, DIR_E, 0, &fr), "a direction the set lacks falls back to the nearest it has");
         } else printf("note: no pak loaded, the sprite tests were skipped\n");
     }
 

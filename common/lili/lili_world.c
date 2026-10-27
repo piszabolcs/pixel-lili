@@ -223,8 +223,11 @@ static uint8_t s_shade[SH_W * SH_H];              /* 1 contact edge, 2 cast far,
 static int shadow_hmax(uint16_t anim) {
     switch (anim) {
     case ANIM_SLEEP_CURL: return 10;
-    case ANIM_PLAY_BOW: case ANIM_EAT_DRINK: case ANIM_DRINK: return 28;
-    case ANIM_IDLE_SIT_BLINK: case ANIM_PANT_SMILE: case ANIM_LOOK_AROUND: case ANIM_BARK_HEAD_FLIP: return 42;
+    case ANIM_CHEW_TOY: case ANIM_CHEW_TREAT: case ANIM_LIE_DOWN_ROPE: return 18;                  /* lying, head up */
+    case ANIM_PLAY_BOW: case ANIM_EAT_DRINK: case ANIM_DRINK: case ANIM_LIE_DOWN: case ANIM_TUG_ROPE:
+    case ANIM_EAT_TREAT: case ANIM_SNIFF: return 28;                                                /* head down, or going down */
+    case ANIM_IDLE_SIT_BLINK: case ANIM_PANT_SMILE: case ANIM_LOOK_AROUND: case ANIM_BARK_HEAD_FLIP: case ANIM_HEAD_TILT:
+    case ANIM_SUN_SIT: case ANIM_ASK_PET: case ANIM_PET_ENJOY: case ANIM_SQUAT: case ANIM_PEE: case ANIM_POOP: return 42;   /* sitting, squatting */
     default: return LILI_SHADOW_HMAX;
     }
 }

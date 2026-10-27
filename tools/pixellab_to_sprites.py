@@ -46,13 +46,33 @@ ANIMS = {
     "tiptoe":         (7,  8,  True,  all8("sneak")),          # A07: PixelLab's "sneaking slowly, crouched low"
     "scurry":         (8,  16, True,  all8("scurry")),
     "pant_smile":     (9,  8,  True,  all8("pant_smile")),
-    # in the game since 2026-10-23, one direction each; M3.6 brings the rest and the approved remakes
-    "play_bow":       (11, 10, True,  {"SW": "play_bow_SW_v3"}),   # v3 (the owner's prompt): all four paws planted
-    "bark_head_flip": (12, 10, False, {"S": "bark_S"}),
+    # M3.6 (2026-10-27): spec 7.4 A10-A27, every direction the review set has (docs/review: the owner's first round,
+    # 2026-10-26, without its hidden sheets; the rest falls back to the nearest direction). Missing: A13 huff,
+    # A14 pickup / drop, A21 guilty_peek, A22 jump_up / jump_down (no PixelLab sheets yet)
+    "head_tilt":      (10, 8,  False, {d: f"head_tilt_{d}" for d in ("S", "SW", "SE")}),
+    "play_bow":       (11, 10, True,  dict(all8("play_bow"), SW="play_bow_SW_v3")),   # v3 (the owner's prompt): all four paws planted
+    "bark_head_flip": (12, 10, False, {"S": "bark_S_v2", "SW": "bark_SW", "W": "bark_W", "E": "bark_E", "SE": "bark_SE"}),   # no back views (the owner, 2026-10-26)
+    "chew_toy":       (15, 10, True,  {"S": "chew_rope_S", "SE": "chew_rope_SE"}),
+    "pet_enjoy":      (16, 6,  True,  {d: f"pet_enjoy_{d}" for d in ("S", "SW", "SE")}),
     "eat_drink":      (17, 8,  True,  {"W": "eat_W"}),
-    "sleep_curl":     (18, 3,  True,  {"SW": "sleep_curl_SW_v2"}),   # the owner rejected it on 2026-10-26 (sheet removed): the built set stays for now
-    "look_around":    (23, 8,  False, {"S": "look_around_S"}),
-    "drink":          (28, 8,  True,  {"W": "drink_W"}),
+    "sleep_curl":     (18, 3,  True,  {"S": "sleep_curl_S"}),           # replaces the rejected SW (2026-10-26)
+    "sun_sit":        (19, 4,  True,  {d: f"sun_sit_{d}" for d in ("S", "SW")}),
+    "squat":          (20, 8,  False, {"SE": "squat_pee_SE"}),          # A20's way down; pee and poop (31, 32) hold the squat
+    "look_around":    (23, 8,  False, {d: f"look_around_{d}" for d in ("S", "SW", "SE")}),
+    "sniff":          (24, 8,  True,  all8("sniff")),
+    "startle":        (25, 14, False, all8("startle")),
+    "pounce":         (26, 14, False, all8("pounce")),
+    "ask_pet":        (27, 8,  True,  {d: f"ask_pet_{d}" for d in ("S", "SW", "SE")}),
+    "drink":          (28, 8,  True,  {"W": "drink_W_pmm"}),            # drink_W had a background remnant (the owner, 2026-10-26)
+    # beyond the spec's list, made in the same PixelLab round and approved with it
+    "lie_down":       (30, 8,  False, {d: f"lie_down_{d}" for d in ("S", "SW", "SE")}),
+    "pee":            (31, 6,  True,  {d: f"pee_{d}" for d in ("SW", "SE")}),
+    "poop":           (32, 6,  True,  {d: f"poop_{d}" for d in ("SW", "SE")}),
+    "tug_rope":       (33, 10, True,  {d: f"tug_rope_{d}" for d in ("S", "SW", "SE")}),
+    "eat_treat":      (34, 8,  True,  {d: f"eat_treat_{d}" for d in ("S", "SW", "SE")}),
+    "carry_trot":     (35, 14, True,  {d: f"carry_trot_{d}" for d in ("S", "SW", "W", "NW", "NE", "E", "SE")}),
+    "lie_down_rope":  (36, 8,  False, {"S": "lie_down_rope_S"}),
+    "chew_treat":     (37, 10, True,  {d: f"chew_treat_{d}" for d in ("S", "SE")}),
 }
 # played from another set backwards: no frames of their own in the pak (common/asset_ids.h ANIM_REVERSE_OF)
 REVERSED = {"stand_up": (29, "sit_down")}     # A03's second half: sitting down backwards is standing up
