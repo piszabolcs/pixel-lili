@@ -46,8 +46,12 @@ enum {
 enum {
     ANIM_IDLE_STAND = 1,
     ANIM_IDLE_SIT_BLINK = 2,
+    ANIM_SIT_DOWN = 3,
     ANIM_WALK = 4,
     ANIM_TROT = 5,
+    ANIM_RUN = 6,
+    ANIM_TIPTOE = 7,
+    ANIM_SCURRY = 8,
     ANIM_PANT_SMILE = 9,
     ANIM_PLAY_BOW = 11,
     ANIM_BARK_HEAD_FLIP = 12,
@@ -55,6 +59,9 @@ enum {
     ANIM_SLEEP_CURL = 18,
     ANIM_LOOK_AROUND = 23,
     ANIM_DRINK = 28,
+    ANIM_STAND_UP = 29,
     ANIM_COUNT_LISTED
 };
+/* an animation drawn from another one's frames, backwards (stand_up = sit_down reversed); 0 = it has its own */
+#define ANIM_REVERSE_OF(a) ((a) == ANIM_STAND_UP ? ANIM_SIT_DOWN : 0)
 #endif

@@ -7,25 +7,22 @@ The owner (2026-10-27): do we fit at all? Each approved animation (the review pa
 hidden ones, a variant only where the plain one is missing) goes through the game's conversion (tools/pixellab_norm.py
 one size and ground line, tools/pixellab_to_sprites.py the palette and the two sizes) and is RLE-packed like
 tools/pack_assets.py does, with its 12-byte frame record. The backgrounds are read from the current pak.
-The sizes are an upper bound while the cells are uncropped (the transparent margin costs a few bytes a row).
+The cells are cropped like the game's (tools/pixellab_to_sprites.py convert), each set with its 12-byte header.
 The limits: the app partition (the pak is linked into the firmware image today), the assets partition of spec 5.10,
 the pak's 3 MB target (M3.8) and the 2 MB it was given in PSRAM (spec 5.11).
 """
 import json, os, struct, sys
-import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 import pixellab_norm as pn
 import pixellab_to_sprites as ps
-from pack_assets import rle, T_IMAGE
-from palette_from_photos import rgb_to_oklab
+from pack_assets import rle
 
 # spec 7.4: the first round (M3.5); sneak is A07's tiptoe, sit_down plays backwards as stand_up
 FIRST_ROUND = ("idle_stand", "idle_sit_blink", "sit_down", "walk", "trot", "run", "sneak", "scurry", "pant_smile")
 HIDDEN = {"drink_W", "bark_S"}                      # tools/review_page.py: rejected, still in the folder
 PREFER = ("", "pmm", "v3", "v2", "try1")            # per direction: the plain sheet, else the variant the owner kept
-SIZES = (("room", 0.75, 96, (48, 92)), ("yard", 0.625, 80, (40, 76)))
 APP = 0x280000                                      # firmware/lili/partitions.csv factory
 FW_CODE = 1_760_032 - 1_460_441                     # docs/stats.md 2026-10-23: the image minus the pak linked into it
 ASSETS = 0x1000000 - 0xA90000                       # spec 5.10: the assets partition, to the end of the 16 MB flash
@@ -46,15 +43,16 @@ def backgrounds():
     return sum(struct.unpack_from("<HBBII", b, toc + 12 * i)[4] for i in range(n) if struct.unpack_from("<HBBII", b, toc + 12 * i)[1] != 1)
 
 def main():
-    full, lili = ps.palette(); lili_lab = rgb_to_oklab(lili); pal_lab = rgb_to_oklab(np.array(full, float))
+    ctx = ps.context()
     jobs = json.load(open(os.path.join(ROOT, "assets", "pixellab", "jobs.json"), encoding="utf-8"))["jobs"]
+    by_anim = {}
+    for (name, d), tag in sorted(approved().items()): by_anim.setdefault(name, {})[d] = tag
     per = {}                                        # anim -> {"room": B, "yard": B, "frames": n, "dirs": [..]}
-    for (name, d), tag in sorted(approved().items()):
-        idx = [ps.to_index(f, lili_lab) for f in pn.normalize(tag, jobs)[1:]]       # the generated frames (pixellab_to_sprites)
-        a = per.setdefault(name, {"room": 0, "yard": 0, "frames": 0, "dirs": []})
-        a["frames"] += len(idx); a["dirs"].append(d)
-        for size, s, cell, piv in SIZES:
-            a[size] += sum(len(rle(ps.scaled_frame(i, full, pal_lab, ps.SLOT + 1, s, cell, piv).flatten())) + 12 for i in idx)
+    for name, src in by_anim.items():
+        sets = ps.convert(name, src, ctx, jobs)     # the game's own conversion: normalized, both sizes, cropped cells
+        a = per[name] = {"frames": sum(len(s) for s in sets["master"][0].values()), "dirs": list(src)}
+        for size, sub in (("room", "lili"), ("yard", "lili_yard")):
+            a[size] = sum(len(rle(f.flatten())) + 12 for s in sets[sub][0].values() for f in s) + 12
     bg = backgrounds()
     first = {k: sum(v[k] for n, v in per.items() if n in FIRST_ROUND) for k in ("room", "yard")}
     every = {k: sum(v[k] for v in per.values()) for k in ("room", "yard")}

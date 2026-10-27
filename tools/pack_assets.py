@@ -91,7 +91,8 @@ def sprite_set(folder, man):
         assert im.mode == "P", fr["file"]
         frames_idx.append((fr, np.asarray(im, dtype=np.uint8)))
     dirs = man["dirs"]; nd, nf = len(dirs), man["frames"]
-    head = struct.pack("<HBBBBBBBBBB", man["id"], nd, nf, man["cell"], man["cell"], man["pivot"][0], man["pivot"][1], man["fps"], 1 if man["loop"] else 0,
+    cw, ch = man.get("cell_w", man.get("cell")), man.get("cell_h", man.get("cell"))       # cropped sets since 2026-10-27, square before
+    head = struct.pack("<HBBBBBBBBBB", man["id"], nd, nf, cw, ch, man["pivot"][0], man["pivot"][1], man["fps"], 1 if man["loop"] else 0,
                        sum(1 << d for d in dirs), 0)
     recs, blob = [], bytearray()
     base = len(head) + 12 * nd * nf
@@ -112,9 +113,10 @@ def main():
     bg, bg_raw = backgrounds()
     entries += bg
     raw_total = 0
-    for sub, off in (("lili", 0), ("lili_yard", YARD_OFFSET)):     # the room's 96 px sets, the yard's smaller ones (id + 100)
+    for sub, off in (("lili", 0), ("lili_yard", YARD_OFFSET)):     # the room's sets, the yard's smaller ones (id + 100)
         sprites = os.path.join(ROOT, "assets", "sprites", sub)
         for name, spec in cat.items():
+            if spec.get("reverse_of"): continue                        # another set backwards (ANIM_REVERSE_OF): no frames of its own
             folder = os.path.join(sprites, name)
             if not os.path.exists(os.path.join(folder, "manifest.json")):
                 print(f"pack: {sub}/{name}: no sprites yet, skipped"); continue
@@ -141,7 +143,10 @@ def main():
            "enum {"] + [f"    IMG_{n.upper()} = {i}," for n, i in IMAGES.items() if not n.startswith("cover_")] + ["};",
            f"#define IMG_COVER(season, k) ((uint16_t)(40 + (season) * {COVERS_PER_SEASON} + (k)))   /* the yard's covers, k < {COVERS_PER_SEASON} */",
            f"#define IMG_COVERS_PER_SEASON {COVERS_PER_SEASON}",
-           "enum {"] + [f"    ANIM_{n.upper()} = {s['id']}," for n, s in cat.items()] + ["    ANIM_COUNT_LISTED", "};", "#endif", ""]
+           "enum {"] + [f"    ANIM_{n.upper()} = {s['id']}," for n, s in cat.items()] + ["    ANIM_COUNT_LISTED", "};",
+           "/* an animation drawn from another one's frames, backwards (stand_up = sit_down reversed); 0 = it has its own */",
+           "#define ANIM_REVERSE_OF(a) (" + "".join(f"(a) == ANIM_{n.upper()} ? ANIM_{s['reverse_of'].upper()} : " for n, s in cat.items() if s.get("reverse_of")) + "0)",
+           "#endif", ""]
     open(os.path.join(ROOT, "common", "asset_ids.h"), "w", encoding="utf-8", newline="\n").write("\n".join(ids))
     print(f"pack: assets.pak {total} B ({len(entries)} entries, sprites {raw_total} B raw, backgrounds {bg_raw} B raw), common/asset_ids.h")
 

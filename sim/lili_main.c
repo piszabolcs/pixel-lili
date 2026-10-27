@@ -198,9 +198,25 @@ static int selftest(void) {
         pak_t t; CHECK(!pak_open(&t, bad, sizeof bad) && !pak_open(&t, NULL, 0), "a bad or missing pack is refused (placeholder graphics then)");
         if (s_pak.data) {
             sprite_set_t set; sprite_frame_t fr;
-            CHECK(pak_sprite_set(&s_pak, ANIM_IDLE_STAND, &set) && set.cell_w == 72 && set.pivot_x == 36 && set.pivot_y == 68 && set.n_frames == 8, "idle_stand in the room: a 72 px cell, pivot (36, 68) (0.75 of the 96 px masters: the owner, 2026-10-23), 8 frames");
-            sprite_set_t ws; CHECK(pak_sprite_set(&s_pak, ANIM_WALK, &ws) && ws.dir_mask == 0xB7, "the walk has S, SW, W, N, NE and SE (PixelLab, 2026-10-23)");
-            CHECK(pak_frame(&set, DIR_S, 0, &fr) && fr.rle_len > 0, "frame S/0 exists");
+            /* M3.5 (2026-10-27): A01-A09 in every direction, 8 frames, in the room's and the yard's size */
+            static const uint16_t FIRST[] = { ANIM_IDLE_STAND, ANIM_IDLE_SIT_BLINK, ANIM_SIT_DOWN, ANIM_WALK, ANIM_TROT, ANIM_RUN, ANIM_TIPTOE, ANIM_SCURRY, ANIM_PANT_SMILE };
+            for (int i = 0; i < (int)(sizeof FIRST / sizeof FIRST[0]); i++) for (int off = 0; off <= ANIM_YARD_OFFSET; off += ANIM_YARD_OFFSET) {
+                sprite_set_t a;
+                if (!pak_sprite_set(&s_pak, (uint16_t)(FIRST[i] + off), &a) || a.dir_mask != 0xFF || a.n_frames != 8) { printf("FAIL: animation %d: not 8 frames in all 8 directions\n", FIRST[i] + off); return 1; }
+            }
+            for (int id = 1; id < ANIM_YARD_OFFSET * 2; id++) {          /* every set the pack has: a cropped cell that holds its pivot and fits the shadow's buffer */
+                sprite_set_t a;
+                if (!pak_sprite_set(&s_pak, (uint16_t)id, &a)) continue;
+                if (a.cell_w > LILI_SPRITE_CELL_MAX || a.cell_h > LILI_SPRITE_CELL_MAX || a.pivot_x >= a.cell_w || a.pivot_y > a.cell_h) { printf("FAIL: sprite set %d: cell %dx%d, pivot (%d, %d)\n", id, a.cell_w, a.cell_h, a.pivot_x, a.pivot_y); return 1; }
+            }
+            CHECK(pak_sprite_set(&s_pak, ANIM_IDLE_STAND, &set) && pak_frame(&set, DIR_S, 0, &fr) && fr.rle_len > 0, "frame S/0 exists");
+            {   /* the size the owner picked (2026-10-23): standing, 0.75 of the 79 px masters (tools/pixellab_norm.py REF) */
+                static uint8_t cell[LILI_SPRITE_CELL_MAX * LILI_SPRITE_CELL_MAX]; int top = -1;
+                pak_frame_decode(&set, &fr, cell);
+                for (int y = 0; y < set.cell_h && top < 0; y++) for (int x = 0; x < set.cell_w; x++) if (cell[y * set.cell_w + x]) { top = y; break; }
+                printf("standing in the room: %d px tall\n", set.pivot_y - top);
+                CHECK(top >= 0 && set.pivot_y - top >= 56 && set.pivot_y - top <= 62, "standing she is 56-62 px tall in the room (0.75 x 79, as before the normalized frames)");
+            }
             const int cx = 120 * K, cy = 140 * K;
             r8_clear(&s_r8, PAL_FLOOR + 5); pak_blit(&s_r8, &set, &fr, cx, cy);
             int painted = 0, out_of_cell = 0;
@@ -212,7 +228,8 @@ static int selftest(void) {
             for (int dy = 1; dy <= 3 * K; dy++) for (int dx = -12; dx <= 12; dx++) paws |= s_r8.px[(cy - dy) * LILI_LOG_W + cx + dx] != PAL_FLOOR + 5;
             CHECK(paws, "the paws stand on the pivot row");
             r8_clear(&s_r8, 0); pak_blit(&s_r8, &set, &fr, 2, 2); pak_blit(&s_r8, &set, &fr, LILI_LOG_W - 2, LILI_LOG_H - 2);   /* clipped at both corners: no crash */
-            CHECK(pak_frame(&set, DIR_NE, 7, &fr), "a frame index wraps, a missing direction falls back");
+            CHECK(pak_frame(&set, DIR_NE, 15, &fr), "a frame index wraps");
+            sprite_set_t one; CHECK(pak_sprite_set(&s_pak, ANIM_PLAY_BOW, &one) && one.dir_mask == (1 << DIR_SW) && pak_frame(&one, DIR_NE, 0, &fr), "a direction the set lacks falls back to the nearest it has");
         } else printf("note: no pak loaded, the sprite tests were skipped\n");
     }
 
@@ -245,7 +262,7 @@ static int selftest(void) {
             d->x = 240; d->y = 300; d->anim = ANIM_IDLE_SIT_BLINK; d->dir = DIR_S; d->anim_t = 0;
             d->present = false; world_render(&s_world, &bg);
             d->present = true;  world_render(&s_world, &sc);
-            sprite_set_t set; sprite_frame_t fr; static uint8_t cell[96 * 96];
+            sprite_set_t set; sprite_frame_t fr; static uint8_t cell[LILI_SPRITE_CELL_MAX * LILI_SPRITE_CELL_MAX];
             CHECK(pak_sprite_set(&s_pak, d->anim, &set) && pak_frame(&set, d->dir, 0, &fr), "the sitting frame exists");
             pak_frame_decode(&set, &fr, cell);
             for (int y = 0; y < LILI_LOG_H; y++) for (int x = 0; x < LILI_LOG_W; x++) {
@@ -264,7 +281,7 @@ static int selftest(void) {
         s_world.daypart_force = 3; d->present = true; d->anim_t = 0;
         d->x = bx + 16; d->y = bowl.y + bowl.h + 1; d->anim = ANIM_EAT_DRINK; d->dir = DIR_W; world_render(&s_world, &sc);   /* the demo's spot (lili_demo.c) */
         {
-            sprite_set_t set; sprite_frame_t fr; static uint8_t cell[96 * 96]; int seen = 0, hidden = 0;
+            sprite_set_t set; sprite_frame_t fr; static uint8_t cell[LILI_SPRITE_CELL_MAX * LILI_SPRITE_CELL_MAX]; int seen = 0, hidden = 0;
             CHECK(pak_sprite_set(&s_pak, d->anim, &set) && pak_frame(&set, d->dir, 0, &fr), "the eating frame exists");
             pak_frame_decode(&set, &fr, cell);
             for (int y = bowl.y; y < bowl.y + bowl.h; y++) for (int x = bowl.x; x < bowl.x + bowl.w; x++) {

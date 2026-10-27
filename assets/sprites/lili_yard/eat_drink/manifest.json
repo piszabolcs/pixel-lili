@@ -7,11 +7,11 @@
   2
  ],
  "frames": 8,
- "cell": 60,
- "scale": 1,
+ "cell_w": 42,
+ "cell_h": 40,
  "pivot": [
-  30,
-  56
+  20,
+  40
  ],
  "files": [
   {

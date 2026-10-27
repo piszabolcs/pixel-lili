@@ -1,7 +1,7 @@
 /* pak.h - the asset pack in memory (spec 7.6, LPAK v1 written by tools/pack_assets.py).
  *
  * The pack is one buffer the platform provides (the simulator reads the file, the firmware maps
- * its partition into PSRAM); nothing is copied out of it: a sprite frame is decoded straight
+ * its flash partition into the address space, 2026-10-27); nothing is copied out of it: a sprite frame is decoded straight
  * from its RLE bytes into the 8-bit canvas. Platform-free, no malloc. */
 #ifndef LILI_PAK_H
 #define LILI_PAK_H

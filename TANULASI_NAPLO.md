@@ -350,6 +350,13 @@ Hiba: az első firmware build megállt ("configured for project ... Desktop ..."
 
 Fogalmak: egyedi adat-altípus (partíció), CMake build-gyorsítótár
 
+## 2026-10-27 | M3.5, 3. lépés: a sprite-lánc a normalizált kockákból
+Készült: a `tools/pixellab_to_sprites.py` most a `pixellab_norm` 128 px-es, egy méretű, egy talpvonalú kockáiból dolgozik (a kezdőpóz nélkül, a 8 generált kocka). Az A01-A09 mind a 8 irányban bekerült (álló és ülő idle, leülés, járás, ügetés, futás, lopakodás = `tiptoe` a `sneak_*` sheetekből, surranás, lihegés), a felállás (`stand_up`, 29) a leülés visszafelé, saját kockák nélkül (`ANIM_REVERSE_OF` a generált `common/asset_ids.h`-ban). A mesterkockák: `assets/sprites/lili_128` (a régi `lili_96` kikerült); a cella készletenként a kockák közös befoglaló téglalapjára vágva (szobában 52x60-67x65), a talppont vele mozog. A pak 2 449 497 B (108 bejegyzés), a panelen 32,1-32,9 fps, mint eddig; a szimulátor selftestje zöld: minden A01-A09 készlet 8 irányú és 8 kockás mindkét méretben, minden cella elfér a 96x96-os pufferben, Lili állva 59 px a szobában (ugyanannyi, mint eddig). Ellenőrzőlap: `docs/img/m3_5_room_sizes.png`.
+
+Döntés: a felállás a leülés visszafelé, mert a PixelLab csak NW-ből készítette el, és visszafelé játszva pontosan ugyanabba a pózba ér vissza, ahonnan a leülés indult (nincs ugrás a két animáció között), a pakban pedig nem foglal helyet. A vágott cella a kisebb dekódolási munka és a kevesebb átlátszó bájt miatt: a 128-as cella nagy része levegő, ami csak az ugrásokhoz kell. A már bekötött többi animáció (meghajlás, ugatás, evés, ivás, körülnézés) ugyanazon a láncon megy át, de egyelőre ugyanazokkal a sheetekkel; a többi irányuk és a jóváhagyott cserék (drink_W_pmm, bark_S_v2) az M3.6-ban jönnek, sorrendben.
+
+Fogalmak: befoglaló téglalap szerinti vágás, visszafelé lejátszás (reverse playback)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -551,3 +558,7 @@ Fogalmak: egyedi adat-altípus (partíció), CMake build-gyorsítótár
 **egyedi adat-altípus (partíció):** a partíciós táblában egy data típusú partíció altípusa lehet szabványos (nvs, phy, spiffs) vagy egy szabadon választott szám 0x40 és 0xFE között. A Lili modellje 0x40, a pak 0x41; a firmware a nevéről (`assets`) keresi meg, az altípus csak jelzi, hogy saját formátumú tartalom.
 
 **CMake build-gyorsítótár (CMakeCache.txt):** a build mappa az első konfiguráláskor rögzíti a forrás abszolút útját és a beállításokat, a további buildek ebből dolgoznak. Ha a projekt máshová költözik, a gyorsítótár a régi helyre mutat, és az ESP-IDF megtagadja a buildet; ilyenkor tiszta build kell (`idf.py fullclean` vagy a mappa törlése).
+
+**befoglaló téglalap szerinti vágás:** egy animációkészlet minden kockáját (minden irányban) arra a legkisebb téglalapra vágjuk, amelyben bármelyik kockán van látható pixel; a talppont koordinátáját ugyanannyival toljuk el, így a rajzolás helye nem változik. Kevesebb átlátszó bájtot kell tárolni és dekódolni.
+
+**visszafelé lejátszás (reverse playback):** egy átmenet-animációt fordított kockasorrendben játszunk le, így egy másik átmenetet kapunk (a leülésből felállás). Csak olyan mozdulatnál jó, amely időben megfordítva is természetes; ugrásnál vagy ugatásnál nem az.

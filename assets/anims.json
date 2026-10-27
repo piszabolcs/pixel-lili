@@ -1,5 +1,5 @@
 {
- "_note": "The animation catalogue (spec 7.4): id = the A-number (drink 28 is new: the spec's A17 eat_drink was split, PixelLab made eating and drinking apart), fps, dirs (the ones that exist, the rest fall back to the nearest), loop. The sprites come from tools/pixellab_to_sprites.py (2026-10-23); tools/pack_assets.py generates common/asset_ids.h from this file.",
+ "_note": "The animation catalogue (spec 7.4): id = the A-number (drink 28 is new: the spec's A17 eat_drink was split, PixelLab made eating and drinking apart; stand_up 29 is A03's second half, sit_down played backwards), fps, dirs (the ones that exist, the rest fall back to the nearest), loop. The sprites come from tools/pixellab_to_sprites.py; tools/pack_assets.py generates common/asset_ids.h from this file.",
  "idle_stand": {
   "id": 1,
   "frames": 8,
@@ -8,8 +8,10 @@
    "S",
    "SW",
    "W",
+   "NW",
    "N",
    "NE",
+   "E",
    "SE"
   ],
   "loop": true
@@ -19,9 +21,32 @@
   "frames": 8,
   "fps": 6,
   "dirs": [
-   "S"
+   "S",
+   "SW",
+   "W",
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE"
   ],
   "loop": true
+ },
+ "sit_down": {
+  "id": 3,
+  "frames": 8,
+  "fps": 12,
+  "dirs": [
+   "S",
+   "SW",
+   "W",
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE"
+  ],
+  "loop": false
  },
  "walk": {
   "id": 4,
@@ -31,8 +56,10 @@
    "S",
    "SW",
    "W",
+   "NW",
    "N",
    "NE",
+   "E",
    "SE"
   ],
   "loop": true
@@ -40,8 +67,63 @@
  "trot": {
   "id": 5,
   "frames": 8,
-  "fps": 12,
+  "fps": 14,
   "dirs": [
+   "S",
+   "SW",
+   "W",
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE"
+  ],
+  "loop": true
+ },
+ "run": {
+  "id": 6,
+  "frames": 8,
+  "fps": 18,
+  "dirs": [
+   "S",
+   "SW",
+   "W",
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE"
+  ],
+  "loop": true
+ },
+ "tiptoe": {
+  "id": 7,
+  "frames": 8,
+  "fps": 8,
+  "dirs": [
+   "S",
+   "SW",
+   "W",
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE"
+  ],
+  "loop": true
+ },
+ "scurry": {
+  "id": 8,
+  "frames": 8,
+  "fps": 16,
+  "dirs": [
+   "S",
+   "SW",
+   "W",
+   "NW",
+   "N",
+   "NE",
+   "E",
    "SE"
   ],
   "loop": true
@@ -51,7 +133,14 @@
   "frames": 8,
   "fps": 8,
   "dirs": [
-   "S"
+   "S",
+   "SW",
+   "W",
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE"
   ],
   "loop": true
  },
@@ -108,5 +197,22 @@
    "W"
   ],
   "loop": true
+ },
+ "stand_up": {
+  "id": 29,
+  "frames": 8,
+  "fps": 12,
+  "dirs": [
+   "S",
+   "SW",
+   "W",
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE"
+  ],
+  "loop": false,
+  "reverse_of": "sit_down"
  }
 }

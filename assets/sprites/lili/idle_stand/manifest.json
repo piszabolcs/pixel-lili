@@ -7,16 +7,18 @@
   0,
   1,
   2,
+  3,
   4,
   5,
+  6,
   7
  ],
  "frames": 8,
- "cell": 72,
- "scale": 1,
+ "cell_w": 55,
+ "cell_h": 61,
  "pivot": [
-  36,
-  68
+  30,
+  61
  ],
  "files": [
   {
@@ -188,6 +190,62 @@
    "head": null
   },
   {
+   "dir": 3,
+   "frame": 0,
+   "file": "d3_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 3,
+   "frame": 1,
+   "file": "d3_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 3,
+   "frame": 2,
+   "file": "d3_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 3,
+   "frame": 3,
+   "file": "d3_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 3,
+   "frame": 4,
+   "file": "d3_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 3,
+   "frame": 5,
+   "file": "d3_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 3,
+   "frame": 6,
+   "file": "d3_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 3,
+   "frame": 7,
+   "file": "d3_f7.png",
+   "mouth": null,
+   "head": null
+  },
+  {
    "dir": 4,
    "frame": 0,
    "file": "d4_f0.png",
@@ -300,6 +358,62 @@
    "head": null
   },
   {
+   "dir": 6,
+   "frame": 0,
+   "file": "d6_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 1,
+   "file": "d6_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 2,
+   "file": "d6_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 3,
+   "file": "d6_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 4,
+   "file": "d6_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 5,
+   "file": "d6_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 6,
+   "file": "d6_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 7,
+   "file": "d6_f7.png",
+   "mouth": null,
+   "head": null
+  },
+  {
    "dir": 7,
    "frame": 0,
    "file": "d7_f0.png",
@@ -356,5 +470,5 @@
    "head": null
   }
  ],
- "source": "tools/pixellab_to_sprites.py (idle_stand_SW)"
+ "source": "tools/pixellab_to_sprites.py (idle_stand_S, idle_stand_SW, idle_stand_W, idle_stand_NW, idle_stand_N, idle_stand_NE, idle_stand_E, idle_stand_SE)"
 }

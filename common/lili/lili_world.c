@@ -207,7 +207,7 @@ static void painted_bg(const world_t *w, render8_t *r) {
    door, in the yard a little to the right like the trees' shadows). Levels per pixel, the darkest wins,
    then one table look-up each; nothing above the room's wall line. */
 enum { SH_W = 200, SH_H = 72, SH_UP = 12 };
-static uint8_t s_cell[96 * 96];                   /* one decoded frame */
+static uint8_t s_cell[LILI_SPRITE_CELL_MAX * LILI_SPRITE_CELL_MAX];   /* one decoded frame */
 static uint8_t s_shade[SH_W * SH_H];              /* 1 contact edge, 2 cast far, 3 cast middle, 4 cast near, 5 contact core */
 /* how high she really is in a pose: the 3/4 camera shows a curled-up dog's back as depth, not height, so
    counting every sprite row as height threw a long flat slab under her that looked like a glass plate

@@ -21,6 +21,7 @@
 #define LILI_ROOM_LIGHT_X    236                          /* the door's glass: by day the room's light comes from here, */
 #define LILI_ROOM_LIGHT_Y    120                          /* so shadows fall towards the viewer and away from the door (the owner) */
 #define LILI_SHADOW_HMAX     60                           /* a sprite pixel higher than this above the paws throws no longer shadow */
+#define LILI_SPRITE_CELL_MAX 96                           /* the largest sprite cell side: the shadow decodes a frame into a buffer this big (the room's sets are 0.75 of the 128 px masters, cropped) */
 
 /* ---- the actors (spec 11.5: Bella-ready, one dog in v1) ---- */
 #define MAX_ACTORS           1
