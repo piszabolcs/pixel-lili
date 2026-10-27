@@ -10,6 +10,7 @@
  *   ./lilisim --demo-record DIR [fps] headless, one round of the demo tour as PPM frames
  *   ./lilisim --anim-viewer [name]    the window: one animation from all 8 directions (A/arrows, Tab yard size, Space pause)
  *   ./lilisim --anim-viewer-shot DIR [frame]  headless, DIR/<anim>.ppm of the viewer for every animation
+ *   ./lilisim --snapshot DIR          headless, both views x 4 seasons x 4 dayparts as DIR/<view>_<season>_<daypart>.ppm
  *
  * The fish simulator (main.c) is untouched and still builds with make SQUARE=1. */
 #include <stdio.h>
@@ -391,6 +392,26 @@ static int demo_record(const char *dir, int fps) {
     return 0;
 }
 
+/* --snapshot DIR (spec 6.3, M3.7 [G]): the static scenes for approval: both views x 4 seasons x 4 dayparts, Lili
+   sitting on the room's centre spot / the yard's grass, DIR/<view>_<season>_<daypart>.ppm (tools/snapshot_review.py) */
+static int snapshot(const char *dir) {
+    static const char *V[VIEW_COUNT] = { "room", "yard" }, *S[4] = { "spring", "summer", "autumn", "winter" },
+                      *D[4] = { "morning", "afternoon", "evening", "night" };
+    canvas_init(); world_init(&s_world, 3);
+    actor_t *l = &s_world.actors[0]; char path[512]; int n = 0;
+    for (int v = 0; v < VIEW_COUNT; v++) {
+        const map_point_t *p = &world_map(&s_world, (view_t)v)->points[v == VIEW_ROOM ? SPOT_CENTER : SPOT_GRASS];
+        s_world.view = l->view = (view_t)v; l->anim = ANIM_IDLE_SIT_BLINK; l->dir = DIR_S; l->anim_t = 0;
+        if (p->z >= 0) { l->x = p->x; l->y = p->y; }
+        for (int s = 0; s < 4; s++) for (int d = 0; d < 4; d++) {
+            s_world.season_force = (int8_t)s; s_world.daypart_force = (int8_t)d;
+            frame(); snprintf(path, sizeof path, "%s/%s_%s_%s.ppm", dir, V[v], S[s], D[d]); write_ppm(path, s_fb); n++;
+        }
+    }
+    printf("snapshot: %d scenes -> %s\n", n, dir);
+    return 0;
+}
+
 static double now_us(void) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); return ts.tv_sec * 1e6 + ts.tv_nsec / 1e3; }
 static int bench(void) {
     canvas_init(); world_init(&s_world, 1);
@@ -540,6 +561,7 @@ int main(int argc, char **argv) {
     if (argc > 2 && !strcmp(argv[1], "--inspector-shot")) return inspector_shot(argv[2]);
     if (argc > 2 && !strcmp(argv[1], "--demo-record")) return demo_record(argv[2], argc > 3 ? atoi(argv[3]) : 12);
     if (argc > 2 && !strcmp(argv[1], "--anim-viewer-shot")) return viewer_shot(argv[2], argc > 3 ? atoi(argv[3]) : 2);
+    if (argc > 2 && !strcmp(argv[1], "--snapshot")) return snapshot(argv[2]);
     if (argc > 2 && !strcmp(argv[1], "--screenshot")) {
         s_debug = argc > 3 && !strcmp(argv[3], "--debug");
         canvas_init(); world_init(&s_world, 1234);
