@@ -131,15 +131,23 @@ static void draw_prop(render8_t *r, const map_prop_t *p) {
     r8_fill(r, p->x, top + p->h, p->w, p->height, pal_ramp(p->ramp, 3));        /* front face */
 }
 
+/* the frame an actor shows now: its animation's set (offset: ANIM_YARD_OFFSET for the yard's size), or the set
+   it plays backwards (stand_up is sit_down reversed: ANIM_REVERSE_OF, tools/pixellab_to_sprites.py REVERSED).
+   A one-shot set holds its last frame; reversed, that is the first frame of the set it plays. */
+static bool actor_frame(const actor_t *a, uint16_t offset, sprite_set_t *set, sprite_frame_t *fr) {
+    const uint16_t rev = ANIM_REVERSE_OF(a->anim);
+    if (!s_pak || !a->anim || !pak_sprite_set(s_pak, (uint16_t)((rev ? rev : a->anim) + offset), set)) return false;
+    int frame = (int)(a->anim_t * set->fps);
+    if (!set->loop && frame >= set->n_frames) frame = set->n_frames - 1;
+    if (rev) frame = set->n_frames - 1 - frame % set->n_frames;
+    return pak_frame(set, a->dir, frame, fr);
+}
+
 static void draw_actor(render8_t *r, const actor_t *a) {    /* the sprite from the pak, or a capsule dog; its paws at (x, y) */
     int x = (int)a->x, y = (int)(a->y - a->z);
     const int K = LILI_K;
     sprite_set_t set; sprite_frame_t fr;
-    if (s_pak && a->anim && pak_sprite_set(s_pak, a->anim, &set)) {
-        int frame = (int)(a->anim_t * set.fps);
-        if (!set.loop && frame >= set.n_frames) frame = set.n_frames - 1;
-        if (pak_frame(&set, a->dir, frame, &fr)) { pak_blit(r, &set, &fr, x, y); return; }
-    }
+    if (actor_frame(a, 0, &set, &fr)) { pak_blit(r, &set, &fr, x, y); return; }
     r8_fill(r, x - 11 * K, y - 13 * K, 22 * K, 14 * K, PAL_OUTLINE);
     r8_fill(r, x - 10 * K, y - 12 * K, 20 * K, 12 * K, PAL_FUR + 5);
     r8_fill(r, x - 6 * K, y - 7 * K, 12 * K, 7 * K, PAL_FUR_W + 5);     /* the white chest (L3) */
@@ -239,9 +247,10 @@ static void actor_shadow(const world_t *w, render8_t *r, const actor_t *a, const
     const int dp = world_daypart(w);
     if (DAYPART[dp].cast >= 0) {
         /* how far the light throws it: a quarter of her height in the room, a little less outdoors; the height
-           cap scales with the cell (the yard's smaller sprites) */
+           cap scales with the set's size (0.75 in the room, 0.625 in the yard: tools/pixellab_to_sprites.py SIZES),
+           not with the cell, which is cropped to each set's frames since M3.5 */
         const float s = w->view == VIEW_ROOM ? 0.25f : 0.22f;
-        const int hmax = shadow_hmax(a->anim) * set->cell_h / 96;
+        const int hmax = shadow_hmax(a->anim) * (set->anim_id >= ANIM_YARD_OFFSET ? 5 : 6) / 8;
         /* the owner's rules (2026-10-23): the shadow starts at the paws, always, and it is her shape, not a block.
            So every pixel of her lands on one point (her shape), but the throw is short (a quarter of her height),
            so the body's shadow stays against the paws, and the dark contact patch under the paws joins the two.
@@ -286,16 +295,11 @@ static void painted_actor(const world_t *w, render8_t *r, const actor_t *a) {
     sprite_set_t set; sprite_frame_t fr;
     if (a->vis <= 0.02f) return;                                          /* gone into a bush */
     /* outdoors the smaller set: the yard is painted at a smaller scale than the room (the owner, 2026-10-23) */
-    const bool small = w->view == VIEW_YARD && a->anim && pak_sprite_set(s_pak, (uint16_t)(a->anim + ANIM_YARD_OFFSET), &set);
-    if (small || (a->anim && pak_sprite_set(s_pak, a->anim, &set))) {
-        int frame = (int)(a->anim_t * set.fps);
-        if (!set.loop && frame >= set.n_frames) frame = set.n_frames - 1;
-        if (pak_frame(&set, a->dir, frame, &fr)) {
-            if (a->vis >= 0.5f) actor_shadow(w, r, a, &set, &fr);
-            /* fading in or out of a bush: an ordered (Bayer 4 x 4) dither, the 8-bit canvas has no alpha */
-            pak_blit_dither(r, &set, &fr, (int)a->x, (int)(a->y - a->z), (int)(a->vis * 16.0f + 0.5f));
-            return;
-        }
+    if ((w->view == VIEW_YARD && actor_frame(a, ANIM_YARD_OFFSET, &set, &fr)) || actor_frame(a, 0, &set, &fr)) {
+        if (a->vis >= 0.5f) actor_shadow(w, r, a, &set, &fr);
+        /* fading in or out of a bush: an ordered (Bayer 4 x 4) dither, the 8-bit canvas has no alpha */
+        pak_blit_dither(r, &set, &fr, (int)a->x, (int)(a->y - a->z), (int)(a->vis * 16.0f + 0.5f));
+        return;
     }
     draw_actor(r, a);
 }

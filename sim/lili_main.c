@@ -247,6 +247,30 @@ static int selftest(void) {
         CHECK(world_bg_key(&s_world) != bc.key, "a view switch changes the key, so the next render redraws the static layer");
     }
 
+    /* --- M3.5 (2026-10-27): standing up is sitting down backwards (ANIM_REVERSE_OF), in both views and sizes --- */
+    if (s_pak.data) {
+        static render8_t ra, rb; sprite_set_t sd, none; int frames = 0, same = 0;
+        world_init(&s_world, 9); actor_t *d = &s_world.actors[0];
+        CHECK(pak_sprite_set(&s_pak, ANIM_SIT_DOWN, &sd) && !sd.loop && !pak_sprite_set(&s_pak, ANIM_STAND_UP, &none),
+              "sitting down plays once, standing up has no frames of its own");
+        for (int v = 0; v < VIEW_COUNT; v++, world_switch_view(&s_world)) {
+            d->view = s_world.view;
+            for (int f = 0; f < sd.n_frames; f++, frames++) {          /* frame f of one = frame n-1-f of the other, a different direction each */
+                d->dir = (dir8_t)(f % DIR_COUNT);
+                d->anim = ANIM_SIT_DOWN; d->anim_t = (f + 0.5f) / sd.fps;                   world_render(&s_world, &ra);
+                d->anim = ANIM_STAND_UP; d->anim_t = (sd.n_frames - 1 - f + 0.5f) / sd.fps; world_render(&s_world, &rb);
+                same += !memcmp(ra.px, rb.px, sizeof ra.px);
+            }
+        }
+        CHECK(same == frames, "every frame of standing up is a frame of sitting down, in the reverse order (room and yard)");
+        s_world.view = d->view = VIEW_ROOM; d->dir = DIR_S;
+        d->anim = ANIM_STAND_UP; d->anim_t = 30.0f; world_render(&s_world, &ra);
+        d->anim = ANIM_SIT_DOWN; d->anim_t = 0;     world_render(&s_world, &rb);
+        CHECK(!memcmp(ra.px, rb.px, sizeof ra.px), "standing up ends (and holds) where sitting down starts: no jump between the two");
+        d->anim = ANIM_STAND_UP; d->anim_t = 0;     world_render(&s_world, &rb);
+        CHECK(memcmp(ra.px, rb.px, sizeof ra.px), "standing up moves: its first and last pictures differ");
+    }
+
     /* --- the painted world (2026-10-23): the owner's pictures, the door view, light and shadow --- */
     if (world_painted()) {
         static render8_t bg, sc;
@@ -472,11 +496,18 @@ int main(int argc, char **argv) {
         if (key_edge(SDL_SCANCODE_M)) s_debug = !s_debug;
         if (key_edge(SDL_SCANCODE_A)) {
             actor_t *l = &s_world.actors[0];
-            static const uint16_t cyc[] = { ANIM_IDLE_STAND, ANIM_IDLE_SIT_BLINK, ANIM_WALK, ANIM_TROT, ANIM_PANT_SMILE, ANIM_PLAY_BOW, ANIM_BARK_HEAD_FLIP,
-                                            ANIM_EAT_DRINK, ANIM_DRINK, ANIM_SLEEP_CURL, ANIM_LOOK_AROUND };
+            /* spec 7.4's order: A01-A09 (M3.5; sit down, then stand up, the same frames backwards), then the rest */
+            static const struct { uint16_t id; const char *name; } cyc[] = {
+                { ANIM_IDLE_STAND, "idle_stand" }, { ANIM_IDLE_SIT_BLINK, "idle_sit_blink" }, { ANIM_SIT_DOWN, "sit_down" },
+                { ANIM_STAND_UP, "stand_up" }, { ANIM_WALK, "walk" }, { ANIM_TROT, "trot" }, { ANIM_RUN, "run" },
+                { ANIM_TIPTOE, "tiptoe" }, { ANIM_SCURRY, "scurry" }, { ANIM_PANT_SMILE, "pant_smile" },
+                { ANIM_PLAY_BOW, "play_bow" }, { ANIM_BARK_HEAD_FLIP, "bark_head_flip" }, { ANIM_EAT_DRINK, "eat_drink" },
+                { ANIM_DRINK, "drink" }, { ANIM_SLEEP_CURL, "sleep_curl" }, { ANIM_LOOK_AROUND, "look_around" } };
             enum { NC = (int)(sizeof cyc / sizeof cyc[0]) }; int k = 0;
-            while (k < NC && cyc[k] != l->anim) k++;
-            l->anim = cyc[(k + 1) % NC]; l->anim_t = 0;
+            while (k < NC && cyc[k].id != l->anim) k++;
+            k = (k + 1) % NC; l->anim = cyc[k].id; l->anim_t = 0;
+            char line[72]; snprintf(line, sizeof line, "%7.1f  A: %s (%d)", s_world.clock_s, cyc[k].name, cyc[k].id);
+            inspector_log(line); puts(line);
         }
         if (key_edge(SDL_SCANCODE_G)) { if (demo_active()) demo_stop(); else demo_start(); }
         if (key_edge(SDL_SCANCODE_R)) { actor_t *l = &s_world.actors[0]; l->dir = (dir8_t)((l->dir + 1) % DIR_COUNT); }

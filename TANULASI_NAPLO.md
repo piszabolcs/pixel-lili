@@ -357,6 +357,13 @@ Döntés: a felállás a leülés visszafelé, mert a PixelLab csak NW-ből kés
 
 Fogalmak: befoglaló téglalap szerinti vágás, visszafelé lejátszás (reverse playback)
 
+## 2026-10-27 | M3.5, 4. lépés: a C oldal (felállás visszafelé, animációválasztó, tesztek)
+Készült: a `common/lili/lili_world.c` új `actor_frame` függvénye választja ki, melyik kockát mutatja Lili (a készlet, a méret, az idő szerinti kockaindex), és ez kezeli a visszafelé lejátszást is: a felállás (29) a leülés (3) készletét játssza fordított sorrendben, a szobában és az udvaron is. A `draw_actor` és a `painted_actor` eddig ugyanezt a számítást kétszer tartalmazta, most mindkettő ezt hívja. A szimulátor A billentyűje a spec 7.4 sorrendjében lépteti az animációkat (A01-A09, közben a leülés után a felállás, utána a régiek), és az eseménykonzolba kiírja a nevét. Selftest: a felállás minden kockája a leülés kockája fordított sorrendben (pixelre azonos kép, 8 irány, mindkét nézet), a felállás ott áll meg, ahonnan a leülés indul, és a két végkép különbözik. A firmware build zöld (app 299 952 B).
+
+Döntés: a kockaválasztás egy helyre került, mert a visszafelé lejátszást különben két helyen kellett volna beírni, és a két másolat könnyen elcsúszik egymástól. Javítás közben: a 3. lépés óta az árnyék magassági korlátja a vágott cella magasságával skálázódott (`cell_h / 96`), így az árnyék animációnként kicsit más hosszú lett; most a készlet méretével skálázódik (szoba 6/8, udvar 5/8), mint a vágás előtt.
+
+Fogalmak: pixelpontos összehasonlító teszt, egy helyen a logika (DRY)
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -562,3 +569,7 @@ Fogalmak: befoglaló téglalap szerinti vágás, visszafelé lejátszás (revers
 **befoglaló téglalap szerinti vágás:** egy animációkészlet minden kockáját (minden irányban) arra a legkisebb téglalapra vágjuk, amelyben bármelyik kockán van látható pixel; a talppont koordinátáját ugyanannyival toljuk el, így a rajzolás helye nem változik. Kevesebb átlátszó bájtot kell tárolni és dekódolni.
 
 **visszafelé lejátszás (reverse playback):** egy átmenet-animációt fordított kockasorrendben játszunk le, így egy másik átmenetet kapunk (a leülésből felállás). Csak olyan mozdulatnál jó, amely időben megfordítva is természetes; ugrásnál vagy ugatásnál nem az.
+
+**pixelpontos összehasonlító teszt:** két úton előállított képet (itt: a leülés f. kockáját és a felállás n-1-f. kockáját) bájtra összehasonlítunk (`memcmp`). Nem azt ellenőrzi, hogy a kép "szép"-e, hanem hogy két dolognak, aminek azonosnak kell lennie, tényleg az-e; így a kirajzolás bármely későbbi változása, amely ezt elrontja, azonnal kiderül.
+
+**egy helyen a logika (DRY, Don't Repeat Yourself):** ugyanaz a számítás egyetlen függvényben él, és minden hely azt hívja. Ha a szabály változik (itt: a visszafelé lejátszás), egy helyen kell módosítani, és a másolatok nem térhetnek el egymástól.
