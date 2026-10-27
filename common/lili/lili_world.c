@@ -62,6 +62,7 @@ static int cover_at(const world_t *w, int x, int y) {
 void world_tick(world_t *w, float dt) {
     w->clock_s += dt;
     if (w->shake_cover >= 0) w->shake_t += dt;
+    if (w->sparkle_t > 0) w->sparkle_t -= dt;
     toys_tick(w, dt);
     for (int i = 0; i < MAX_ACTORS; i++) {
         actor_t *a = &w->actors[i];
@@ -93,6 +94,8 @@ void world_switch_view(world_t *w) {
 
 void world_handle_event(world_t *w, const ev_t *e) {
     if (e->type < EV_COUNT) w->events_seen[e->type]++;
+    if (e->type == EV_TAP && world_care_tap(w, e->a, e->b)) return;   /* a bowl, the pad, a spot: the owner's care (spec 8.10) */
+    reflex_event(w, e);                                  /* the reflexes first (spec 8.8): 0 ms, past the brain */
     switch (e->type) {
     case EV_SWITCH_VIEW: world_switch_view(w); break;
     case EV_TIME_SKIP:   if (e->a > 0) w->clock_s += (float)e->a; break;
@@ -401,6 +404,48 @@ static void draw_mess(const world_t *w, render8_t *r) {
     }
 }
 
+/* ---- the care taps (spec 8.10, M4.7): a bowl refilled, the pad changed, a spot cleaned (the last one forgives
+   her: R1); each with a sparkle. The hit areas are the props' pictures (or the map's boxes without the pak) ---- */
+static bool prop_box(const world_t *w, uint16_t img, const char *name, int *x0, int *y0, int *x1, int *y1) {
+    pak_image_t im;
+    if (s_pak && pak_image(s_pak, img, &im)) { *x0 = im.x; *y0 = im.y; *x1 = im.x + im.w; *y1 = im.y + im.h; return true; }
+    const map_t *m = &MAPS[VIEW_ROOM];
+    for (int i = 0; i < m->n_props; i++) if (!strcmp(m->props[i].name, name)) {
+        const map_prop_t *p = &m->props[i]; *x0 = p->x; *y0 = p->y - p->height; *x1 = p->x + p->w; *y1 = p->y + p->h; return true;
+    }
+    (void)w; return false;
+}
+static bool tap_in(const world_t *w, uint16_t img, const char *name, int x, int y) {
+    int x0, y0, x1, y1;
+    return prop_box(w, img, name, &x0, &y0, &x1, &y1) && x >= x0 - 4 && x < x1 + 4 && y >= y0 - 4 && y < y1 + 4;
+}
+static void sparkle(world_t *w, int x, int y) { w->sparkle_x = (int16_t)x; w->sparkle_y = (int16_t)y; w->sparkle_t = 0.6f; }
+bool world_care_tap(world_t *w, int x, int y) {
+    things_t *t = &w->things;
+    if (w->view != VIEW_ROOM) return false;
+    for (int i = 0; i < t->n_mess; i++)
+        if (abs(x - t->mess[i][0]) <= 16 && abs(y - t->mess[i][1]) <= 10) {
+            sparkle(w, t->mess[i][0], t->mess[i][1]);
+            t->mess[i][0] = t->mess[t->n_mess - 1][0]; t->mess[i][1] = t->mess[t->n_mess - 1][1]; t->n_mess--;
+            if (!t->n_mess) reflex_forgiven(w);                  /* R1: the last one */
+            return true;
+        }
+    if (tap_in(w, IMG_BOWL_FOOD, "bowl_food", x, y) && t->food < 3) { t->food = 3; sparkle(w, x, y); return true; }
+    if (tap_in(w, IMG_BOWL_WATER, "bowl_water", x, y) && t->water < 3) { t->water = 3; sparkle(w, x, y); return true; }
+    if (tap_in(w, IMG_PAD, "pad", x, y) && t->pad) { t->pad = 0; sparkle(w, x, y); return true; }
+    return false;
+}
+static void draw_sparkle(const world_t *w, render8_t *r) {
+    if (w->sparkle_t <= 0 || w->view != VIEW_ROOM) return;
+    uint8_t dark, mid, light, warm; lili_slots(r, &dark, &mid, &light, &warm);
+    const int k = (int)(w->sparkle_t * 10) % 3, x = w->sparkle_x, y = w->sparkle_y;
+    static const int8_t P[3][4][2] = { { { -8, -6 }, { 6, -10 }, { 0, 2 }, { 10, 0 } }, { { -4, -12 }, { 8, -4 }, { -10, 0 }, { 2, -2 } }, { { 0, -8 }, { -8, -2 }, { 8, -12 }, { 4, 4 } } };
+    for (int i = 0; i < 4; i++) {                            /* little four-point stars, twinkling */
+        const int sx = x + P[k][i][0], sy = y + P[k][i][1];
+        r8_fill(r, sx - 2, sy, 5, 1, light); r8_fill(r, sx, sy - 2, 1, 5, light);
+    }
+}
+
 static void painted_fg(const world_t *w, render8_t *r) {
     enum { MAXD = 16 }; int16_t key[MAXD]; int8_t who[MAXD]; int n = 0;  /* who: prop slot, or -1 - actor */
     pak_image_t props[IMG_COVERS_PER_SEASON + 3]; int np = 0;
@@ -428,6 +473,7 @@ static void painted_fg(const world_t *w, render8_t *r) {
         else if (who[i] <= -10) draw_toy(w, r, -10 - who[i]);
         else painted_actor(w, r, &w->actors[-1 - who[i]]);
     }
+    draw_sparkle(w, r);
 }
 
 uint32_t world_bg_key(const world_t *w) {               /* placeholder: the view only; painted: view, season and daypart */

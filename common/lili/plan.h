@@ -17,5 +17,12 @@ void        plan_one(world_t *w, int actor, int act, int style); /* a decision o
 nav_style_t plan_style(int st, int urg);                          /* the schema's style (ST_*) and the urgency -> the gait */
 bool        world_sun_on(const world_t *w);                       /* the sunbeam is on the room's floor (spec 8.2: afternoon) */
 int         plan_describe(const world_t *w, int actor, char *buf, int n);
+/* the reflexes (spec 8.8, M4.5): an event answered at once, past the brain, if its priority allows (a running
+   reflex of a higher priority is not interrupted); true = a reflex took it. R6's greeting comes from the
+   platform (a wake after more than 15 minutes away), R1's release from the last spot cleaned (M4.7) */
+bool        reflex_event(world_t *w, const ev_t *e);
+bool        reflex_greet(world_t *w);
+bool        reflex_forgiven(world_t *w);
+bool        plan_asleep(const world_t *w, int actor);
 
 #endif

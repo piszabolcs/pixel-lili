@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 #include "lili_world.h"
 #include "render8.h"
 #include "palette.h"
@@ -668,6 +669,114 @@ static int selftest_plan(void) {
     return 0;
 }
 
+/* --selftest-reflex (spec 8.8, M4.5) and the care taps (8.10, M4.7): each reflex fires from its trigger, runs
+   to its end with its effect, the priorities hold, and the sleeping, hidden or guilty dog answers only as she should */
+static int run_plan(float limit) {
+    int st = PLAN_RUNNING; float t = 0;
+    while ((st = plan_tick(&s_world, 0, 1.0f / 30.0f)) == PLAN_RUNNING && t < limit) { world_tick(&s_world, 1.0f / 30.0f); t += 1.0f / 30.0f; }
+    return st;
+}
+static void ev(ev_type_t type, int a, int b, int c) { ev_t e = { (uint8_t)type, (int16_t)a, (int16_t)b, (int16_t)c }; world_handle_event(&s_world, &e); }
+static void sleep_now(void) { s_world.actors[0].anim = ANIM_SLEEP_CURL; s_world.actors[0].anim_t = 5; s_world.plans[0].status = PLAN_DONE; }
+static int selftest_reflex(void) {
+    nav_init(&s_nav); actor_t *l = &s_world.actors[0]; plan_t *p = &s_world.plans[0]; char d[64];
+    const map_point_t *front = &MAPS[VIEW_ROOM].points[SPOT_FRONT];
+    /* R2: a whistle brings her to the front; from the yard through the door; not when guilty */
+    world_init(&s_world, 31); ev(EV_WHISTLE, 0, 0, 0);
+    CHECK(p->status == PLAN_RUNNING && p->prio == 2, "R2: a whistle starts the call reflex");
+    CHECK(run_plan(30) == PLAN_DONE && fabsf(l->x - front->x) < 2 && fabsf(l->y - front->y) < 2, "R2: she ends at the front");
+    world_init(&s_world, 32); { const map_point_t *g = &MAPS[VIEW_YARD].points[SPOT_GRASS]; l->view = VIEW_YARD; l->x = g->x; l->y = g->y; }
+    ev(EV_CALL_NAME, 0, 0, 0);
+    CHECK(run_plan(40) == PLAN_DONE && l->view == VIEW_ROOM && s_world.view == VIEW_ROOM, "R2: called from the yard she comes in through the door; the camera stays");
+    world_init(&s_world, 33); s_world.things.guilty = true; ev(EV_WHISTLE, 0, 0, 0);
+    CHECK(p->status != PLAN_RUNNING, "R2: a guilty dog does not come");
+    /* R3: a pet: she stops and enjoys it while it lasts, 2 s more after it */
+    world_init(&s_world, 34); ev(EV_PET_START, (int)l->x, (int)l->y - 20, 0);
+    CHECK(p->prio == 3 && run_plan(1.0f) == PLAN_RUNNING && l->anim == ANIM_PET_ENJOY, "R3: petted, she enjoys it");
+    ev(EV_PET_END, 0, 0, 0); { int st = run_plan(5); CHECK(st == PLAN_DONE, "R3: and stops 2 s after the hand"); }
+    /* R4: a flicked toy: she runs after it and brings it to the front */
+    world_init(&s_world, 35); { toy_t *ty = &s_world.things.toys[TOY_PLUSH]; ty->x = 300; ty->y = 300; }
+    ev(EV_FLICK, 2000, 600, TOY_PLUSH);
+    CHECK(p->prio == 4, "R4: a flick starts the fetch");
+    CHECK(run_plan(40) == PLAN_DONE && toy_held(&s_world, 0) < 0, "R4: the fetch ends with the toy dropped");
+    { const toy_t *ty = &s_world.things.toys[TOY_PLUSH]; printf("R4: toy at (%.0f, %.0f) view %d held %d, Lili (%.0f, %.0f), front (%d, %d)\n", ty->x, ty->y, ty->view, ty->held_by, l->x, l->y, front->x, front->y); CHECK(fabsf(ty->x - front->x) < 40 && fabsf(ty->y - front->y) < 40, "R4: the toy is at the front"); }
+    /* R5: bowing by a toy, the finger near: she grabs it and dashes off; after 4 rounds she is tired */
+    world_init(&s_world, 36); toy_pick(&s_world, TOY_ROPE, 0);
+    for (int round = 0; round < 5; round++) {
+        l->anim = ANIM_PLAY_BOW; p->status = PLAN_DONE;
+        ev(EV_APPROACH, 40, 0, 0);
+        plan_describe(&s_world, 0, d, sizeof d);
+        CHECK(p->prio == 5 && strstr(d, round < 4 ? "R5 tease" : "R5 tired"), round < 4 ? "R5: a tease round" : "R5: the fifth time she is tired");
+        if (round < 4) run_plan(30);
+    }
+    /* R6: the owner back: a toy to chew in front; guilty: under the bench, peeking */
+    world_init(&s_world, 37); CHECK(reflex_greet(&s_world) && run_plan(45) == PLAN_DONE && l->anim == ANIM_CHEW_TOY, "R6: she greets with a toy, chewing it in front");
+    world_init(&s_world, 38); s_world.things.guilty = true; reflex_greet(&s_world);
+    CHECK(run_plan(30) == PLAN_DONE && p->hide == 1, "R6: guilty, she greets from under the bench");
+    /* R7: a shake wakes her: startled, one bark; R8: a voice: a head tilt, but not in her sleep */
+    world_init(&s_world, 39); sleep_now(); ev(EV_SHAKE, 0, 0, 0);
+    CHECK(p->prio == 7 && run_plan(10) == PLAN_DONE, "R7: a shake wakes her (startle, bark)");
+    world_init(&s_world, 40); sleep_now(); ev(EV_VOICE_ACTIVITY, 0, 0, 0);
+    CHECK(p->status != PLAN_RUNNING, "R8: a voice does not wake her");
+    s_world.actors[0].anim = ANIM_IDLE_STAND; ev(EV_VOICE_ACTIVITY, 0, 0, 0);
+    CHECK(p->prio == 8 && run_plan(5) == PLAN_DONE && l->anim == ANIM_IDLE_STAND, "R8: awake, she tilts her head");
+    /* R9: a tap on the free floor: a look (half the time a walk); a tap on her: a wag */
+    world_init(&s_world, 41); ev(EV_TAP, 120, 420, 0);
+    CHECK(p->prio == 9 && run_plan(20) == PLAN_DONE, "R9: a tap on the floor gets a look");
+    world_init(&s_world, 42); ev(EV_TAP, (int)l->x, (int)l->y - 20, 0); plan_describe(&s_world, 0, d, sizeof d);
+    CHECK(strstr(d, "tap on her") != NULL, "a tap on her: a happy wag");
+    /* the priorities: a running call (R2) is not cut by a tap (R9) or a shake (R7); a call cuts a tap */
+    world_init(&s_world, 43); ev(EV_WHISTLE, 0, 0, 0); ev(EV_TAP, 120, 420, 0); ev(EV_SHAKE, 0, 0, 0);
+    CHECK(p->prio == 2, "a call is not cut by a tap or a shake");
+    world_init(&s_world, 44); ev(EV_TAP, 120, 420, 0); ev(EV_WHISTLE, 0, 0, 0);
+    CHECK(p->prio == 2, "a call cuts a tap's look");
+    /* M4.7 and R1: the bowls, the pad, the spots; the last spot cleaned forgives her and she runs out */
+    world_init(&s_world, 45);
+    pak_image_t im; int bx = 0, by = 0;
+    if (pak_image(&s_pak, IMG_BOWL_FOOD, &im)) { bx = im.x + im.w / 2; by = im.y + im.h / 2; }
+    else { const map_point_t *bf = &MAPS[VIEW_ROOM].points[SPOT_BOWL_FOOD]; bx = bf->x; by = bf->y - 4; }
+    s_world.things.food = 0; ev(EV_TAP, bx, by, 0);
+    CHECK(s_world.things.food == 3 && s_world.sparkle_t > 0 && p->status != PLAN_RUNNING, "a tap on the empty bowl fills it (3), with a sparkle, and is no R9");
+    if (pak_image(&s_pak, IMG_PAD, &im)) { s_world.things.pad = 2; ev(EV_TAP, im.x + im.w / 2, im.y + im.h / 2, 0); CHECK(s_world.things.pad == 0, "a tap on the full pad changes it"); }
+    plan_one(&s_world, 0, ACT_MISCHIEF_FLOOR, ST_WALK); run_plan(30);
+    plan_one(&s_world, 0, ACT_HIDE_BENCH, ST_WALK); run_plan(30);
+    CHECK(s_world.things.guilty && s_world.things.n_mess == 1 && p->hide == 1, "a spot, guilty, under the bench");
+    ev(EV_WHISTLE, 0, 0, 0); CHECK(p->status != PLAN_RUNNING || p->prio != 2, "hidden and guilty she does not come to a whistle");
+    ev(EV_TAP, s_world.things.mess[0][0], s_world.things.mess[0][1], 0);
+    CHECK(s_world.things.n_mess == 0 && p->prio == 1, "R1: the last spot cleaned starts the release");
+    CHECK(run_plan(30) == PLAN_DONE && !s_world.things.guilty && p->hide == 0 && fabsf(l->x - front->x) < 2, "R1: forgiven, she runs out to the front");
+    printf("selftest-reflex: ok\n");
+    return 0;
+}
+
+/* --selftest-toys (spec 8.9, M4.6): a throw flies and bounces, the walls send it back, it never leaves its view
+   on its own, in her mouth it follows her head and goes with her through the door */
+static int selftest_toys(void) {
+    nav_init(&s_nav); world_init(&s_world, 51); toy_t *ty = &s_world.things.toys[TOY_PLUSH];
+    ty->x = 240; ty->y = 300; toy_throw(&s_world, TOY_PLUSH, 900, 0);
+    int landings = 0; float lastz = 0;
+    for (int i = 0; i < 300; i++) {
+        toys_tick(&s_world, 1.0f / 30.0f);
+        if (lastz > 0 && ty->z == 0) landings++;
+        lastz = ty->z;
+        CHECK(ty->view == VIEW_ROOM && nav_clear(VIEW_ROOM, (int)ty->x, (int)ty->y, 0), "a thrown toy stays on its view's floor");
+    }
+    CHECK(landings >= 2, "it bounces (lands more than once)");
+    ty->x = 400; ty->y = 300; ty->z = 0; toy_throw(&s_world, TOY_PLUSH, 6000, 0);     /* hard at the right wall */
+    bool back = false; for (int i = 0; i < 200; i++) { toys_tick(&s_world, 1.0f / 30.0f); if (ty->vx < 0) back = true; }
+    CHECK(back && nav_clear(VIEW_ROOM, (int)ty->x, (int)ty->y, 0), "the wall sends it back");
+    actor_t *l = &s_world.actors[0]; l->dir = DIR_E;
+    toy_pick(&s_world, TOY_PLUSH, 0); toys_tick(&s_world, 0.03f);
+    float dx, h; toy_mouth(l, &dx, &h);
+    CHECK(ty->held_by == 0 && fabsf(ty->x - (l->x + dx)) < 0.5f && ty->z > 20, "in her mouth it is at her head");
+    plan_one(&s_world, 0, ACT_ENTER_YARD, ST_WALK); run_plan(40); toys_tick(&s_world, 0.03f);
+    CHECK(l->view == VIEW_YARD && ty->view == VIEW_YARD, "it goes out with her, in her mouth");
+    toy_drop(&s_world, TOY_PLUSH);
+    CHECK(ty->held_by < 0 && ty->view == VIEW_YARD && nav_clear(VIEW_YARD, (int)ty->x, (int)ty->y, 0), "dropped, it lies on the yard's floor");
+    printf("selftest-toys: ok\n");
+    return 0;
+}
+
 static double now_us(void) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); return ts.tv_sec * 1e6 + ts.tv_nsec / 1e3; }
 static int bench(void) {
     canvas_init(); world_init(&s_world, 1);
@@ -823,6 +932,8 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--selftest-nav")) return selftest_nav();
     if (argc > 1 && !strcmp(argv[1], "--selftest-gesture")) return selftest_gesture();
     if (argc > 1 && !strcmp(argv[1], "--selftest-plan")) return selftest_plan();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-reflex")) return selftest_reflex();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-toys")) return selftest_toys();
     if (argc > 1 && !strcmp(argv[1], "--selftest-render")) return selftest_render(argc > 2 && !strcmp(argv[2], "--update"));
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
     if (argc > 2 && !strcmp(argv[1], "--inspector-shot")) return inspector_shot(argv[2]);

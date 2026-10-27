@@ -63,6 +63,9 @@ typedef struct {
     float    t, step_t;               /* seconds in the primitive, in the action (its time limit, spec 8.7) */
     int16_t  gx, gy;                  /* the current walk's goal */
     uint8_t  hide;                    /* 0 out, 1 under the bench (the nook), 2 in a bush */
+    uint8_t  prio;                    /* the running reflex's priority (1 = R1 .. 9 = R9), 255 = the brain's plan (spec 8.8) */
+    uint8_t  rounds;                  /* R5: the chase rounds so far (at most 4, then she sits down tired) */
+    int8_t   toy;                     /* the toy this plan is about (R4: the one thrown), -1 = the nearest */
     float    peek_t;                  /* > 0: peeking out of her hiding place for this long */
 } plan_t;
 
@@ -80,6 +83,7 @@ typedef struct {
     float    shake_t;              /* seconds into that shake */
     things_t things;
     plan_t   plans[MAX_ACTORS];    /* plans[i] drives bodies[i] */
+    int16_t  sparkle_x, sparkle_y; float sparkle_t;   /* a care tap's sparkle (spec 8.10), seconds left */
     bool     finger_down;          /* the finger on the glass (follow_finger), set by the platform each frame */
     int16_t  finger_x, finger_y;
 } world_t;
