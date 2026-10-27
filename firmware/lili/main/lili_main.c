@@ -29,6 +29,7 @@
 #include "nav.h"
 #include "gesture.h"
 #include "touch_216.h"
+#include "body_216.h"
 #include "plan.h"
 #include "life.h"
 #include "save.h"
@@ -203,6 +204,7 @@ void app_main(void) {
     s_touch = touch216_init();
     lili_load();
     llm_init();
+    body_init();
     /* M6.4: from power-on she lives by her own brain; BOOT starts (and stops) the demo tour */
     memset(s_bg, 0, sizeof *s_bg);
     ESP_LOGI(TAG, "up: world %u B, canvas %u B, mask %u B, static-layer cache %u B | internal heap %u KB free", (unsigned)sizeof s_world, (unsigned)sizeof *s_r8, (unsigned)sizeof *s_mask, (unsigned)sizeof *s_bg,
@@ -222,6 +224,7 @@ void app_main(void) {
             gesture_feed(&g, &gc, down, tx, ty, (uint32_t)(t0 / 1000), &s_q);
             world_finger(&s_world, down, tx, ty);
         }
+        const bool screen = body_poll(&s_world, &s_q, dt);      /* the mic, the IMU, the PWR key, the console, the energy states */
         ev_t ev; while (ev_pop(&s_q, &ev)) { ESP_LOGI(TAG, "event %s %d %d %d", ev_name((ev_type_t)ev.type), ev.a, ev.b, ev.c); world_handle_event(&s_world, &ev); }
         if (demo_active()) demo_tick(&s_world, dt);
         else {
@@ -234,6 +237,7 @@ void app_main(void) {
         { static float save_t; save_t += dt; if (save_t > 300.0f && !demo_active()) { save_t = 0; lili_save(); } }   /* every 5 minutes (spec 9.7) */
         world_tick(&s_world, dt);
         int64_t t1 = esp_timer_get_time();
+        if (!screen) { vTaskDelay(pdMS_TO_TICKS(60)); continue; }   /* the screen asleep: the world lives on, nothing is drawn */
         world_render_cached(&s_world, s_r8, s_bg);
         int64_t t2 = esp_timer_get_time();
         display_port_flush_gen(fill_stripe, NULL);

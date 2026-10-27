@@ -1275,6 +1275,30 @@ static int selftest_llm(void) {
     return 0;
 }
 
+/* --selftest-motion (spec 5.5, M5.6): synthetic accelerometer streams: still on the desk, lifted (one PICKUP),
+   shaken (one SHAKE), carried in a pocket (IN_MOTION, nothing else) */
+#include "motion.h"
+static int selftest_motion(void) {
+    motion_t m; ev_queue_t q; motion_init(&m); ev_init(&q); uint32_t t = 0; world_t r; world_init(&r, 3);
+    #define NOISE() (((int)(world_rand(&r) % 21) - 10) * 0.5f)
+    for (int i = 0; i < 130; i++, t += 32) { float a[3] = { NOISE(), NOISE(), -1000 + NOISE() }; motion_feed(&m, a, t, &q); }
+    CHECK(m.state == MOTION_STILL && q.count == 0, "4 s flat and quiet (screen down too): STILL, no event");
+    for (int i = 0; i < 10; i++, t += 32) { const float th = (i + 1) * 3.0f * 0.01745f; float a[3] = { 1000 * sinf(th), 0, -1000 * cosf(th) }; motion_feed(&m, a, t, &q); }
+    ev_t e; int pick = 0; while (ev_pop(&q, &e)) pick += e.type == EV_PICKUP;
+    CHECK(pick == 1 && m.state == MOTION_HANDHELD, "lifted and tilted 30 degrees: one PICKUP");
+    for (int i = 0; i < 30; i++, t += 32) { float a[3] = { 500 * sinf(t * 0.02f), 0, -900 }; motion_feed(&m, a, t, &q); }
+    while (ev_pop(&q, &e)) CHECK(e.type != EV_PICKUP, "in the hand no second PICKUP");
+    for (int i = 0; i < 20; i++, t += 32) { const bool hard = i == 2 || i == 6 || i == 10; float a[3] = { hard ? 2200.0f : 300.0f, 0, -900 }; motion_feed(&m, a, t, &q); }
+    int shake = 0; while (ev_pop(&q, &e)) shake += e.type == EV_SHAKE;
+    CHECK(shake == 1, "three hard peaks in 300 ms: one SHAKE");
+    motion_init(&m); ev_init(&q);
+    for (int i = 0; i < 160; i++, t += 32) { float a[3] = { 200 * sinf(i * 0.6f), 120 * cosf(i * 0.9f), -1000 + 150 * sinf(i * 1.3f) }; motion_feed(&m, a, t, &q); }
+    CHECK(m.state == MOTION_IN_MOTION && q.count == 0, "carried, swinging 0.1-0.4 g: IN_MOTION, no event");
+    #undef NOISE
+    printf("selftest-motion: ok\n");
+    return 0;
+}
+
 static double now_us(void) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); return ts.tv_sec * 1e6 + ts.tv_nsec / 1e3; }
 static int bench(void) {
     canvas_init(); world_init(&s_world, 1);
@@ -1468,6 +1492,7 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--selftest-probes")) return selftest_probes();
     if (argc > 1 && !strcmp(argv[1], "--selftest-life")) return selftest_life();
     if (argc > 1 && !strcmp(argv[1], "--selftest-llm")) return selftest_llm();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-motion")) return selftest_motion();
     if (argc > 3 && !strcmp(argv[1], "--dump-prompts")) return dump_prompts(argv[2], atoi(argv[3]));
     if (argc > 2 && !strcmp(argv[1], "--dump-probes")) return dump_probes(argv[2]);
     if (argc > 2 && !strcmp(argv[1], "--dump-traces")) {
