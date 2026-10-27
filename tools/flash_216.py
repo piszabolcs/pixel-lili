@@ -2,14 +2,17 @@
 """Pixel Lili: flash the 2.16 panel from Windows with the Windows-side esptool.
 
     py -3.12 tools/flash_216.py diag [--port COM3]     the diag firmware (firmware/build/diag)
-    py -3.12 tools/flash_216.py lili [--port COM3]     the Pixel Lili world (firmware/build/lili)
+    py -3.12 tools/flash_216.py lili [--port COM3]     the Pixel Lili world (firmware/build/lili) and its pack
+    py -3.12 tools/flash_216.py pak [--port COM3]      only the pack (assets/build/assets.pak): after a sprite change
     py -3.12 tools/flash_216.py tank [--port COM3]     the pocket-tank square set back (firmware/build/216)
     py -3.12 tools/flash_216.py <set> --dry            print the esptool command only
 
 Each set is the build's own flash_args (ESP-IDF writes it next to the binaries:
 the flash mode / frequency / size on the first line, then "offset file" rows),
 so what idf.py would flash is what this flashes. The model partition
-(0x290000) is in neither set: a diag <-> tank swap never touches it. Close any
+(0x290000) is in neither set: a diag <-> tank swap never touches it. The world's
+pack goes to its own assets partition (0xA90000, firmware/lili/partitions.csv,
+spec 5.10; since 2026-10-27, before that it was linked into the app). Close any
 serial reader on the port first (serial_log.py), the bootloader needs it.
 """
 import argparse, os, subprocess, sys
@@ -17,7 +20,10 @@ import argparse, os, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETS = {"diag": os.path.join(ROOT, "firmware", "build", "diag"),
         "lili": os.path.join(ROOT, "firmware", "build", "lili"),
-        "tank": os.path.join(ROOT, "firmware", "build", "216")}
+        "tank": os.path.join(ROOT, "firmware", "build", "216"),
+        "pak": os.path.join(ROOT, "firmware", "build", "lili")}
+PAK_OFFSET, PAK_SIZE = 0xA90000, 0x570000          # firmware/lili/partitions.csv: assets
+PAK = os.path.join(ROOT, "assets", "build", "assets.pak")
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -33,12 +39,16 @@ def main():
     lines = [l.strip() for l in open(fa, encoding="utf-8") if l.strip()]
     opts = lines[0].split()
     pairs = []
-    for l in lines[1:]:
+    for l in (lines[1:] if a.set != "pak" else []):
         off, rel = l.split()
         path = os.path.join(bdir, rel.replace("/", os.sep))
         if not os.path.exists(path):
             sys.exit(f"missing {path}")
         pairs += [off, path]
+    if a.set in ("lili", "pak"):
+        if not os.path.exists(PAK): sys.exit(f"no {PAK}: py -3.12 tools/pack_assets.py")
+        if os.path.getsize(PAK) > PAK_SIZE: sys.exit(f"{PAK} is {os.path.getsize(PAK)} B, the assets partition holds {PAK_SIZE} B")
+        pairs += [hex(PAK_OFFSET), PAK]
     cmd = [sys.executable, "-m", "esptool", "--chip", "esp32s3", "-p", a.port, "-b", a.baud,
            "--before", "default_reset", "--after", "hard_reset", "write_flash"] + opts + pairs
     print(" ".join(cmd))

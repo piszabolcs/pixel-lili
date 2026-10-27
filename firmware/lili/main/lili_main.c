@@ -3,8 +3,8 @@
  * The same common/lili core the simulator runs: world_tick, world_render into the 480 x 480 (native since M3.4)
  * byte canvas (PSRAM), then the panel's stripes are made straight into the DMA buffer:
  * 2x LUT flush, the glass mask, the byte swap. No RGB565 frame buffer exists.
- * The painted world (2026-10-23): the pack (assets/build/assets.pak) is linked into the app image and read in
- * place from flash; the demo tour (common/lili/lili_demo.c, the simulator's script) runs from power-on.
+ * The painted world (2026-10-23): the pack (assets/build/assets.pak) is read in place from flash, since 2026-10-27
+ * from its own "assets" partition (spec 5.10); the demo tour (common/lili/lili_demo.c, the simulator's script) runs from power-on.
  * Keys (the stand-in for the finger until M4): BOOT = the tour on / off, KEY3 = room <-> yard (stops the tour). */
 #include <stdio.h>
 #include <string.h>
@@ -16,6 +16,7 @@
 #include "esp_random.h"
 #include "esp_heap_caps.h"
 #include "nvs_flash.h"
+#include "esp_partition.h"
 #include "board_pins.h"
 #include "display_port.h"
 #include "lili_world.h"
@@ -40,13 +41,26 @@ static render8_t *s_r8;                        /* PSRAM: 57 600 B canvas + the L
 static mask_t    *s_mask;                      /* PSRAM: the glass's quadrant table */
 static bgcache_t *s_bg;                        /* PSRAM: the static layer (floor, wall, flat props), drawn once per view */
 static ev_queue_t s_q;
-static pak_t     s_pak;                        /* the pack, in place in the app image (flash, through the cache) */
+static pak_t     s_pak;                        /* the pack, in place in its flash partition (through the cache) */
 static demo_scratch_t *s_demo;                 /* PSRAM: the tour's path search (86 KB) */
-extern const uint8_t s_pak_start[] asm("_binary_assets_pak_start");
-extern const uint8_t s_pak_end[]   asm("_binary_assets_pak_end");
 static int64_t   s_fill_us;                    /* time spent making stripes (this window) */
 
 static void *psram(size_t n) { return heap_caps_aligned_alloc(64, (n + 63) & ~(size_t)63, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
+
+/* the pack's partition mapped into the data address space (the MMU's 64 KB pages): read like RAM, held in none.
+   Only the pack's own length is mapped (LPAK header: total_size at byte 12); an empty partition (0xFF, never
+   flashed) or a foreign one gives NULL, and the world draws its placeholder shapes (docs/decisions.md, 2026-10-27) */
+static const uint8_t *pak_map(uint32_t *len) {
+    const esp_partition_t *p = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "assets");
+    uint8_t head[20];
+    if (!p || esp_partition_read(p, 0, head, sizeof head) != ESP_OK || memcmp(head, "LPAK", 4)) return NULL;
+    uint32_t total = (uint32_t)head[12] | (uint32_t)head[13] << 8 | (uint32_t)head[14] << 16 | (uint32_t)head[15] << 24;
+    if (total < sizeof head || total > p->size) return NULL;
+    const void *map; esp_partition_mmap_handle_t h;
+    if (esp_partition_mmap(p, 0, total, ESP_PARTITION_MMAP_DATA, &map, &h) != ESP_OK) return NULL;
+    *len = total;
+    return map;
+}
 
 /* one stripe: indices -> RGB565 at 2x, the glass mask, then the wire's byte order */
 static void fill_stripe(uint16_t *dst, int y0, int n, void *ctx) {
@@ -82,8 +96,11 @@ void app_main(void) {
     if (!display_port_init()) ESP_LOGE(TAG, "no display: the board was not told");
     display_port_set_madctl(LILI_MADCTL);      /* the hardware turns the picture: no cost per frame (the glass mask is the same in all four corners) */
     int64_t tp = esp_timer_get_time();
-    if (pak_open(&s_pak, s_pak_start, (uint32_t)(s_pak_end - s_pak_start))) world_set_pak(&s_pak);   /* the CRC over it: once, here */
-    ESP_LOGI(TAG, "pak: %u B, %d entries, %s (%lld ms)", (unsigned)(s_pak_end - s_pak_start), s_pak.n, s_pak.data ? "ok" : "REFUSED: placeholder graphics",
+    uint32_t pak_len = 0;
+    const uint8_t *pak = pak_map(&pak_len);
+    if (pak && pak_open(&s_pak, pak, pak_len)) world_set_pak(&s_pak);   /* the CRC over it: once, here */
+    ESP_LOGI(TAG, "pak: %u B, %d entries, %s (%lld ms)", (unsigned)pak_len, s_pak.n,
+             s_pak.data ? "ok" : pak ? "REFUSED (CRC): placeholder graphics" : "none in the assets partition (tools/flash_216.py pak): placeholder graphics",
              (long long)((esp_timer_get_time() - tp) / 1000));
     uint8_t pal[256][3]; if (!pak_palette(&s_pak, pal)) pal_master(pal); r8_set_palette(s_r8, pal);   /* the painted views set their own */
     mask_init(s_mask);

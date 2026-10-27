@@ -341,6 +341,15 @@ Döntés: a pak most az app képébe van linkelve, oda legfeljebb 2267 KB fér (
 
 Fogalmak: delta-kódolás (kockák közötti különbség), memóriába leképezés (mmap)
 
+## 2026-10-27 | M3.5, 2. lépés: a pak saját partícióra, a flashből leképezve
+Készült: a firmware partíciós táblájában új `assets` partíció (0xA90000, 5,4 MB, a spec 5.10 szerint); a pak már nincs az app képébe linkelve, a firmware a partíciót memóriába képezi le (`esp_partition_mmap`) és a helyén olvassa (`firmware/lili/main/lili_main.c`, `pak_map`). A `tools/flash_216.py lili` az appal együtt a pakot is írja, a `... pak` csak a pakot. A panelen kipróbálva: "pak: 1460441 B, 100 entries, ok (310 ms)", 32 fps, ugyanannyi, mint előtte; az app 300 KB, a partíció 89 %-a szabad. A gazdi kérésére a hiányzó trot_SE is elkészült (1 generálás, irányrögzítéssel, "in place, paws on the ground, same size, no motion lines"): minden kocka a talpvonalon, 75-81 px, mint a szomszédos irányoké.
+
+Döntés: leképezés, nem másolás, mert a mért 2,3-3,9 MB-os pak nem fér a PSRAM-ban neki szánt 2 MB-ba, a flashből olvasás pedig eddig is így működött (a pak az app képében is a flashben volt). Csak a pak saját hosszát képezzük le (a fejléc 12. bájtja), a CRC egyszer, bootkor fut; üres vagy hibás partíciónál a világ helyőrző grafikával indul.
+
+Hiba: az első firmware build megállt ("configured for project ... Desktop ..."). Gyökérok: a 2026-10-26-i költözés óta ez volt az első firmware build, és a WSL-beli build mappa CMake-gyorsítótára a forrás abszolút útját tárolja (az asztali régit). Javítás: a régi build mappa törölve (csak újragenerálható kimenet volt benne), tiszta build. Korábban egy költözés utáni próba-build mutatta volna meg.
+
+Fogalmak: egyedi adat-altípus (partíció), CMake build-gyorsítótár
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -538,3 +547,7 @@ Fogalmak: delta-kódolás (kockák közötti különbség), memóriába leképez
 **delta-kódolás (kockák közötti különbség):** egy animációs kockát nem önmagában tárolunk, hanem csak azt, ami az előzőhöz képest változott; a változatlan pixel egy "ugyanaz" jel, amit az RLE egy futamba sűrít. Ahol alig mozog valami (légzés, pislogás), sokat nyer, ahol az egész test elmozdul (futás), semmit. Ára: egy kocka csak az előző ismeretében fejthető vissza.
 
 **memóriába leképezés (mmap):** a flash egy tartományát a processzor címtartományába vetítjük (az ESP32-S3 MMU-ja 64 KB-os lapokkal), így közönséges mutatóval olvasható, mintha RAM lenne, a használt részt a gyorsítótár hozza be. Nem foglal RAM-ot, ezért egy 4 MB-os pak sem veszi el a PSRAM-ot; az LLM modellje is így olvasódik.
+
+**egyedi adat-altípus (partíció):** a partíciós táblában egy data típusú partíció altípusa lehet szabványos (nvs, phy, spiffs) vagy egy szabadon választott szám 0x40 és 0xFE között. A Lili modellje 0x40, a pak 0x41; a firmware a nevéről (`assets`) keresi meg, az altípus csak jelzi, hogy saját formátumú tartalom.
+
+**CMake build-gyorsítótár (CMakeCache.txt):** a build mappa az első konfiguráláskor rögzíti a forrás abszolút útját és a beállításokat, a további buildek ebből dolgoznak. Ha a projekt máshová költözik, a gyorsítótár a régi helyre mutat, és az ESP-IDF megtagadja a buildet; ilyenkor tiszta build kell (`idf.py fullclean` vagy a mappa törlése).

@@ -1,0 +1,32 @@
+--- 06:58:11 port COM3 open
+06:58:11 I (262) efuse_init: Min chip rev:     v0.0
+06:58:11 I (266) efuse_init: Max chip rev:     v0.99 
+06:58:11 I (270) efuse_init: Chip rev:         v0.2
+06:58:11 I (274) heap_init: Initializing. RAM available for dynamic allocation:
+06:58:11 I (280) heap_init: At 3FC9F5F0 len 0004A120 (296 KiB): RAM
+06:58:11 I (285) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+06:58:11 I (290) heap_init: At 600FE11C len 00001ECC (7 KiB): RTCRAM
+06:58:11 I (296) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator
+06:58:11 I (303) spi_flash: detected chip: generic
+06:58:11 I (306) spi_flash: flash io: qio
+06:58:11 I (309) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+06:58:11 I (315) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+06:58:11 I (322) main_task: Started on CPU0
+06:58:11 I (325) esp_psram: Reserving pool of 64K of internal memory for DMA/internal allocations
+06:58:11 I (333) main_task: Calling app_main()
+06:58:11 I (336) lili: Pixel Lili world | internal heap 296 KB, PSRAM 8189 KB free
+06:58:11 I (347) gpio: GPIO[0]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+06:58:11 I (351) gpio: GPIO[18]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+06:58:11 I (360) gpio: GPIO[40]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+06:58:11 I (438) sh8601: board: the SQUARE, 2.16 (CO5300 480x480 / CST92xx at 0x5a) - no expander, an ES7210 at 0x40, an RTC at 0x51
+06:58:11 I (439) gpio: GPIO[39]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+06:58:11 I (446) sh8601: LCD panel create success, version: 2.0.1
+06:58:12 W (731) sh8601: The 3Ah command has been used and will be overwritten by external initialization sequence
+06:58:12 W (731) sh8601: The 36h command has been used and will be overwritten by external initialization sequence
+06:58:12 I (758) sh8601: panel up: 480x480 square, the tank px for px (MADCTL a0)
+06:58:12 I (1069) lili: pak: 1460441 B, 100 entries, ok (310 ms)
+06:58:12 I (1109) lili: up: world 124 B, canvas 230912 B, mask 57840 B, static-layer cache 230408 B | internal heap 246 KB free
+06:58:17 I (6114) lili: 31.8 fps | per frame: tick 135 us, render 13308 us, flush 17169 us (fill 14959, wire wait 39, send 2111) | internal heap 246 KB, min 246 KB
+06:58:22 I (11138) lili: 32.2 fps | per frame: tick 17 us, render 13120 us, flush 17168 us (fill 14957, wire wait 39, send 2110) | internal heap 245 KB, min 245 KB
+06:58:27 I (16150) lili: 32.1 fps | per frame: tick 133 us, render 13298 us, flush 17174 us (fill 14963, wire wait 39, send 2111) | internal heap 245 KB, min 245 KB
+06:58:32 I (21152) lili: 32.0 fps | per frame: tick 266 us, render 12954 us, flush 17177 us (fill 14961, wire wait 39, send 2118) | internal heap 245 KB, min 245 KB

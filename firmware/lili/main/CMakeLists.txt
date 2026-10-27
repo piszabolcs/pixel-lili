@@ -6,10 +6,9 @@ idf_component_register(
          ${LILI}/lili_world.c ${LILI}/lili_demo.c ${LILI}/render8.c ${LILI}/palette.c ${LILI}/palette_gen.c ${LILI}/pak.c ${LILI}/mask.c ${LILI}/maps_gen.c ${LILI}/events.c
          ${PT}/display_port_sh8601.c
     INCLUDE_DIRS "." ${PT} ${CMAKE_CURRENT_LIST_DIR}/../../../common ${LILI}
-    REQUIRES esp_driver_spi esp_driver_i2c esp_driver_gpio esp_lcd nvs_flash esp_timer esp_psram esp_hw_support
+    REQUIRES esp_driver_spi esp_driver_i2c esp_driver_gpio esp_lcd nvs_flash esp_timer esp_psram esp_hw_support esp_partition
 )
-# the painted world's pack (tools/pack_assets.py) inside the app image: read in place from flash, no partition
-# (1.5 MB of the 2.5 MB app slot; the model partition at 0x290000 stays untouched)
-target_add_binary_data(${COMPONENT_TARGET} "${CMAKE_CURRENT_LIST_DIR}/../../../assets/build/assets.pak" BINARY)
+# the painted world's pack (tools/pack_assets.py) is not in the app image any more (2026-10-27): with the M3.5
+# animations it outgrows the 2.5 MB app slot, so it has its own "assets" partition (partitions.csv, spec 5.10)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE TANK_SQUARE)
 target_compile_options(${COMPONENT_LIB} PRIVATE -O2 -ffast-math)

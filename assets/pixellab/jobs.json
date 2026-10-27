@@ -91,6 +91,12 @@
    "frames": 8
   },
   {
+   "tag": "trot_SE",
+   "start": "stand_SE",
+   "action": "trotting happily in place, tail up, paws on the ground, same size, no motion lines",
+   "frames": 8
+  },
+  {
    "tag": "run_S",
    "start": "stand_S",
    "action": "running fast in a full gallop, ears back, happy zoomies",
