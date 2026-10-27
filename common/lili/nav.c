@@ -170,7 +170,10 @@ dir8_t nav_dir_hyst(dir8_t cur, float dx, float dy) {
 bool nav_follow(actor_t *a, body_t *b, float dt) {
     if (b->i >= b->n) { b->speed = 0; return true; }
     const float vmax = nav_speed((nav_style_t)b->style, a->view), acc = vmax * 4.0f;
-    const uint16_t anim = nav_anim((nav_style_t)b->style);
+    uint16_t anim = nav_anim((nav_style_t)b->style);
+    /* the rope in her mouth: its own trot stands in for the walk and the trot (plan.c sets it); switching back and
+       forth every tick restarted it, so she slid along on its first frame (the owner, 2026-10-27) */
+    if (a->anim == ANIM_CARRY_TROT && (anim == ANIM_WALK || anim == ANIM_TROT)) anim = ANIM_CARRY_TROT;
     if (a->anim != anim) { a->anim = anim; a->anim_t = 0; }
     float step;
     {   /* the speed she aims for: full, less into a sharp turn at the next waypoint, and down to a walk into the goal */

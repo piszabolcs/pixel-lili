@@ -18,7 +18,7 @@ PixelLab kept Lili's palette (measured: 95 % of the pixels are exactly one of he
 is nearest-colour in Oklab; shrinking takes each output pixel's most common source colour and redraws the outline.
 A direction PixelLab did not make falls back to the nearest one in the game (pak_frame).
 """
-import json, os, sys
+import colorsys, json, os, sys
 import numpy as np
 from PIL import Image
 
@@ -30,6 +30,8 @@ import sprite_clean as sc
 
 DIRS = pn.DIRS
 CELL, PIVOT, SLOT = pn.CELL, pn.PIVOT, 144
+TOY_SLOT, TOY_N = 184, 6                   # the toys' colours (assets/palettes/toy_colors.json): the rope keeps its blues, reds, yellows
+ROPE_ANIMS = ("tug_rope", "carry_trot", "lie_down_rope", "chew_toy")
 
 def all8(src):
     return {d: f"{src}_{d}" for d in DIRS}
@@ -82,17 +84,37 @@ SIZES = (("lili", 0.75, 0), ("lili_yard", 0.625, 100))
 def palette():
     master = json.load(open(os.path.join(ROOT, "assets", "palettes", "master.json"), encoding="utf-8"))["rgb"]
     lili = json.load(open(os.path.join(ROOT, "assets", "palettes", "lili_sprites.json"), encoding="utf-8"))["rgb"]
+    toy = json.load(open(os.path.join(ROOT, "assets", "palettes", "toy_colors.json"), encoding="utf-8"))["rgb"]
     full = [list(c) for c in master]
     for i, c in enumerate(lili):
         full[SLOT + i] = list(c)
+    for i, c in enumerate(toy):
+        full[TOY_SLOT + i] = list(c)
     return full, np.array(lili, float)
 
-def to_index(rgba, lili_lab):
+def rope_like(rgb):
+    """a pixel of the rope toy, not of Lili: its blues, its saturated reds, its yellows (her fawn stays under 42 degrees,
+    her pink ears and tongue are paler than the rope's red)"""
+    r, g, b = [c / 255 for c in rgb]
+    h, sat, v = colorsys.rgb_to_hsv(r, g, b); h *= 360
+    if v < 0.3: return False
+    if 180 <= h <= 270 and sat >= 0.30: return True
+    if (h >= 335 or h <= 12) and sat >= 0.50: return True
+    return 43 <= h <= 65 and sat >= 0.45 and v >= 0.70
+
+def to_index(rgba, lili_lab, toy=False):
+    """nearest of Lili's 40 colours in Oklab; with toy=True the rope's pixels may also take the toys' 6"""
     a = rgba[..., 3] > 127
     idx = np.zeros(a.shape, np.uint8)
-    lab = rgb_to_oklab(rgba[..., :3][a].reshape(-1, 3).astype(float))
-    near = np.argmin(((lab[:, None, :] - lili_lab[None, :, :]) ** 2).sum(2), 1)
-    idx[a] = SLOT + near
+    px = rgba[..., :3][a].reshape(-1, 3).astype(float)
+    lab = rgb_to_oklab(px)
+    near = SLOT + np.argmin(((lab[:, None, :] - lili_lab[None, :, :]) ** 2).sum(2), 1)
+    if toy:
+        toy_lab = rgb_to_oklab(np.array(palette()[0][TOY_SLOT:TOY_SLOT + TOY_N], float))
+        rope = np.array([rope_like(c) for c in px])
+        if rope.any():
+            near[rope] = TOY_SLOT + np.argmin(((lab[rope][:, None, :] - toy_lab[None]) ** 2).sum(2), 1)
+    idx[a] = near
     return idx
 
 def ground(idx, pivot_y, dy=None):
@@ -120,7 +142,7 @@ def shrink(idx, full_rgb, pal_lab, outline, scale):
     (crisp, no new colours), the outline redrawn"""
     rgba = np.zeros(idx.shape + (4,), np.uint8)
     rgba[..., :3] = np.array(full_rgb, np.uint8)[idx]; rgba[..., 3] = np.where(idx > 0, 255, 0)
-    small = sc.resample(rgba, 1 / scale, pal_lab, np.arange(SLOT, SLOT + 40))
+    small = sc.resample(rgba, 1 / scale, pal_lab, np.r_[np.arange(SLOT, SLOT + 40), np.arange(TOY_SLOT, TOY_SLOT + TOY_N)])
     return sc.clean_outline(small, pal_lab, outline)
 
 def crop(seqs, pivot):
@@ -135,7 +157,7 @@ def crop(seqs, pivot):
 def convert(name, src, ctx, jobs=None):
     """one animation, {dir: tag} -> {"master": ({dir index: [128 px frames]}, ...), "lili": (seqs, (w, h), pivot), "lili_yard": ...}"""
     full, lili_lab, pal_lab = ctx
-    seqs = {DIRS.index(d): [to_index(f, lili_lab) for f in pn.normalize(t, jobs)[1:]] for d, t in src.items()}
+    seqs = {DIRS.index(d): [to_index(f, lili_lab, name in ROPE_ANIMS) for f in pn.normalize(t, jobs)[1:]] for d, t in src.items()}
     n = len(next(iter(seqs.values())))
     assert all(len(s) == n for s in seqs.values()), f"{name}: the directions differ in frame count"
     out = {"master": (seqs, (CELL, CELL), PIVOT)}
@@ -179,11 +201,17 @@ def context():
 def main():
     ctx = context(); full = ctx[0]
     jobs = json.load(open(os.path.join(ROOT, "assets", "pixellab", "jobs.json"), encoding="utf-8"))["jobs"]
+    only = set(sys.argv[1:])                                 # some animations only; the rest keep their built sets
+    old = json.load(open(os.path.join(ROOT, "assets", "anims.json"), encoding="utf-8"))
     cat = {"_note": "The animation catalogue (spec 7.4): id = the A-number (drink 28 is new: the spec's A17 eat_drink was split, "
                     "PixelLab made eating and drinking apart; stand_up 29 is A03's second half, sit_down played backwards), fps, "
                     "dirs (the ones that exist, the rest fall back to the nearest), loop. The sprites come from tools/pixellab_to_sprites.py; "
                     "tools/pack_assets.py generates common/asset_ids.h from this file."}
+    for k, v in old.items():                                 # the toys and other sets made elsewhere (tools/toy_sprites.py)
+        if isinstance(v, dict) and v.get("extra"): cat[k] = v
     for anim, (aid, fps, loop, src) in ANIMS.items():
+        if only and anim not in only:
+            cat[anim] = old[anim]; continue
         gone = [t for t in src.values() if not os.path.exists(os.path.join(ROOT, "assets", "pixellab", t + "_sheet.png"))]
         if gone:                                             # the owner rejected the sheet: the built set stays until a new one is approved
             man = json.load(open(os.path.join(ROOT, "assets", "sprites", "lili", anim, "manifest.json"), encoding="utf-8"))

@@ -85,7 +85,7 @@ void world_tick(world_t *w, float dt) {
         a->anim_t += dt;
         const bool hide = in_hide_zone(a);
         const plan_t *pl = &w->plans[i];
-        const bool gone = hide || (pl->hide == 1 && pl->peek_t <= 0) || pl->hide == 3;   /* under the bench, or out of the door */
+        const bool gone = hide || pl->hide == 3;      /* in a bush, or out of the door; under the bench its seat covers her */
         /* the owner (2026-10-27): the bush stays still, it shakes once as she goes into it */
         if (hide && !w->bodies[i].in_hide && a->view == VIEW_YARD) { w->shake_cover = (int8_t)cover_at(w, (int)a->x, (int)a->y); w->shake_t = 0; }
         w->bodies[i].in_hide = hide;
@@ -398,11 +398,29 @@ static void lili_slots(const render8_t *r, uint8_t *dark, uint8_t *mid, uint8_t 
         if (abs(L - 70) < best_mid) { best_mid = abs(L - 70); *mid = (uint8_t)i; }
     }
 }
+/* the animations whose frames hold the rope themselves: then it is not drawn again at her mouth */
+static bool rope_in_frames(uint16_t anim) { return anim == ANIM_CARRY_TROT || anim == ANIM_CHEW_TOY || anim == ANIM_TUG_ROPE || anim == ANIM_LIE_DOWN_ROPE; }
 static void draw_toy(const world_t *w, render8_t *r, int k) {
     const toy_t *t = &w->things.toys[k];
-    if (t->held_by >= 0 && k == TOY_ROPE && w->actors[t->held_by].anim == ANIM_CARRY_TROT) return;   /* those frames carry the rope */
+    const actor_t *holder = t->held_by >= 0 ? &w->actors[t->held_by] : NULL;
+    if (holder && k == TOY_ROPE && rope_in_frames(holder->anim)) return;
     uint8_t dark, mid, light, warm; lili_slots(r, &dark, &mid, &light, &warm);
     const int x = (int)t->x, y = (int)(t->y - t->z);
+    if (!holder && t->z > 1.0f) {                            /* in the air: its shadow on the floor under it */
+        const uint8_t *lut = bg_lut(w, LUT_SHADE_OUT);
+        for (int dy = -3; lut && dy <= 3; dy++) for (int dx = -10; dx <= 10; dx++) {
+            const int px = x + dx, py = (int)t->y + dy;
+            if (dx * dx * 9 + dy * dy * 100 <= 900 && px >= 0 && py >= 0 && px < LILI_LOG_W && py < LILI_LOG_H) r->px[py * LILI_LOG_W + px] = lut[r->px[py * LILI_LOG_W + px]];
+        }
+    }
+    /* the rope (tools/toy_sprites.py: the owner's generated one, 4 ways it can lie): across her mouth as she faces, turning
+       over in the air, at rest the way it landed */
+    sprite_set_t set; sprite_frame_t fr;
+    if (k == TOY_ROPE && s_pak && pak_sprite_set(s_pak, (uint16_t)(ANIM_TOY_ROPE + (t->view == VIEW_YARD ? ANIM_YARD_OFFSET : 0)), &set)) {
+        static const uint8_t HELD[DIR_COUNT] = { 0, 3, 2, 1, 0, 3, 2, 1 };   /* across, falling right, upright, rising right */
+        const int rot = holder ? HELD[holder->dir] : t->z > 0.5f ? (int)(w->clock_s * 12.0f) & 3 : ((int)t->x * 7 + (int)t->y * 13) & 3;
+        if (pak_frame(&set, rot, 0, &fr)) { pak_blit(r, &set, &fr, x, holder ? y + set.cell_h / 2 : y); return; }
+    }
     if (k == TOY_ROPE) {                                     /* a knotted rope: a light bar with warm stripes, knots at the ends */
         r8_fill(r, x - 9, y - 4, 18, 5, dark); r8_fill(r, x - 8, y - 3, 16, 3, light);
         for (int i = -6; i <= 6; i += 4) r8_fill(r, x + i, y - 3, 2, 3, warm);
@@ -465,8 +483,9 @@ static void draw_sparkle(const world_t *w, render8_t *r) {
     }
 }
 
-/* ---- the thought bubble (spec 10.4, M10.4): a small round bubble over her head with an icon, in Lili's palette slots;
-   9 x 9 icons as bit rows (bit 8 = the leftmost pixel) ---- */
+/* ---- the thought bubble (spec 10.4, M10.4): a small square bubble over her head with an icon, in Lili's palette slots
+   (the owner, 2026-10-27: no trail of dots into her head); 9 x 9 icons as bit rows (bit 8 = the leftmost pixel), the rope
+   its own picture (tools/toy_sprites.py icon_rope) ---- */
 static const uint16_t BUBBLE_ICON[BB_COUNT][9] = {
     [BB_HEART]    = { 0x000, 0x0C6, 0x1EF, 0x1FF, 0x1FF, 0x0FE, 0x07C, 0x038, 0x010 },
     [BB_NOTE]     = { 0x01E, 0x01E, 0x012, 0x012, 0x012, 0x072, 0x0F6, 0x0E0, 0x000 },
@@ -481,14 +500,33 @@ static const uint16_t BUBBLE_ICON[BB_COUNT][9] = {
 static void draw_bubble(const world_t *w, render8_t *r, int x, int top) {
     if (!w->bubbles_on || w->bubble_t <= 0 || w->bubble == BB_NONE || w->bubble >= BB_COUNT) return;
     uint8_t dark, mid, light, warm; lili_slots(r, &dark, &mid, &light, &warm);
-    const int bx = x + 10, by = top - 16;                          /* up and to the right of her head */
-    r8_fill(r, bx - 9, by - 7, 19, 15, dark); r8_fill(r, bx - 8, by - 8, 17, 17, dark);
-    r8_fill(r, bx - 8, by - 6, 17, 13, light); r8_fill(r, bx - 7, by - 7, 15, 15, light);
-    r8_fill(r, bx - 5, by + 9, 3, 3, dark); r8_fill(r, bx - 4, by + 10, 1, 1, light);   /* the little trail to her head */
-    r8_fill(r, bx - 8, by + 13, 2, 2, dark);
+    sprite_set_t set; sprite_frame_t fr;
+    const bool rope = w->bubble == BB_ROPE && s_pak && pak_sprite_set(s_pak, ANIM_ICON_ROPE, &set) && pak_frame(&set, 0, 0, &fr);
+    const int bw = (rope ? set.cell_w : 9) + 6, bh = (rope ? set.cell_h : 9) + 6;   /* the icon and 3 px of air round it */
+    int bx = x - bw / 2, by = top - 5 - bh;                        /* centred over her head, clear of her ears */
+    if (bx < 2) bx = 2;
+    if (bx > LILI_LOG_W - bw - 2) bx = LILI_LOG_W - bw - 2;
+    if (by < 2) by = 2;
+    r8_fill(r, bx + 1, by, bw - 2, bh, dark); r8_fill(r, bx, by + 1, bw, bh - 2, dark);   /* the outline, its corners cut */
+    r8_fill(r, bx + 1, by + 1, bw - 2, bh - 2, light);
+    if (rope) { pak_blit(r, &set, &fr, bx + 3 + set.pivot_x, by + 3 + set.pivot_y); return; }
     const uint8_t ink = w->bubble == BB_HEART || w->bubble == BB_FOOD ? warm : dark;
     for (int row = 0; row < 9; row++) for (int c = 0; c < 9; c++)
-        if (BUBBLE_ICON[w->bubble][row] >> (8 - c) & 1) r8_fill(r, bx - 4 + c, by - 4 + row, 1, 1, ink);
+        if (BUBBLE_ICON[w->bubble][row] >> (8 - c) & 1) r8_fill(r, bx + 3 + c, by + 3 + row, 1, 1, ink);
+}
+
+/* where her head is in a frame: its topmost row and the middle of the few rows under it, from the pivot (the set's cell is
+   cropped to all its frames and directions, so the cell's top is not her head's) */
+static bool frame_head(const sprite_set_t *set, const sprite_frame_t *fr, int *dx, int *dy) {
+    if (set->cell_w * set->cell_h > (int)sizeof s_cell) return false;
+    pak_frame_decode(set, fr, s_cell);
+    const int W = set->cell_w, H = set->cell_h;
+    int top = -1, sx = 0, n = 0;
+    for (int i = 0; i < W * H && top < 0; i++) if (s_cell[i]) top = i / W;
+    if (top < 0) return false;
+    for (int y = top; y < top + 8 && y < H; y++) for (int x = 0; x < W; x++) if (s_cell[y * W + x]) { sx += x; n++; }
+    *dx = sx / n - set->pivot_x; *dy = top - set->pivot_y;
+    return true;
 }
 
 /* the search hint (spec 8.4, M10.5, D-06; off unless set): she went to the other place a moment ago: a paw print
@@ -512,9 +550,10 @@ static void painted_fg(const world_t *w, render8_t *r) {
         for (int k = 0; k < IMG_COVERS_PER_SEASON && np < IMG_COVERS_PER_SEASON; k++)
             if (pak_image(s_pak, IMG_COVER(world_season(w), k), &props[np])) { props[np].x += shake_dx(w, k); key[n] = props[np].sort_y; who[n++] = (int8_t)np; np++; }
     if (w->view == VIEW_ROOM) {
-        /* the bowls stand apart (tools/bg_build.py PROP_MOVE) so she has room beside each */
-        static const uint16_t P[3] = { IMG_VASE, IMG_BOWL_FOOD, IMG_BOWL_WATER };
-        for (int i = 0; i < 3; i++)
+        /* the bowls stand apart (tools/bg_build.py PROP_MOVE) so she has room beside each; the bench's back part
+           covers her in her nook under it (spec H10, H11) */
+        static const uint16_t P[4] = { IMG_VASE, IMG_BOWL_FOOD, IMG_BOWL_WATER, IMG_BENCH };
+        for (int i = 0; i < 4; i++)
             if (!prop_in_use(w, P[i]) && pak_image(s_pak, P[i], &props[np])) { key[n] = props[np].sort_y; who[n++] = (int8_t)np; np++; }
     }
     for (int a = 0; a < MAX_ACTORS && n < MAXD; a++)
@@ -534,12 +573,16 @@ static void painted_fg(const world_t *w, render8_t *r) {
     }
     draw_sparkle(w, r);
     draw_search_hint(w, r);
-    {   /* her thought over everything, where her head is */
+    {   /* her thought over everything, over her head */
         const actor_t *a = &w->actors[0]; sprite_set_t set; sprite_frame_t fr;
         if (a->present && a->view == w->view && a->vis > 0.5f) {
             const bool yard = w->view == VIEW_YARD;
-            const int top = ((yard && world_actor_frame(a, ANIM_YARD_OFFSET, &set, &fr)) || world_actor_frame(a, 0, &set, &fr)) ? (int)(a->y - a->z) - set.pivot_y : (int)(a->y - a->z) - 60;
-            draw_bubble(w, r, (int)a->x, top);
+            int hx = (int)a->x, top = (int)(a->y - a->z) - 60, dx, dy;
+            if ((yard && world_actor_frame(a, ANIM_YARD_OFFSET, &set, &fr)) || world_actor_frame(a, 0, &set, &fr)) {
+                if (frame_head(&set, &fr, &dx, &dy)) { hx = (int)a->x + dx; top = (int)(a->y - a->z) + dy; }
+                else top = (int)(a->y - a->z) - set.pivot_y;
+            }
+            draw_bubble(w, r, hx, top);
         }
     }
 }

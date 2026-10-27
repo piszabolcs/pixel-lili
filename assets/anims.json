@@ -424,5 +424,28 @@
    "SE"
   ],
   "loop": true
+ },
+ "toy_rope": {
+  "id": 40,
+  "frames": 1,
+  "fps": 1,
+  "dirs": [
+   "S",
+   "SW",
+   "W",
+   "NW"
+  ],
+  "loop": true,
+  "extra": true
+ },
+ "icon_rope": {
+  "id": 42,
+  "frames": 1,
+  "fps": 1,
+  "dirs": [
+   "S"
+  ],
+  "loop": true,
+  "extra": true
  }
 }

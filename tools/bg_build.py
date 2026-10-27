@@ -10,8 +10,8 @@
   mask_sun, mask_cast, mask_shade_out, mask_shade_in
                                where the afternoon sunbeam lands, where the door's light leaves the bench's, the
                                bowls' and the vase's cast shadows, and the overhead light's contact shadows
-  palettes                     per background: the master palette (fixed 0-15, Lili 144-183) with the 200 free
-                               slots (16-143, 184-255) from k-means in Oklab over that picture; the training set
+  palettes                     per background: the master palette (fixed 0-15, Lili 144-183, the toys 184-189) with the 194 free
+                               slots (16-143, 190-255) from k-means in Oklab over that picture; the training set
                                also holds the picture's floor/grass darkened and lightened, so a shadow or a sunbeam
                                has a real colour to step to
   luts                         per palette, index -> index: sun_strong, sun_weak, cast_day, cast_eve, shade_out,
@@ -31,7 +31,7 @@ import bg_prepare as bp
 BG = os.path.join(ROOT, "assets", "backgrounds")
 OUT = os.path.join(BG, "game")
 SHOW, GRID = 480, 400
-SLOTS = list(range(16, 144)) + list(range(184, 256))           # 200 slots a background may use
+SLOTS = list(range(16, 144)) + list(range(190, 256))           # 194 slots a background may use (184-189: the toys' colours)
 TABLES = {  # name: (multiply, add) on RGB, the same numbers the preview (bg_prepare) used
     "sun_strong": (1.16, (30, 20, 2)), "sun_weak": (1.056, (10.5, 7, 0.7)),
     "cast_day": (0.64, (0, 1.44, 5.04)), "cast_eve": (0.838, (0, 0.65, 2.27)),
@@ -41,6 +41,10 @@ SEASONS = bp.SEASONS
 # drinking she hung off the picture): her eating and drinking frames face west, so each bowl needs her length
 # of floor east of it; the vase moves left to make room. The floor under the old places is already refilled.
 PROP_MOVE = {"vase": (-54, 0), "bowl_food": (-98, 0), "bowl_water": (-70, 0)}
+# the bench's back part on the 480 picture (measured 2026-10-27): its box, the row under the seat's front edge, the
+# front legs' columns; sorted with Lili a little in front of the legs' feet (219), so lying at the nook's front her
+# head is under the seat and her eyes just below its edge (H10)
+BENCH_CUT, BENCH_SEAT_EDGE, BENCH_LEGS, BENCH_SORT_Y = (300, 104, 376, 221), 189, ((304, 313), (364, 373)), 226
 
 def cast_split(alpha, ox, oy, base, hmax, s):
     """the door's cast shadow of one thing, the same way the game draws Lili's: every pixel at height h above
@@ -127,7 +131,7 @@ def oklab_to_rgb(lab):
     return (srgb * 255).round().clip(0, 255).astype(int)
 
 def build_palette(pixels, floor_pixels, master):
-    """200 colours for one background; the floor (or grass) also enters darkened and lightened"""
+    """194 colours for one background; the floor (or grass) also enters darkened and lightened"""
     train = [pixels]
     for name, (m, add) in TABLES.items():
         train.append((floor_pixels * m + np.array(add)).clip(0, 255))
@@ -167,6 +171,8 @@ def main():
     lili = json.load(open(os.path.join(ROOT, "assets", "palettes", "lili_sprites.json"), encoding="utf-8"))["rgb"]
     master = [list(c) for c in master]
     for i, c in enumerate(lili): master[144 + i] = list(c)
+    for i, c in enumerate(json.load(open(os.path.join(ROOT, "assets", "palettes", "toy_colors.json"), encoding="utf-8"))["rgb"]):
+        master[184 + i] = list(c)                                 # the toys' 6 colours, fixed in every palette too
     meta = {"palettes": {}, "luts": {}, "images": []}
 
     # ---- the room: picture, door views, props, masks, one palette for all of them ----
@@ -189,6 +195,16 @@ def main():
     idx = index(room[..., :3], full); idx[room[..., 3] == 0] = 0
     save_indexed(os.path.join(OUT, "room.png"), idx, full)
     meta["images"].append({"name": "room", "file": "room.png", "x": 0, "y": 0, "palette": "room"})
+    # the corner bench's back part again, drawn over Lili when she is under it (the owner, 2026-10-27: she walked on
+    # the bench; spec H10, H11: her nook is under it): the backrest and the seat down to its front edge, and the two
+    # front legs; the shaded floor between the legs stays the background's, so her paws and chest show there
+    bx0, by0, bx1, by1 = BENCH_CUT
+    cut = np.zeros(idx.shape, bool)
+    cut[by0:BENCH_SEAT_EDGE, bx0:bx1] = True
+    for lx0, lx1 in BENCH_LEGS: cut[BENCH_SEAT_EDGE:by1, lx0:lx1] = True
+    bi = np.where(cut, idx, 0)[by0:by1, bx0:bx1]
+    save_indexed(os.path.join(OUT, "bench.png"), bi, full)
+    meta["images"].append({"name": "bench", "file": "bench.png", "x": bx0, "y": by0, "palette": "room", "sort_y": BENCH_SORT_Y})
     for s in SEASONS:
         rgba, x, y = doors[s]
         save_indexed(os.path.join(OUT, f"door_{s}.png"), index(rgba[..., :3], full), full)

@@ -16,19 +16,19 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 | M3.5 A01-A09 | kész, [G] vár | `docs/review/m3_5.html`, `./lilisim --anim-viewer`; a panelen 32-33 fps |
 | M3.6 A10-A27 | kész, [G] vár | `docs/review/m3_6.html`; 33 animáció a pakban (3,97 MB). **Hiányzik** (nincs PixelLab-sheet): A13 puffogás, A14 felvétel/leejtés, A21 kukucskálás; az A22 (ágy) tárgytalan, szőnyeg van |
 | M3.7 szoba, udvar, évszakok, napszakok | kész, [G] vár | `docs/review/m3_7.html` (`--snapshot`). **Hiányzik:** évszakos díszek és a különleges napok díszei (új grafika kell) |
-| M3.8 játékok, foltok, pelenka, UI ikonok | hiányzik | új grafika kell (PixelLab); addig kódból rajzolt helyőrző kötél, plüss, folt, csillogás |
+| M3.8 játékok, foltok, pelenka, UI ikonok | részben | **a kötél kész** a gazdi Gemini-kelléklapjáról (`docs/art/Lilik/07.jpg`, 4 állás, `tools/toy_sprites.py`), saját 6 játékszínnel, a szájában is színes; a buborékban is a képe. Még helyőrző: plüss (nincs generált képe), folt, csillogás, pelenka állapotai, ikonok |
 | M4.1 navigáció | kész | `--selftest-nav`: 32 út ajtó és minden pont között, A*, simítás, kormányzás, hiszterézis |
-| M4.2 Y-rendezés, takarók, bokor | kész, [G] vár | a bokor egyszer rezzen (`docs/img/anim/m4_2_bush_shake.gif`); `--selftest-render` referenciaképekkel. A sarokülő alatti kukucskáláshoz kivágott ülőlap és az A21 kell |
+| M4.2 Y-rendezés, takarók, bokor | kész, [G] vár | a bokor egyszer rezzen (`docs/img/anim/m4_2_bush_shake.gif`); `--selftest-render` referenciaképekkel. **Sarokülő (2026-10-27 este):** a pad nem járható, a kuckó a hátsó rész alatt van, a kivágott pad takarja (alvás, bújás: a szeme kilátszik); `--scene-shots`. A valódi kukucskáló A21 és a padon alvás (ugrás, A22) még nincs |
 | M4.3 gesztusok | kész, [G] vár | mind a 7 gesztus, `--selftest-gesture`; a panelen az érintés él, **ujjal kipróbálni** (a soros konzol írja az eseményeket) |
 | M4.4 terv-végrehajtó | kész | mind az 53 akció (`model/schema_lili.json`), `--selftest-plan`; az inspectorban akcióválasztó |
 | M4.5 reflexek R1-R9 | kész | `--selftest-reflex`, prioritásokkal |
 | M4.6 játékfizika | kész, [G] vár | `--selftest-toys`; a dobás érzete a panelen kipróbálandó |
 | M4.7 gondozási koppintások | kész | tál, pelenka, folt, csillogás, az utolsó folt után R1 |
 | M5.1-M5.5 igények, pelenka, naptár, távollét, mentés | kész | `--selftest-progress/-calendar/-offline/-save`; a panelen RTC és NVS-mentés |
-| M5.6 energiaállapotok | kész, [G] vár | ACTIVE -> 60 mp -> DIM -> 10 perc az asztalon -> kijelző ki; zsebben azonnal ki; ujj, gomb, felvétel, fütty ébreszt, 15 perc után üdvözöl; PWR = kijelző ki/be (`motion.c`, `--selftest-motion`). A valódi könnyű alvás (WoM-ébresztés) még nincs; a panelen kipróbálandó |
+| M5.6 energiaállapotok | kész, [G] vár | ACTIVE -> 60 mp -> DIM -> 10 perc az asztalon -> kijelző ki; zsebben (30 mp mozgás, függőleges, érintés nélkül) ki, **a felemelés utáni sötét kijelző javítva (2026-10-27 este)**; ujj, gomb, felvétel, fütty ébreszt, 15 perc után üdvözöl; PWR = kijelző ki/be (`motion.c`, `--selftest-motion`). A valódi könnyű alvás (WoM-ébresztés) még nincs; a panelen kipróbálandó |
 | M6.1-M6.5 szabálymotor agy | kész | séma, kódoló (C = Python 1000/1000), 46 sablon (H1-H15), életciklus, habozás; P1-P12 mind teljesül; a panelen bekapcsoláskor Lili a saját agyával él (BOOT: demó) |
 | M6.6 egy hét élet a panelen | [G] vár | a gazdi szerint "ez Lili"? a viselkedés a `model/teacher_rules.yaml`-ben hangolható |
-| M7.1-M7.4 LLM tanítása | kész | 184 ezer pár (`lilisim --dump-traces`), egyik szokás sem 1 % alatt; S, M tanítva az RTX 5060-on (3-4 perc); S: A1 87 %, top-2 93,6 %, P1-P12 mind teljesül (`model/eval_lili.py`). A vizualizáló Gradio-felület nem készült el |
+| M7.1-M7.4 LLM tanítása | kész | 184 ezer pár (`lilisim --dump-traces`), egyik szokás sem 1 % alatt; S, M tanítva az RTX 5060-on (3-4 perc); S: A1 87 %, top-2 93,6 %, P1-P12 mind teljesül (`model/eval_lili.py`). **2026-10-27 este újratanítva az új térképpel** (a kuckó áthelyezése után a régi modell rohangálásba esett): 165 ezer pár, A1 83,6 %, top-2 93,4 %, P1-P12 teljesül, egy óra 12 fajta döntés. A vizualizáló Gradio-felület nem készült el |
 | M7.5 B szintű tanár (Ollama) | hiányzik | opcionális |
 | M8.1-M8.4 agy az eszközön | kész | S modell, 4 bit, 2,76 MB, sématrailer; C motor: 100 % érvényes válasz, Q4 = fp32 99,2 % a határozott esetekben; a panelen Core 1-en, **1,7 mp/döntés**, 33-37 fps; egy óra élet a modellel a szimulátorban (`--selftest-llm`). A panelen bekapcsoláskor a modell dönt, ha van a partíción, különben a szabálymotor |
 | M9.1-M9.2 Lili hangja | hiányzik | [G] a gazdi videói kellenek; a lejátszás (ES8311) a mikrofonnal közös I2S buszon duplex beállítást kér, ezt a hanggal együtt csinálom |
@@ -47,6 +47,16 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 4. A panelen: koppints Lilire, simogasd (oda-vissza húzás rajta), húzd fel az ujjad az alsó szélről; a soros konzol (`py -3.12 tools/serial_log.py --seconds 60`) kiírja, mit ismert fel. Jó helyen van-e az érintés?
 5. Füttyents a panel közelében: Lilinek elő kell jönnie (R2). Rázd meg: megriad és ugat. Tedd le az asztalra 3 mp-re, aztán vedd fel: felébred. A BOOT gomb az állapotsáv, a PWR a kijelző ki/be.
 6. A panelen a modell vezérli Lilit (a konzolon `brain rules` a szabálymotorra vált). A gondolatbuborékok maradjanak bekapcsolva a panelen (D-09)?
+**A gazdi esti hibalistája (2026-10-27 este), javítva:**
+1. Méretugrás (leülés, mozgás, meghajlás, kötél felvétele): a Gemini-lapok eltérő léptéke, lapanként visszaskálázva (`tools/pixellab_norm.py` SHEET_SIZE).
+2. Kötél a szájában csak állókép volt: a járás és a hordozó ügetés minden képkockán felülírta egymást (`nav.c`); most animált.
+3. A kötél a gazdi generált kötele (`docs/art/Lilik/07.jpg`), a padlón, repülés közben, a szájában és a buborékban; saját játékszínekkel.
+4. Gondolatbuborék: kis négyzet a feje fölött, a pöttyök nélkül.
+5. Sarokülő: nem sétál rajta, a kuckója alatta van (alvás, bújás), a pad eltakarja.
+6. Panel: felemelés után sötét kijelző, gomb nem ébresztette: javítva (`body_216.c`), kézzel kipróbálandó.
+7. A kuckó áthelyezése után a modell elromlott (rohangálás), ezért újratanítva az új térképpel.
+
+**Nyitott (a gazdi dönt):** a plüssnek nincs generált képe (PixelLab vagy kivenni); a padon alvás ugrás-animációt (A22) kér, és a kutya talán túl nagy hozzá.
 <!-- /overview -->
 
 ## Kész

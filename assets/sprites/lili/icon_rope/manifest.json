@@ -1,0 +1,26 @@
+{
+ "anim": "icon_rope",
+ "id": 42,
+ "fps": 1,
+ "loop": true,
+ "dirs": [
+  0
+ ],
+ "frames": 1,
+ "cell_w": 22,
+ "cell_h": 7,
+ "pivot": [
+  11,
+  7
+ ],
+ "files": [
+  {
+   "dir": 0,
+   "frame": 0,
+   "file": "d0_f0.png",
+   "mouth": null,
+   "head": null
+  }
+ ],
+ "source": "tools/pixellab_to_sprites.py (docs/art/Lilik/07.jpg)"
+}

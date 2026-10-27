@@ -2,8 +2,10 @@
  * firmware's, M1.6: 24/24 whistles, 0 false), a voice-activity line, the accelerometer through common/lili/motion.c
  * (shake, pickup, still, carried), the PWR key, the energy states and a serial console (settime, status, brain, demo).
  * Energy (spec 5.7): ACTIVE -> 60 s without the owner -> DIM -> 10 more minutes on the desk -> OFF (the screen
- * asleep, the world still living at a slower beat); carried in a pocket for 5 s -> OFF at once; a finger, a key,
- * a pickup, a whistle wake her; after more than 15 minutes asleep she greets (R6). */
+ * asleep, the world still living at a slower beat); in a pocket (carried, upright, nobody touching her for 30 s) -> OFF;
+ * a finger, a key, a pickup, a whistle wake her; after more than 15 minutes asleep she greets (R6).
+ * (2026-10-27, the owner: lifted to look at her, the screen went dark after 3 s and no key woke it: a hand's sway read
+ * as a pocket after 5 s, and every wake fell straight back to OFF while the swaying went on.) */
 #include "body_216.h"
 #include "board_pins.h"
 #include "display_port.h"
@@ -35,10 +37,12 @@ static bool s_mic, s_imu, s_con;
 static motion_t s_motion;
 static int s_whistles;
 static int64_t s_owner_us, s_off_since_us;
+static bool s_upright;
 static uint8_t s_bright_active, s_state = BODY_ACTIVE;
 #define DIM_AFTER_US     (60LL * 1000000)
 #define OFF_AFTER_US     (11LL * 60 * 1000000)
-#define POCKET_OFF_US    (5LL * 1000000)
+#define POCKET_OFF_US    (30LL * 1000000)  /* carried this long, and as long since the owner touched or woke her */
+#define POCKET_UPRIGHT   0.35f              /* and the screen near upright (|g_z| under 0.35 g): a pocket, not a hand looking at it */
 #define DIM_LEVEL        48
 #define VOICE_DB         (-38.0f)        /* the frame's level a voice must pass (tune on the panel [G]) */
 
@@ -144,7 +148,12 @@ bool body_poll(world_t *w, ev_queue_t *q, float dt) {
     /* the body: shake, pickup, still or carried */
     if (s_imu) {
         int16_t a[3];
-        if (imu_read(a)) { const float mg[3] = { a[0] / 16.384f, a[1] / 16.384f, a[2] / 16.384f }; motion_feed(&s_motion, mg, (uint32_t)(now / 1000), q); }
+        if (imu_read(a)) {
+            const float mg[3] = { a[0] / 16.384f, a[1] / 16.384f, a[2] / 16.384f };
+            motion_feed(&s_motion, mg, (uint32_t)(now / 1000), q);
+            static float gz = 1000; gz = 0.9f * gz + 0.1f * fabsf(mg[2]);          /* how flat the screen is, smoothed */
+            s_upright = gz < POCKET_UPRIGHT * 1000.0f;
+        }
     }
     /* the PWR key: a press puts the screen to sleep or wakes it */
     static bool pwr_prev;
@@ -167,7 +176,8 @@ bool body_poll(world_t *w, ev_queue_t *q, float dt) {
         const uint8_t t = q->q[(q->head + i) % EV_QUEUE_LEN].type;
         if ((t != EV_NONE && t < EV_VOICE_ACTIVITY) || t == EV_SWITCH_VIEW) { body_owner(w); break; }
     }
-    if (s_motion.state == MOTION_IN_MOTION && now - s_motion.move_since * 1000LL > POCKET_OFF_US && s_state != BODY_OFF) set_state(BODY_OFF, w);   /* a pocket */
+    const bool pocket = s_motion.state == MOTION_IN_MOTION && s_upright && now - s_motion.move_since * 1000LL > POCKET_OFF_US && now - s_owner_us > POCKET_OFF_US;
+    if (pocket && s_state != BODY_OFF) { ESP_LOGI(TAG, "in a pocket: the screen off"); set_state(BODY_OFF, w); }
     else if (s_state == BODY_ACTIVE && now - s_owner_us > DIM_AFTER_US) set_state(BODY_DIM, w);
     else if (s_state == BODY_DIM && now - s_owner_us > OFF_AFTER_US && s_motion.state != MOTION_HANDHELD) set_state(BODY_OFF, w);
     return s_state != BODY_OFF;

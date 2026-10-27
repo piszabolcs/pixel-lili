@@ -2,6 +2,7 @@
 #include "toys.h"
 #include "nav.h"
 #include "maps_gen.h"
+#include "asset_ids.h"
 #include <math.h>
 
 #define TOY_GRAVITY    (300.0f * LILI_K)
@@ -20,12 +21,22 @@ void toys_init(world_t *w) {
     }
 }
 
-/* her mouth from the paws, by facing (the room's 0.75 set; smaller outdoors): the PixelLab frames have no mouth
-   anchor yet (spec 7.4's metadata), so a hand-measured point per direction */
+/* her mouth from the paws, by facing (the room's 0.75 set; smaller outdoors), standing; lower in a bow, sniffing or lying.
+   The PixelLab frames have no mouth anchor (spec 7.4's metadata), so measured by hand on idle_stand (2026-10-27: the
+   rope sat on her chest at the old heights) */
+static float mouth_k(uint16_t anim) {
+    switch (anim) {
+    case ANIM_SNIFF: return 0.35f;
+    case ANIM_LIE_DOWN: case ANIM_SLEEP_CURL: case ANIM_CHEW_TREAT: return 0.5f;
+    case ANIM_PLAY_BOW: case ANIM_POUNCE: return 0.55f;
+    case ANIM_RUN: case ANIM_SCURRY: case ANIM_TIPTOE: return 0.85f;
+    default: return 1.0f;
+    }
+}
 void toy_mouth(const actor_t *a, float *dx, float *h) {
-    static const int8_t DX[DIR_COUNT] = { 0, -16, -24, -14, 0, 14, 24, 16 }, H[DIR_COUNT] = { 30, 32, 34, 40, 42, 40, 34, 32 };
+    static const int8_t DX[DIR_COUNT] = { 0, -14, -20, -14, 0, 14, 20, 14 }, H[DIR_COUNT] = { 33, 33, 34, 38, 39, 38, 34, 33 };
     const float k = a->view == VIEW_YARD ? 0.625f / 0.75f : 1.0f;
-    *dx = DX[a->dir] * k; *h = H[a->dir] * k;
+    *dx = DX[a->dir] * k; *h = H[a->dir] * k * mouth_k(a->anim);
 }
 
 int toy_held(const world_t *w, int actor) {
@@ -60,9 +71,10 @@ void toy_throw(world_t *w, int toy, float fvx, float fvy) {
 void toys_tick(world_t *w, float dt) {
     for (int i = 0; i < TOY_COUNT; i++) {
         toy_t *t = &w->things.toys[i];
-        if (t->held_by >= 0) {                                  /* in her mouth: at her head, sorted just in front of her */
+        if (t->held_by >= 0) {                                  /* in her mouth: at her head, sorted just in front of her (behind her facing away) */
             const actor_t *a = &w->actors[t->held_by]; float dx, h; toy_mouth(a, &dx, &h);
-            t->view = a->view; t->x = a->x + dx; t->y = a->y + 1; t->z = h + a->z;
+            const bool away = a->dir == DIR_NW || a->dir == DIR_N || a->dir == DIR_NE;
+            t->view = a->view; t->x = a->x + dx; t->y = a->y + (away ? -1 : 1); t->z = h + a->z + (away ? -2 : 0);
             continue;
         }
         if (t->z <= 0 && t->vz <= 0 && fabsf(t->vx) < 1 && fabsf(t->vy) < 1) { t->z = 0; t->vx = t->vy = t->vz = 0; continue; }

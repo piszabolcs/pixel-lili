@@ -35,6 +35,7 @@ enum {
     IMG_VASE = 11,
     IMG_BOWL_FOOD = 12,
     IMG_BOWL_WATER = 13,
+    IMG_BENCH = 14,
     IMG_MASK_SUN = 20,
     IMG_MASK_CAST = 21,
     IMG_MASK_SHADE_OUT = 22,
@@ -77,6 +78,8 @@ enum {
     ANIM_CARRY_TROT = 35,
     ANIM_LIE_DOWN_ROPE = 36,
     ANIM_CHEW_TREAT = 37,
+    ANIM_TOY_ROPE = 40,
+    ANIM_ICON_ROPE = 42,
     ANIM_COUNT_LISTED
 };
 /* an animation drawn from another one's frames, backwards (stand_up = sit_down reversed); 0 = it has its own */

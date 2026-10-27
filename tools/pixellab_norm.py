@@ -27,6 +27,13 @@ from PIL import Image, ImageDraw
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CELL, PIVOT = 128, (64, 122)
 REF = {"stand": 79, "sit": 81}            # the masters: assets/sprites/lili_src stand_* 78-79, sit_S 81
+# the other poses' start frames were cut from the owner's Gemini sheets at one scale (tools/startframes_cut.py), but
+# Gemini drew some sheets bigger (measured 2026-10-27, the owner: she grew when she bowed or picked up the rope): sheet
+# 02's standing dog (stand_E2) was 89.7 px against the masters' 79, so every bow is 0.881; sheet 03's carries stand
+# 8 % taller than the masters in their directions (median), 0.92; sheet 05's dogs match the masters' heads at 1.06
+# (the head matched on the front views), 0.943. Sheets 01, 04 and 06 (06 holds the scale's reference) are 1.
+SHEET_SIZE = {"02": 0.881, "03": 0.92, "05": 0.943}
+CELLS = os.path.join(ROOT, "docs", "art", "startframes", "cells.json")
 TOL = 0.03
 END = {"sit_down": "sit", "stand_up": "stand", "lie_down": "lie", "squat_pee": "pee"}
 JUMP = ("startle", "pounce")
@@ -203,6 +210,15 @@ def holes():
         HOLES = {j["tag"] for j in jobs if j["start"] == "stand_N"} | {"walk_N", "idle_stand_N"}
     return HOLES
 
+def sheet_size(start, jobs, depth=0):
+    """the scale a start frame needs for its Gemini sheet; a start frame PixelLab made (a transition's last frame,
+    jobs.json "makes") has the scale of the start that animation grew from"""
+    cells = json.load(open(CELLS, encoding="utf-8"))
+    if start in cells: return SHEET_SIZE.get(cells[start]["cell"].split(".")[0], 1.0)
+    for j in jobs:
+        if j.get("makes") == start and depth < 4: return sheet_size(j["start"], jobs, depth + 1)
+    return 1.0
+
 def normalize(tag, jobs=None):
     """the sheet's frames (the source pose first) -> 128 px RGBA frames, one size, on the ground"""
     if jobs is None:
@@ -215,6 +231,7 @@ def normalize(tag, jobs=None):
     frames = [drop_specks(f) for f in frames]
     p0 = pose(job["start"]); h0 = height(frames[0])
     s0 = target(p0, h0) / h0 if h0 else 1
+    if p0 not in REF: s0 = sheet_size(job["start"], jobs)        # a bow, a carry, lying ...: its sheet's scale
     s1 = s0
     if name in END and END[name] in REF:
         hl = height(frames[-1]); s1 = target(END[name], hl) / hl if hl else s0

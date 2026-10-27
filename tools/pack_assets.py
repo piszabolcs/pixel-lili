@@ -28,7 +28,7 @@ PALS = ["master", "room", "yard_spring", "yard_summer", "yard_autumn", "yard_win
 LUTS = ["sun_strong", "sun_weak", "cast_day", "cast_eve", "shade_out", "shade_in"]             # tools/bg_build.py TABLES
 IMAGES = {"room": 1, "yard_spring": 2, "yard_summer": 3, "yard_autumn": 4, "yard_winter": 5,
           "door_spring": 6, "door_summer": 7, "door_autumn": 8, "door_winter": 9,
-          "pad": 10, "vase": 11, "bowl_food": 12, "bowl_water": 13,
+          "pad": 10, "vase": 11, "bowl_food": 12, "bowl_water": 13, "bench": 14,
           "mask_sun": 20, "mask_cast": 21, "mask_shade_out": 22, "mask_shade_in": 23, "mask_cast_far": 24}
 COVERS_PER_SEASON = 8                                   # the yard's covers: id IMG_COVER_BASE + season * 8 + k (tools/bg_build.py COVERS)
 for _s, _season in enumerate(["spring", "summer", "autumn", "winter"]):
@@ -109,6 +109,8 @@ def main():
     pal = [list(c) for c in json.load(open(os.path.join(ROOT, "assets", "palettes", "master.json"), encoding="utf-8"))["rgb"]]
     for i, c in enumerate(json.load(open(os.path.join(ROOT, "assets", "palettes", "lili_sprites.json"), encoding="utf-8"))["rgb"]):
         pal[144 + i] = list(c)                      # Lili's 40 colours (tools/sprite_clean.py); master.json leaves these slots empty
+    for i, c in enumerate(json.load(open(os.path.join(ROOT, "assets", "palettes", "toy_colors.json"), encoding="utf-8"))["rgb"]):
+        pal[184 + i] = list(c)                      # the toys' 6 (tools/toy_sprites.py)
     entries = [(1, T_PALETTE, bytes(sum(pal, [])))]
     bg, bg_raw = backgrounds()
     entries += bg

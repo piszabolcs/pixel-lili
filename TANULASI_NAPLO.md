@@ -364,6 +364,11 @@ Döntés: a kockaválasztás egy helyre került, mert a visszafelé lejátszást
 
 Fogalmak: pixelpontos összehasonlító teszt, egy helyen a logika (DRY)
 
+## 2026-10-27 | A modell tanítása (M7-M8), magyarázat
+Készült: tanulási jegyzet (HTML) arról, hogyan lett a szabálymotor 184 130 szimulált döntéséből az 5 180 672 paraméteres S modell (6000 lépés, 171 s az RTX 5060-on, A1 87,0 %, top-2 93,6 %, P1-P12 mind teljesül), hogyan lett belőle 2 764 048 bájtos 4 bites fájl sématrailerrel, és hogyan dönt a panel Core 1-én kényszerített dekódolással 1,5-1,7 mp alatt.
+Döntés: az S modell maradt (D-12), mert a spec szabálya szerint a legkisebb, amely teljesíti a 10.11 céljait, és az M-nél is jobb lett (val 0,1558 kontra 0,1564, A1 87 % kontra 83 %), a panelen pedig így 1,7 mp egy döntés a 3,5 mp-es keretben.
+Fogalmak: token, szótár (vocabulary), embedding, transzformer, figyelem (attention), RMSNorm / RoPE / SwiGLU, súlymegosztás, logit, softmax és hőmérséklet, keresztentrópia, desztilláció (tanár-diák), validációs halmaz, batch / lépés / epoch, AdamW és súlycsökkentés, tanulási ráta ütemezés, dropout, bf16 és fp32 mester súlyok, gradiensvágás, túltanulás, ellenőrzőpont, felülmintavételezés, perturbáció, teacher forcing, top-k pontosság, kvantálás (Q4, modellsúlyok), csoportonkénti skála, kényszerített dekódolás, mohó dekódolás és mintavétel, prefill és KV cache, FNV-1a hash
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -573,3 +578,63 @@ Fogalmak: pixelpontos összehasonlító teszt, egy helyen a logika (DRY)
 **pixelpontos összehasonlító teszt:** két úton előállított képet (itt: a leülés f. kockáját és a felállás n-1-f. kockáját) bájtra összehasonlítunk (`memcmp`). Nem azt ellenőrzi, hogy a kép "szép"-e, hanem hogy két dolognak, aminek azonosnak kell lennie, tényleg az-e; így a kirajzolás bármely későbbi változása, amely ezt elrontja, azonnal kiderül.
 
 **egy helyen a logika (DRY, Don't Repeat Yourself):** ugyanaz a számítás egyetlen függvényben él, és minden hely azt hívja. Ha a szabály változik (itt: a visszafelé lejátszás), egy helyen kell módosítani, és a másolatok nem térhetnek el egymástól.
+
+**token:** a modell szótárának egy eleme, egy egész szám (itt 0-255), csak ezt látja a modell. Lilinél egy token egy teljes jelentés (`hunger_7`, `zoomies`), nem szódarab.
+
+**szótár (vocabulary):** az összes token listája rögzített sorrendben, a sorszám a token-id. Lilinél 227 token 256 helyen, az egyetlen forrása a `model/schema_lili.json`.
+
+**embedding (beágyazás):** tanult táblázat, amely minden token-id-hez egy vektort rendel (az S modellben 256 számot); a háló ezzel a vektorral számol tovább.
+
+**transzformer:** rétegekből álló neurális háló, amelyben minden pozíció a figyelem segítségével a többi pozíció információját is felhasználja; a mai nyelvi modellek alapja. Lili modellje a llama2.c felépítését követi, mert a panel C motorja ezt futtatja.
+
+**figyelem (attention), kauzális:** minden pozíció súlyozott átlagot vesz a korábbi pozíciók értékeiből, a súlyokat a háló számolja. Kauzális: csak visszafelé lát, ezért lehet tokenről tokenre generálni.
+
+**RMSNorm, RoPE, SwiGLU:** a llama-felépítés három építőköve: az RMSNorm a vektorok nagyságát normálja, a RoPE forgatással kódolja a pozíciót, a SwiGLU egy kapuzott előrecsatolt réteg.
+
+**súlymegosztás (weight tying):** a bemeneti embedding és a kimeneti osztályozó ugyanaz a mátrix; kevesebb paraméter, és a modellfájlba egyszer kerül.
+
+**logit:** a modell nyers kimenete tokenenként, egy tetszőleges valós szám; a softmax csinál belőle valószínűséget.
+
+**softmax és hőmérséklet:** p_i = e^(x_i/τ) / Σ e^(x_j/τ), pontszámokból valószínűség. Kisebb τ élesebb, nagyobb τ változatosabb; a tanárnál 0,6 (3 pont különbség kb. 148-szoros esély), a panelen 0,8.
+
+**keresztentrópia (cross-entropy):** a helyes token valószínűségének negatív logaritmusa, átlagolva; 0, ha a modell biztosan eltalálja, ln 256 = 5,55, ha vakon tippel. Az S modell 5,54-ről 0,1558-ra ment le.
+
+**desztilláció (tanár-diák tanítás):** egy modellt egy meglévő rendszer (a tanár) kimenetein tanítunk, hogy ugyanúgy viselkedjen. Lilinél a tanár a szabálymotor (`model/teacher_rules.yaml`, 46 sablon).
+
+**validációs halmaz:** adat, amelyet a tanítás nem lát, csak mérésre használjuk. Lilinél az 1-3. seed (16 907 sor), seed szerint választva, hogy egy helyzet se szivárogjon át.
+
+**batch, lépés, epoch:** a batch az egyszerre feldolgozott párok száma (128), a lépés egy súlyfrissítés, az epoch egyszeri végigmenés a teljes tanítóhalmazon (6000 lépés kb. 5,2 epoch-nyi minta).
+
+**AdamW és súlycsökkentés:** az AdamW gradiens-alapú optimalizáló, paraméterenként alkalmazkodó lépésközzel. A súlycsökkentés (weight decay, itt 0,1) minden lépésben kicsit a nulla felé húzza a mátrixok súlyait, ami a túltanulás ellen hat.
+
+**tanulási ráta ütemezés (bemelegítés, koszinusz):** a lépésköz időbeli lefutása: 200 lépésig lineárisan nő 6e-4-ig, utána koszinusz szerint csökken a csúcs tizedéig. A bemelegítés miatt a kezdeti nagy hibák nem lökik szét a súlyokat.
+
+**dropout:** tanításkor véletlenszerűen kinullázza az aktivációk egy részét (itt 10 %-át), így a háló nem támaszkodhat egyetlen útvonalra.
+
+**bf16 és fp32 mester súlyok:** a számítás 16 bites lebegőpontos formában fut (gyorsabb a GPU-n), a súlyokat viszont 32 biten tároljuk és frissítjük, hogy a kis változások ne vesszenek el.
+
+**gradiensvágás:** ha a gradiens normája egy határnál (itt 1,0) nagyobb, arányosan lekicsinyítjük, hogy egy rossz batch ne rántsa el a súlyokat.
+
+**túltanulás (overfitting):** a modell a tanítóadatot magolja be, és a soha nem látott helyzeteken romlik; jele, hogy a validációs veszteség emelkedni kezd. Lilinél nem látszott (a legjobb 0,1558 az 5500. lépésnél, a végén 0,1565).
+
+**ellenőrzőpont (checkpoint):** a súlyok mentése tanítás közben; a `train_lili.py` mindig a legkisebb validációs veszteségűt tartja meg (`ckpt_S.pt`).
+
+**felülmintavételezés (oversampling):** a ritka eseteket ismételjük az adatban, hogy a modell elég sokszor lássa őket. Lilinél a 1,2 % alatti szokások (H5, H7, H9, H15) 3570 többletsort kaptak.
+
+**perturbáció (tanítóadatnál):** egy valós helyzet szándékos átírása (különleges nap, téli éjszaka, bűntudat, bokor...), hogy a ritka esetek is lefedve legyenek; a `--dump-traces` minden negyedik élő döntés mellé tesz egyet.
+
+**teacher forcing:** tanításkor a modell a helyes előző tokeneket kapja bemenetként, ezért a 7 válaszpozíció egyszerre tanítható; az eszközön slotonként, a ténylegesen kiválasztott tokenekre építve megy.
+
+**top-k pontosság:** talál, ha a helyes válasz a modell k legvalószínűbb tippje között van. Lilinél top-2: a tanár kisorsolt első akciója a modell első kettőjében 93,6 %.
+
+**kvantálás (Q4, modellsúlyok):** a súlyok tárolása 4 biten 32 helyett, egy kerekítési hibáért cserébe; az S modell 20,7 MB-ról 2,76 MB-ra csökken. (Nem azonos a Fogalomtár "kvantálás rámpára" és "kvantálási hiba (mérésnél)" bejegyzésével.)
+
+**csoportonkénti skála (group scale):** minden 64 súlyos csoport saját fp16 szorzót kap (max|w| / 7), a 4 bites egész ezzel szorozva adja vissza a súlyt; így egy kiugró súly csak a saját csoportja pontosságát rontja. Átlagosan 4,25 bit súlyonként.
+
+**kényszerített dekódolás (constrained decoding):** generáláskor a nem megengedett tokenek logitját kizárjuk, így a kimenet szerkezetileg mindig érvényes. Lilinél slotonként csak az odaillő osztály, az A1-ben a környezeti maszk (`plan_possible`) is.
+
+**mohó dekódolás és mintavétel:** mohó (greedy): mindig a legvalószínűbb token; mintavétel: a valószínűségek szerint sorsolunk. A panelen az A1-A3 0,8-as hőmérsékleten sorsolt, a stílus, arc, buborék, sürgősség mohó.
+
+**prefill és KV cache:** a prefill a teljes promptot (26 token) egyszerre viszi át a hálón, rétegenként egyszer olvasva a súlyokat; a KV cache a figyelem korábbi pozícióinak kulcsait és értékeit tárolja (a PSRAM-ban), így a következő tokennél nem kell újraszámolni őket.
+
+**FNV-1a hash:** egyszerű 32 bites ellenőrző kód bájtsorozatra (XOR, majd szorzás egy prímmel). A modellfájl LSCH trailere a tokennevek FNV-1a hash-ét tartalmazza; ha a firmware szótára más, a modellt elutasítja, és a szabálymotor fut.

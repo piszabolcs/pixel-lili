@@ -1,18 +1,22 @@
 {
   "name": "room",
   "view": 0,
-  "_note": "Spec 8.2 as changed by the owner on 2026-10-19 (the rug instead of the bed, the pad bottom left, food and water bottom right, the season's decoration in the middle), and since 2026-10-23 measured from the owner's painted room (assets/backgrounds/src/room.png, its 400 grid x 0.6 = this 240 design grid): the wall ends at 83, the L-shaped bench stands along the back and the right wall with the nook arch at its front, the rug is the painting's (not 3:2 any more). Later the same day the vase and the bowls moved left (the owner: eating she stood in the other bowl, drinking she hung off the picture; her frames face west, so each bowl needs her length of floor east of it): the bowls are in the right half now, not the right third. Logical px (240 x 240), y is depth. Edit this file, then `python3 tools/gen_maps.py` (the sim's make does it).",
+  "_note": "Spec 8.2 as changed by the owner on 2026-10-19 (the rug instead of the bed, the pad bottom left, food and water bottom right, the season's decoration in the middle), and since 2026-10-23 measured from the owner's painted room (assets/backgrounds/src/room.png, its 400 grid x 0.6 = this 240 design grid): the wall ends at 83, the L-shaped bench stands along the back and the right wall with the nook arch at its front, the rug is the painting's (not 3:2 any more). Later the same day the vase and the bowls moved left (the owner: eating she stood in the other bowl, drinking she hung off the picture; her frames face west, so each bowl needs her length of floor east of it): the bowls are in the right half now, not the right third. Logical px (240 x 240), y is depth. Edit this file, then `python3 tools/gen_maps.py` (the sim's make does it). 2026-10-27 (the owner: she walked on the corner bench): the bench is not floor any more (its seat, its side part, the back part's front legs); her nook (spec H10, H11) is under the back part, between its legs, where the seat covers her head (tools/bg_build.py BENCH_CUT).",
   "background": { "floor_ramp": "floor", "wall_ramp": "wall", "wall_bottom": 83 },
   "floor": [[8, 84], [232, 84], [232, 231], [8, 231]],
   "blocked": [
     { "id": "backrest",   "rect": [150, 83, 80, 6] },
-    { "id": "backrest_r", "rect": [222, 83, 10, 95] }
+    { "id": "backrest_r", "rect": [222, 83, 10, 95] },
+    { "id": "bench_back_seat", "rect": [150, 83, 38, 11] },
+    { "id": "bench_leg_l", "rect": [151, 94, 6, 16] },
+    { "id": "bench_leg_r", "rect": [181, 94, 7, 16] },
+    { "id": "bench_side", "rect": [188, 83, 44, 96] }
   ],
   "points": {
     "spot_door":    [118, 90, 0],
     "spot_center":  [120, 140, 0],
     "spot_front":   [120, 196, 0],
-    "spot_nook":    [208, 170, 0],
+    "spot_nook":    [169, 110, 0],
     "spot_rug":     [60, 136, 0],
     "bowl_food":    [129, 217, 0],
     "bowl_water":   [168, 217, 0],
@@ -23,7 +27,7 @@
   },
   "zones": {
     "sunbeam": { "poly": [[103, 90], [137, 90], [160, 151], [90, 151]] },
-    "nook":    { "rect": [195, 150, 30, 30] },
+    "nook":    { "rect": [157, 94, 24, 17] },
     "rug":     { "rect": [18, 89, 86, 95] },
     "deco":    { "rect": [74, 190, 34, 38] }
   },

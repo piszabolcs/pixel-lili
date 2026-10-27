@@ -1,0 +1,39 @@
+{
+ "slots": [
+  184,
+  189
+ ],
+ "_note": "The toys' colours (2026-10-27): the rope's blues, reds and yellows from the owner's Gemini props sheet (docs/art/Lilik/07.jpg, k-means in Oklab, tools/toy_sprites.py). Fixed in every background's palette like Lili's 40 (tools/bg_build.py), so a toy, and the rope in her mouth (tools/pixellab_to_sprites.py), keeps its colours in the room and the yard.",
+ "rgb": [
+  [
+   58,
+   83,
+   123
+  ],
+  [
+   82,
+   133,
+   179
+  ],
+  [
+   135,
+   58,
+   67
+  ],
+  [
+   199,
+   92,
+   89
+  ],
+  [
+   205,
+   152,
+   93
+  ],
+  [
+   240,
+   211,
+   108
+  ]
+ ]
+}

@@ -191,7 +191,7 @@ int life_offline(world_t *w, int64_t dt, offline_log_t *log) {
     p->status = PLAN_IDLE; p->hide = 0; p->peek_t = 0;
     for (int i = 0; i < TOY_COUNT; i++) if (t->toys[i].held_by >= 0) toy_drop(w, i);
     if (t->n_mess) {                                          /* the room looks empty: she peeks from under the bench */
-        place(w, VIEW_ROOM, SPOT_NOOK); a->dir = DIR_W; a->anim = ANIM_IDLE_SIT_BLINK; p->hide = 1; p->peek_t = 4; t->guilty = true;
+        place(w, VIEW_ROOM, SPOT_NOOK); a->dir = DIR_S; a->anim = ANIM_LIE_DOWN; a->anim_t = 10; p->hide = 1; p->peek_t = 4; t->guilty = true;
         return SCENE_GUILTY;
     }
     if (on_rug) {                                             /* asleep where she should not be: up with a start */
@@ -204,7 +204,7 @@ int life_offline(world_t *w, int64_t dt, offline_log_t *log) {
         else { place(w, VIEW_YARD, world_rand(w) & 1 ? SPOT_BUSH_2 : SPOT_BUSH_3); plan_one(w, 0, ACT_HIDE_BUSH, ST_WALK); }
         return SCENE_OUTSIDE;
     }
-    if (dp == 3) { place(w, VIEW_ROOM, SPOT_NOOK); a->anim = ANIM_SLEEP_CURL; a->anim_t = 0; a->dir = DIR_W; return SCENE_ASLEEP; }
+    if (dp == 3) { place(w, VIEW_ROOM, SPOT_NOOK); a->anim = ANIM_SLEEP_CURL; a->anim_t = 0; a->dir = DIR_S; return SCENE_ASLEEP; }
     place(w, VIEW_ROOM, SPOT_CENTER); a->anim = ANIM_IDLE_STAND;
     reflex_greet(w);
     return SCENE_GREET;

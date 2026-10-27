@@ -1,0 +1,50 @@
+{
+ "anim": "toy_rope",
+ "id": 40,
+ "fps": 1,
+ "loop": true,
+ "dirs": [
+  0,
+  1,
+  2,
+  3
+ ],
+ "frames": 1,
+ "cell_w": 46,
+ "cell_h": 30,
+ "pivot": [
+  23,
+  30
+ ],
+ "files": [
+  {
+   "dir": 0,
+   "frame": 0,
+   "file": "d0_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 0,
+   "file": "d1_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 0,
+   "file": "d2_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 3,
+   "frame": 0,
+   "file": "d3_f0.png",
+   "mouth": null,
+   "head": null
+  }
+ ],
+ "source": "tools/pixellab_to_sprites.py (docs/art/Lilik/07.jpg)"
+}
