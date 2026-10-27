@@ -129,27 +129,45 @@ void brain_signal(world_t *w, const ev_t *e) {
     w->brain_sig = s; w->ask_now = 1;
 }
 
-void brain_tick(world_t *w, float dt) {
+/* is it time to ask (spec 10.6)? the triggers, the 3 s / 20 s, never over a reflex */
+bool brain_due(world_t *w, float dt) {
     plan_t *p = &w->plans[0]; const actor_t *a = &w->actors[0];
     w->ask_t += dt;
-    /* the triggers (spec 10.6): a line crossed, the view, a new spot, the owner came or went */
     const uint8_t now[6] = { w->hunger >= 5, w->bladder >= 8, w->energy <= 3, (uint8_t)a->view, w->things.n_mess, life_owner_active(w) };
     for (int i = 0; i < 6; i++) {
         if (now[i] != w->mark[i] && (i >= 3 || now[i])) w->ask_now = 1;     /* the needs on the way up only */
         w->mark[i] = now[i];
     }
-    if (p->status == PLAN_RUNNING && p->prio != 255) return;              /* a reflex is answering: the brain waits */
+    if (p->status == PLAN_RUNNING && p->prio != 255) return false;        /* a reflex is answering: the brain waits */
     const bool idle = p->status != PLAN_RUNNING;
-    if (w->ask_t < BRAIN_ASK_MIN_S) return;
-    if (!idle && !w->ask_now && w->ask_t < BRAIN_ASK_MAX_S) return;
-    brain_state_t s; decision_t d; float m;
+    if (w->ask_t < BRAIN_ASK_MIN_S) return false;
+    return idle || w->ask_now || w->ask_t >= BRAIN_ASK_MAX_S;
+}
+/* the question has been put: the signal and the "back" are said, the clock restarts */
+void brain_asked(world_t *w) { w->ask_t = 0; w->ask_now = 0; w->brain_sig = V_SIG_NONE; w->owner_back = OWNER_BACK_NONE; }
+/* the answer: hesitation (spec 8.7), then the plan */
+void brain_apply(world_t *w, decision_t *d, float margin, int rule) {
+    w->rule = (int8_t)rule; w->margin = margin;
+    if (rule < 0) return;
+    if (margin < BRAIN_HESITATE && d->a[0] != ACT_HEAD_TILT) { d->a[2] = d->a[1]; d->a[1] = d->a[0]; d->a[0] = ACT_HEAD_TILT; }   /* torn: a head tilt first */
+    plan_start(w, 0, d);
+}
+void brain_env_mask(world_t *w, int actor, uint8_t *mask) {
+    for (int a = 0; a < ACT_COUNT; a++) mask[a] = a != ACT_NONE && plan_possible(w, actor, a);
+}
+
+static bool s_use_llm;
+void brain_use_llm(bool on) { s_use_llm = on; }
+
+void brain_tick(world_t *w, float dt) {
+    if (!brain_due(w, dt)) return;
+    brain_state_t s; decision_t d; float m = 1;
     brain_encode(w, 0, &s);
-    const int r = brain_rules_decide(w, 0, &s, &d, &m);
-    w->ask_t = 0; w->ask_now = 0; w->brain_sig = V_SIG_NONE; w->owner_back = OWNER_BACK_NONE;
-    w->rule = (int8_t)r; w->margin = m;
-    if (r < 0) return;
-    if (m < BRAIN_HESITATE && d.a[0] != ACT_HEAD_TILT) { d.a[2] = d.a[1]; d.a[1] = d.a[0]; d.a[0] = ACT_HEAD_TILT; }   /* torn: a head tilt first */
-    plan_start(w, 0, &d);
+    int r = -1;
+    if (s_use_llm && brain_llm_ready() && brain_llm_decide(w, 0, &s, &d, &m, BRAIN_TEMP) == 0) r = BRAIN_RULE_LLM;   /* the learned brain */
+    if (r < 0) r = brain_rules_decide(w, 0, &s, &d, &m);                                                            /* the rules: the teacher, the fallback */
+    brain_asked(w);
+    brain_apply(w, &d, m, r);
 }
 
 /* ---- a world for a brain state (the probes, the traces' perturbations) ---- */

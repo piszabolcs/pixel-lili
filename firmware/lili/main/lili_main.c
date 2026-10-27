@@ -33,6 +33,8 @@
 #include "life.h"
 #include "save.h"
 #include "brain.h"
+#include "q4_model.h"
+#include "freertos/queue.h"
 #include "rtc_port.h"
 #include "nvs_flash.h"
 #include "nvs.h"
@@ -108,6 +110,62 @@ static void lili_load(void) {
     ESP_LOGI(TAG, "save: away %.1f h -> %s", clock && now > at ? (now - at) / 3600.0 : 0.0, life_scene_name(sc));
 }
 
+/* ---- the learned brain on Core 1 (spec 4.4, 10.12, M8.2): the model in its partition through an mmap, a task that
+   answers one question at a time; the frame loop on Core 0 puts the question (the encoded state, the actions possible
+   now) and takes the answer when it comes. Until then she idles (spec 8.7); without a model the rules answer at once ---- */
+typedef struct { brain_state_t s; uint8_t mask[ACT_COUNT]; uint32_t rng; } brain_q_t;
+typedef struct { decision_t d; float margin; int ok; int ms; } brain_a_t;
+static QueueHandle_t s_bq, s_ba;
+static bool s_llm, s_asking;
+static size_t model_size(const uint8_t *h) {           /* the file's length from its header (the partition is larger) */
+    int32_t c[7], gs; memcpy(c, h + 8, sizeof c); memcpy(&gs, h + 37, sizeof gs);   /* after the 7 ints: the shared flag (1 B), then the group size */
+    const int64_t dim = c[0], hid = c[1], L = c[2], vocab = c[5];
+    if (gs != 64 || dim <= 0 || dim > 1024 || L <= 0 || L > 16 || vocab != SCHEMA_VOCAB) return 0;
+    int64_t n = 256 + (2 * L * dim + dim) * 4, w[] = { vocab * dim, L * dim * dim * 4, L * dim * hid * 3 };
+    for (int i = 0; i < 3; i++) n += w[i] / 2 + w[i] / gs * 2;
+    return (size_t)(n + 16);
+}
+static void *psram_any(size_t n) { return heap_caps_malloc(n, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
+static void brain_task(void *arg) {
+    (void)arg; brain_q_t q; brain_a_t a;
+    for (;;) {
+        if (xQueueReceive(s_bq, &q, portMAX_DELAY) != pdTRUE) continue;
+        const int64_t t0 = esp_timer_get_time();
+        a.ok = brain_llm_decide_masked(&q.s, q.mask, &q.rng, &a.d, &a.margin, BRAIN_TEMP) == 0;
+        a.ms = (int)((esp_timer_get_time() - t0) / 1000);
+        xQueueSend(s_ba, &a, portMAX_DELAY);
+    }
+}
+static void llm_init(void) {
+    const esp_partition_t *p = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "model");
+    uint8_t head[64];
+    if (!p || esp_partition_read(p, 0, head, sizeof head) != ESP_OK) { ESP_LOGI(TAG, "brain: no model partition, the rules"); return; }
+    const size_t len = model_size(head);
+    if (!len || len > p->size) { ESP_LOGI(TAG, "brain: no Lili model in the partition (tools/flash_216.py model), the rules"); return; }
+    const void *map; esp_partition_mmap_handle_t h;
+    if (esp_partition_mmap(p, 0, len, ESP_PARTITION_MMAP_DATA, &map, &h) != ESP_OK) { ESP_LOGW(TAG, "brain: model mmap failed"); return; }
+    if (!brain_llm_load(map, len, psram_any)) { ESP_LOGW(TAG, "brain: model refused (%s), the rules", brain_llm_status()); return; }
+    s_bq = xQueueCreate(1, sizeof(brain_q_t)); s_ba = xQueueCreate(1, sizeof(brain_a_t));
+    if (!s_bq || !s_ba || xTaskCreatePinnedToCore(brain_task, "brain", 8192, NULL, 4, NULL, 1) != pdPASS) { ESP_LOGW(TAG, "brain: no task"); return; }
+    s_llm = true;
+    ESP_LOGI(TAG, "brain: model %u B (%s) on Core 1", (unsigned)len, brain_llm_status());
+}
+/* the frame loop's half: put the question when it is due, apply the answer when it is back */
+static void llm_tick(float dt) {
+    brain_a_t a;
+    if (s_asking && xQueueReceive(s_ba, &a, 0) == pdTRUE) {
+        s_asking = false;
+        if (a.ok) {
+            brain_apply(&s_world, &a.d, a.margin, BRAIN_RULE_LLM);
+            ESP_LOGI(TAG, "brain: model -> %s %s %s (margin %.2f, %d ms)", ACTION_NAME(a.d.a[0]), ACTION_NAME(a.d.a[1]), ACTION_NAME(a.d.a[2]), a.margin, a.ms);
+        }
+    }
+    if (!s_asking && brain_due(&s_world, dt)) {
+        brain_q_t q; brain_encode(&s_world, 0, &q.s); brain_env_mask(&s_world, 0, q.mask); q.rng = world_rand(&s_world);
+        if (xQueueSend(s_bq, &q, 0) == pdTRUE) { s_asking = true; brain_asked(&s_world); }
+    }
+}
+
 static void keys_init(void) {
     gpio_config_t pu = { .pin_bit_mask = (1ULL << PIN_BOOT) | (1ULL << PIN_KEY3), .mode = GPIO_MODE_INPUT, .pull_up_en = GPIO_PULLUP_ENABLE };
     gpio_config(&pu);
@@ -144,6 +202,7 @@ void app_main(void) {
     nav_init(s_nav);
     s_touch = touch216_init();
     lili_load();
+    llm_init();
     /* M6.4: from power-on she lives by her own brain; BOOT starts (and stops) the demo tour */
     memset(s_bg, 0, sizeof *s_bg);
     ESP_LOGI(TAG, "up: world %u B, canvas %u B, mask %u B, static-layer cache %u B | internal heap %u KB free", (unsigned)sizeof s_world, (unsigned)sizeof *s_r8, (unsigned)sizeof *s_mask, (unsigned)sizeof *s_bg,
@@ -166,9 +225,10 @@ void app_main(void) {
         ev_t ev; while (ev_pop(&s_q, &ev)) { ESP_LOGI(TAG, "event %s %d %d %d", ev_name((ev_type_t)ev.type), ev.a, ev.b, ev.c); world_handle_event(&s_world, &ev); }
         if (demo_active()) demo_tick(&s_world, dt);
         else {
-            brain_tick(&s_world, dt); plan_tick(&s_world, 0, dt);
-            if (s_world.ask_t == 0 && s_world.rule >= 0)              /* a new decision: the serial log shows what she chose */
-                ESP_LOGI(TAG, "brain: %s -> %s %s %s (margin %.2f)", BRAIN_RULES[s_world.rule].id, ACTION_NAME(s_world.plans[0].d.a[0]),
+            if (s_llm) llm_tick(dt); else brain_tick(&s_world, dt);
+            plan_tick(&s_world, 0, dt);
+            if (!s_llm && s_world.ask_t == 0 && s_world.rule >= 0)              /* a new decision: the serial log shows what she chose */
+                ESP_LOGI(TAG, "brain: %s -> %s %s %s (margin %.2f)", s_world.rule == BRAIN_RULE_LLM ? "model" : BRAIN_RULES[s_world.rule].id, ACTION_NAME(s_world.plans[0].d.a[0]),
                          ACTION_NAME(s_world.plans[0].d.a[1]), ACTION_NAME(s_world.plans[0].d.a[2]), s_world.margin);
         }
         { static float save_t; save_t += dt; if (save_t > 300.0f && !demo_active()) { save_t = 0; lili_save(); } }   /* every 5 minutes (spec 9.7) */

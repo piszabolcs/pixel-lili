@@ -21,8 +21,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETS = {"diag": os.path.join(ROOT, "firmware", "build", "diag"),
         "lili": os.path.join(ROOT, "firmware", "build", "lili"),
         "tank": os.path.join(ROOT, "firmware", "build", "216"),
-        "pak": os.path.join(ROOT, "firmware", "build", "lili")}
+        "pak": os.path.join(ROOT, "firmware", "build", "lili"),
+        "model": os.path.join(ROOT, "firmware", "build", "lili")}
 PAK_OFFSET, PAK_SIZE = 0xA90000, 0x570000          # firmware/lili/partitions.csv: assets
+MODEL_OFFSET, MODEL_SIZE = 0x290000, 0x800000      # ... and model (Lili's brain, model/export_lili_q4.py)
+MODEL = os.path.join(ROOT, "model", "out", "lili", "lili_S_q4.bin")
 PAK = os.path.join(ROOT, "assets", "build", "assets.pak")
 
 def main():
@@ -39,7 +42,7 @@ def main():
     lines = [l.strip() for l in open(fa, encoding="utf-8") if l.strip()]
     opts = lines[0].split()
     pairs = []
-    for l in (lines[1:] if a.set != "pak" else []):
+    for l in (lines[1:] if a.set not in ("pak", "model") else []):
         off, rel = l.split()
         path = os.path.join(bdir, rel.replace("/", os.sep))
         if not os.path.exists(path):
@@ -49,6 +52,10 @@ def main():
         if not os.path.exists(PAK): sys.exit(f"no {PAK}: py -3.12 tools/pack_assets.py")
         if os.path.getsize(PAK) > PAK_SIZE: sys.exit(f"{PAK} is {os.path.getsize(PAK)} B, the assets partition holds {PAK_SIZE} B")
         pairs += [hex(PAK_OFFSET), PAK]
+    if a.set == "model" or (a.set == "lili" and os.path.exists(MODEL)):        # Lili's brain model, when there is one
+        if not os.path.exists(MODEL): sys.exit(f"no {MODEL}: model/train_lili.py, model/export_lili_q4.py")
+        if os.path.getsize(MODEL) > MODEL_SIZE: sys.exit(f"{MODEL} is {os.path.getsize(MODEL)} B, the model partition holds {MODEL_SIZE} B")
+        pairs += [hex(MODEL_OFFSET), MODEL]
     cmd = [sys.executable, "-m", "esptool", "--chip", "esp32s3", "-p", a.port, "-b", a.baud,
            "--before", "default_reset", "--after", "hard_reset", "write_flash"] + opts + pairs
     print(" ".join(cmd))

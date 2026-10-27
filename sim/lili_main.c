@@ -11,6 +11,7 @@
  *   ./lilisim --anim-viewer [name]    the window: one animation from all 8 directions (A/arrows, Tab yard size, Space pause)
  *   ./lilisim --anim-viewer-shot DIR [frame]  headless, DIR/<anim>.ppm of the viewer for every animation
  *   ./lilisim --snapshot DIR          headless, both views x 4 seasons x 4 dayparts as DIR/<view>_<season>_<daypart>.ppm
+ *   ./lilisim [--brain llm]           the window, her brain the trained model (../model/out/lili/lili_S_q4.bin; else the rules)
  *   ./lilisim [--fresh]               the window keeps Lili in lili_save.bin: the time away is lived when it opens
  *                                     (spec 9.6), and she is saved every 5 minutes and at Q (--fresh: a new start)
  *
@@ -909,6 +910,8 @@ static int selftest_save(void) {
 }
 
 /* ---- M6: the teacher's probes (spec 10.11 P1-P12) and a day of life ---- */
+static bool s_probe_llm;                         /* the probes ask the model (--selftest-llm) */
+static int act_kind_of(int a);
 /* a realistic random situation (the probes' "fresh situations"): needs mostly not urgent, no guilt unless asked,
    the owner mostly here or away, a signal now and then */
 static void probe_sample(brain_state_t *s, int k) {
@@ -941,8 +944,11 @@ static float probe(const char *name, void (*fix)(brain_state_t *), const uint8_t
         brain_state_t st; probe_sample(&st, k); fix(&st);
         world_init(&s_world, 7000 + k); brain_world_from_state(&s_world, &st);
         brain_state_t enc; brain_encode(&s_world, 0, &enc);
-        decision_t d; float m; const int r = brain_rules_decide(&s_world, 0, &enc, &d, &m);
+        decision_t d; float m; int r;
+        if (s_probe_llm) r = brain_llm_decide(&s_world, 0, &enc, &d, &m, BRAIN_TEMP) == 0 ? BRAIN_RULE_LLM : -1;
+        else r = brain_rules_decide(&s_world, 0, &enc, &d, &m);
         if (r < 0) continue;
+        if (r == BRAIN_RULE_LLM) { for (int i = 0; i < n_acts; i++) if (d.a[0] == acts[i]) { hit++; break; } if (same_as_last) same += act_kind_of(d.a[0]) == enc.f[F_LAST]; continue; }
         if (getenv("PROBE_DEBUG") && !strcmp(getenv("PROBE_DEBUG"), name)) printf("  %s: %s %s (spot %d)\n", name, BRAIN_RULES[r].id, ACTION_NAME(d.a[0]), enc.f[F_SPOT]);
         for (int i = 0; i < n_acts; i++) if (d.a[0] == acts[i]) { hit++; break; }
         if (same_as_last && BRAIN_RULES[r].kind == enc.f[F_LAST]) same++;
@@ -1038,6 +1044,234 @@ static int dump_prompts(const char *path, int n) {
         fprintf(f, "\n");
     }
     fclose(f); printf("dump-prompts: %d -> %s\n", n, path);
+    return 0;
+}
+
+/* --dump-traces OUT --hours H --seed S (spec 10.8, M7.1): her life headless with the rule brain and a virtual
+   owner (home in the evenings and at weekends, away for minutes to days, petting, throwing, calling, feeding,
+   cleaning or neglecting), every decision as a training pair: the 26 prompt ids, the 7 output ids, the template,
+   and the teacher's two likeliest first actions. One perturbed situation (a special day, a winter night, guilt,
+   a bush, many spots...) is added for every four lived ones (rare situations, spec 10.8) */
+static void trace_line(FILE *f, world_t *w, const brain_state_t *st, const decision_t *d, int rule, int seed) {
+    uint8_t ids[F_COUNT + 2]; const int n = brain_prompt(st, ids);
+    /* the teacher's A1 distribution: each template's probability shared among its possible first actions */
+    static float a1p[ACT_COUNT]; memset(a1p, 0, sizeof a1p); const float *pr = brain_last_probs();
+    for (int r = 0; r < BRAIN_N_RULES; r++) {
+        if (pr[r] <= 0) continue;
+        int ok[4], k = 0;
+        for (int i = 0; i < BRAIN_RULES[r].n_alt[0]; i++) if (plan_possible(w, 0, BRAIN_RULES[r].alt[0][i])) ok[k++] = BRAIN_RULES[r].alt[0][i];
+        for (int i = 0; i < k; i++) a1p[ok[i]] += pr[r] / k;
+    }
+    int b1 = 0, b2 = 1; for (int a = 0; a < ACT_COUNT; a++) { if (a1p[a] > a1p[b1]) { b2 = b1; b1 = a; } else if (a != b1 && a1p[a] > a1p[b2]) b2 = a; }
+    fprintf(f, "{\"p\":[");
+    for (int i = 0; i < n; i++) fprintf(f, i ? ",%d" : "%d", ids[i]);
+    uint64_t mask = 0; for (int a = 0; a < ACT_COUNT; a++) if (a != ACT_NONE && plan_possible(w, 0, a)) mask |= 1ull << a;   /* the environment mask */
+    fprintf(f, "],\"t\":[%d,%d,%d,%d,%d,%d,%d],\"r\":%d,\"b\":[%d,%d],\"bp\":[%.4f,%.4f],\"m\":\"%llx\",\"s\":%d}\n", ACT_TOKEN(d->a[0]), ACT_TOKEN(d->a[1]), ACT_TOKEN(d->a[2]),
+            ST_TOKEN(d->style), FC_TOKEN(d->face), BB_TOKEN(d->bubble), URG_TOKEN(d->urg), rule, ACT_TOKEN(b1), ACT_TOKEN(b2), a1p[b1], a1p[b2], (unsigned long long)mask, seed);
+}
+static int dump_traces(const char *path, double hours, int seed) {
+    nav_init(&s_nav); FILE *f = fopen(path, "w"); if (!f) { perror(path); return 1; }
+    world_init(&s_world, (uint32_t)seed); s_world.season_force = s_world.daypart_force = -1;
+    world_t rng; world_init(&rng, (uint32_t)seed * 7919u + 13);
+    #define R01() ((world_rand(&rng) >> 8) * (1.0f / 16777216.0f))
+    life_init(&s_world, life_local(2026, 1 + (int)(world_rand(&rng) % 12), 1 + (int)(world_rand(&rng) % 28), 8, 0, 0));
+    const float dt = 1.0f / 10.0f; long pairs = 0, perturbed = 0; double t = 0; const bool home = true; double until = 1800;
+    world_t scratch;
+    while (t < hours * 3600) {
+        lili_date_t dd; life_date(world_now(&s_world), &dd);
+        if (t >= until) {                                                  /* the owner comes or goes */
+            {                                                             /* away: minutes to days (log-uniform), the night asleep */
+                const double away = dd.hour >= 22 || dd.hour < 6 ? 6 * 3600 + R01() * 3 * 3600 : 60.0 * pow(10.0, R01() * 3.2);
+                life_offline(&s_world, (int64_t)away, NULL); brain_owner_back(&s_world, (int64_t)away); t += away;
+                until = t + 300 + R01() * 3600;                           /* back, for a while (5 minutes to an hour) */
+                if (R01() < 0.8f) { s_world.things.food = s_world.things.water = 3; }                 /* fed, mostly */
+                continue;
+            }
+        }
+        if (home && R01() < dt / 25.0f) {                                  /* now and then the owner does something */
+            const float u = R01(); const actor_t *l = &s_world.actors[0]; ev_t e = { 0, 0, 0, 0 };
+            if (u < 0.30f) { e.type = EV_PET_START; e.a = (int16_t)l->x; e.b = (int16_t)(l->y - 20); }
+            else if (u < 0.42f) { e.type = EV_FLICK; e.a = (int16_t)(R01() * 1600 - 800); e.b = (int16_t)(R01() * 1600 - 800); e.c = (int16_t)(world_rand(&rng) % TOY_COUNT); }
+            else if (u < 0.52f) e.type = R01() < 0.7f ? EV_WHISTLE : EV_CALL_NAME;
+            else if (u < 0.70f) { e.type = EV_TAP; e.a = (int16_t)(60 + R01() * 360); e.b = (int16_t)(200 + R01() * 240); }
+            else if (u < 0.78f) e.type = EV_VOICE_ACTIVITY;
+            else if (u < 0.81f) e.type = EV_SHAKE;
+            else if (u < 0.90f) { if (s_world.things.n_mess && R01() < 0.8f) { ev_t c = { EV_TAP, s_world.things.mess[0][0], s_world.things.mess[0][1], 0 }; e = c; } }
+            else if (u < 0.95f) { if (s_world.things.pad == 2) s_world.things.pad = 0; }
+            else { s_world.view = (view_t)(1 - s_world.view); }
+            if (e.type) { world_handle_event(&s_world, &e); if (e.type == EV_PET_START) { ev_t end = { EV_PET_END, 0, 0, 0 }; s_world.plans[0].t = 57; world_handle_event(&s_world, &end); } }
+            life_owner(&s_world);
+        }
+        brain_tick(&s_world, dt);
+        if (s_world.ask_t == 0 && s_world.rule >= 0 && s_world.plans[0].status == PLAN_RUNNING && s_world.plans[0].prio == 255) {
+            brain_state_t st; brain_encode(&s_world, 0, &st);
+            /* re-decide on a copy to log the decision the plan holds (the encode is the same moment) */
+            trace_line(f, &s_world, &st, &s_world.plans[0].d, s_world.rule, seed); pairs++;
+            if (world_rand(&rng) % 4 == 0) {                               /* a perturbed rare situation */
+                brain_state_t ps; probe_sample(&ps, (int)(world_rand(&rng) & 0xFFFFF));
+                switch (world_rand(&rng) % 8) {
+                case 0: ps.f[F_DAY] = (uint8_t)(1 + world_rand(&rng) % 3); break;
+                case 1: ps.f[F_SEASON] = V_SEASON_WINTER; ps.f[F_TOD] = V_TOD_NIGHT; break;
+                case 2: ps.f[F_GUILTY] = V_GUILTY_1; ps.f[F_MESS] = (uint8_t)(1 + world_rand(&rng) % 2); ps.f[F_SPOT] = world_rand(&rng) & 1 ? V_SPOT_NOOK : ps.f[F_SPOT]; break;
+                case 3: ps.f[F_LOC] = V_LOC_YARD; ps.f[F_SPOT] = V_SPOT_BUSH; break;
+                case 4: ps.f[F_BLADDER] = (uint8_t)(8 + world_rand(&rng) % 2); ps.f[F_PAD] = (uint8_t)(world_rand(&rng) % 3); break;
+                case 5: ps.f[F_HUNGER] = (uint8_t)(6 + world_rand(&rng) % 4); break;
+                case 6: ps.f[F_OWNER] = world_rand(&rng) & 1 ? V_OWNER_BACK_LONG : V_OWNER_BACK_SHORT; break;
+                default: ps.f[F_BORED] = (uint8_t)(6 + world_rand(&rng) % 4); ps.f[F_LONELY] = (uint8_t)(5 + world_rand(&rng) % 5); ps.f[F_SINCE] = V_SINCE_LONG; break;
+                }
+                world_init(&scratch, world_rand(&rng)); world_t keep = s_world; s_world = scratch;
+                brain_world_from_state(&s_world, &ps); brain_state_t enc; brain_encode(&s_world, 0, &enc);
+                decision_t d; float m; const int r = brain_rules_decide(&s_world, 0, &enc, &d, &m);
+                if (r >= 0) { trace_line(f, &s_world, &enc, &d, r, seed); perturbed++; }
+                s_world = keep;
+            }
+        }
+        plan_tick(&s_world, 0, dt); world_tick(&s_world, dt); t += dt;
+    }
+    #undef R01
+    fclose(f);
+    printf("traces: %.0f h, %ld lived + %ld perturbed pairs -> %s\n", hours, pairs, perturbed, path);
+    return 0;
+}
+
+/* --dump-probes FILE (spec 10.11, M7.4): the probes' situations for a model: each sample's prompt, the first
+   actions that count, the actions possible there (the environment mask), the threshold and its direction.
+   P11 counts the actions of the same kind as the last activity (and wants at most 0.15) */
+static int act_kind(int a);
+static int act_kind_of(int a) { return act_kind(a); }
+static int act_kind(int a) {                     /* life.c's classes of the actions (spec 10.3 F22) */
+    switch (a) {
+    case ACT_EAT: case ACT_DRINK: return V_LAST_EAT;
+    case ACT_MISCHIEF_FLOOR: return V_LAST_MISCHIEF;
+    case ACT_PICKUP_ROPE: case ACT_PICKUP_PLUSH: case ACT_BRING_TOY: case ACT_CHEW_TOY: case ACT_PLAY_BOW: case ACT_ZOOMIES:
+    case ACT_RUN_WITH_TOY: case ACT_TOSS_TOY: case ACT_CHASE_LEAF: case ACT_CHASE_BUTTERFLY: case ACT_PLAY_SNOW: return V_LAST_PLAY;
+    case ACT_WANDER: case ACT_SNIFF_AROUND: case ACT_GO_BUSH: case ACT_GO_TREE: case ACT_SNIFF_FLOWERS: case ACT_ENTER_YARD:
+    case ACT_GO_DOOR: case ACT_LOOK_AROUND: case ACT_ENTER_ROOM: case ACT_PEEK_BUSH: case ACT_GO_TOY: case ACT_HIDE_BUSH: return V_LAST_EXPLORE;
+    case ACT_SLEEP_NOOK: case ACT_SLEEP_RUG: case ACT_NAP_SUNBEAM: case ACT_SIT: case ACT_LIE_DOWN: case ACT_SNEAK_RUG: case ACT_GO_SUNBEAM:
+    case ACT_GO_RUG: case ACT_GO_NOOK: case ACT_PANT_IDLE: case ACT_USE_PAD: return V_LAST_REST;
+    default: return V_LAST_SOCIAL;
+    }
+}
+static int dump_probes(const char *path) {
+    nav_init(&s_nav); FILE *f = fopen(path, "w"); if (!f) { perror(path); return 1; }
+    static const struct { const char *name; void (*fix)(brain_state_t *); uint8_t set[4]; int n; float thr; int at_most; } P[] = {
+        { "P1", fx_p1, { ACT_PICKUP_ROPE, ACT_PICKUP_PLUSH, ACT_BRING_TOY }, 3, 0.8f, 0 },  { "P2", fx_p2, { ACT_HIDE_BENCH, ACT_PEEK_BENCH }, 2, 0.9f, 0 },
+        { "P3", fx_p3, { ACT_GOTO_FRONT, ACT_ASK_PET }, 2, 0.5f, 0 },                       { "P3m", fx_p3, { ACT_MISCHIEF_FLOOR }, 1, 0.0f, 1 },
+        { "P4", fx_p4, { ACT_SLEEP_NOOK }, 1, 0.8f, 0 },                                     { "P5", fx_p5, { ACT_GO_SUNBEAM, ACT_NAP_SUNBEAM }, 2, 0.4f, 0 },
+        { "P7", fx_p7, { ACT_MISCHIEF_FLOOR }, 1, 0.4f, 0 },                                 { "P8", fx_p8, { ACT_USE_PAD }, 1, 0.85f, 0 },
+        { "P9", fx_p9, { ACT_HIDE_BUSH, ACT_PEEK_BUSH }, 2, 0.3f, 0 },                       { "P10", fx_p10, { ACT_GO_BOWLS, ACT_EAT }, 2, 0.85f, 0 },
+        { "P11", fx_p11, { 0 }, 0, 0.15f, 1 },                                               { "P12", fx_p12, { ACT_PLAY_BOW, ACT_BRING_TOY, ACT_ZOOMIES }, 3, 0.6f, 0 },
+    };
+    int lines = 0;
+    for (unsigned k = 0; k < sizeof P / sizeof P[0]; k++)
+        for (int i = 0; i < 200; i++) {
+            brain_state_t st; probe_sample(&st, 40000 + 1000 * (int)k + i); P[k].fix(&st);
+            world_init(&s_world, 60000 + 1000 * k + i); brain_world_from_state(&s_world, &st);
+            brain_state_t enc; brain_encode(&s_world, 0, &enc); uint8_t ids[F_COUNT + 2]; const int n = brain_prompt(&enc, ids);
+            fprintf(f, "{\"probe\":\"%s\",\"thr\":%.2f,\"at_most\":%d,\"p\":[", P[k].name, P[k].thr, P[k].at_most);
+            for (int j = 0; j < n; j++) fprintf(f, j ? ",%d" : "%d", ids[j]);
+            fprintf(f, "],\"set\":[");
+            int c = 0;
+            for (int a = 0; a < ACT_COUNT; a++) {
+                bool in = false;
+                if (P[k].n) for (int j = 0; j < P[k].n; j++) in |= P[k].set[j] == a;
+                else in = a != ACT_NONE && act_kind(a) == enc.f[F_LAST];
+                if (in) fprintf(f, c++ ? ",%d" : "%d", ACT_TOKEN(a));
+            }
+            fprintf(f, "],\"mask\":[");
+            c = 0; for (int a = 0; a < ACT_COUNT; a++) if (plan_possible(&s_world, 0, a)) fprintf(f, c++ ? ",%d" : "%d", ACT_TOKEN(a));
+            fprintf(f, "]}\n"); lines++;
+        }
+    fclose(f); printf("dump-probes: %d samples -> %s\n", lines, path);
+    return 0;
+}
+
+static double now_us(void);
+/* the model file (spec 10.10): ../model/out/lili/lili_S_q4.bin, or LILI_MODEL */
+static uint8_t *s_model_bin; static size_t s_model_len;
+static bool sim_model_load(void) {
+    const char *path = getenv("LILI_MODEL") ? getenv("LILI_MODEL") : "../model/out/lili/lili_S_q4.bin";
+    FILE *f = fopen(path, "rb"); if (!f) { printf("brain: no model at %s (the rules run)\n", path); return false; }
+    fseek(f, 0, SEEK_END); s_model_len = (size_t)ftell(f); fseek(f, 0, SEEK_SET);
+    s_model_bin = malloc(s_model_len);
+    if (!s_model_bin || fread(s_model_bin, 1, s_model_len, f) != s_model_len) { fclose(f); return false; }
+    fclose(f);
+    const bool ok = brain_llm_load(s_model_bin, s_model_len, malloc);
+    printf("brain: %s %s (%s)\n", path, ok ? "loaded" : "refused", brain_llm_status());
+    return ok;
+}
+/* --selftest-llm (spec 10.11, M8.1-M8.2): the 4-bit model on the device's engine: a foreign file refused, every
+   answer valid and possible, Q4 = fp32 on the first action >= 95 %, the probes, the time a decision takes here */
+static int selftest_llm(void) {
+    nav_init(&s_nav);
+    if (!sim_model_load()) { printf("selftest-llm: skipped (no model: model/train_lili.py, model/export_lili_q4.py)\n"); return 0; }
+    {   /* a model with a changed trailer is refused, the rules stay */
+        uint8_t *bad = malloc(s_model_len); memcpy(bad, s_model_bin, s_model_len); bad[s_model_len - 8] ^= 1;
+        CHECK(!brain_llm_load(bad, s_model_len, malloc), "a model of another vocabulary is refused");
+        free(bad);
+        CHECK(brain_llm_load(s_model_bin, s_model_len, malloc), "and the right one loads again");
+    }
+    int valid = 0, n = 0; double us = 0;
+    for (int k = 0; k < 300; k++) {
+        brain_state_t st; probe_sample(&st, 30000 + k);
+        world_init(&s_world, 31000 + k); brain_world_from_state(&s_world, &st);
+        brain_state_t enc; brain_encode(&s_world, 0, &enc); decision_t d; float m;
+        const double t0 = now_us(); const int r = brain_llm_decide(&s_world, 0, &enc, &d, &m, BRAIN_TEMP); us += now_us() - t0; n++;
+        if (r == 0 && d.a[0] < ACT_COUNT && d.a[0] != ACT_NONE && plan_possible(&s_world, 0, d.a[0]) && d.a[1] < ACT_COUNT && d.a[2] < ACT_COUNT &&
+            d.style < ST_COUNT && d.face < FC_COUNT && d.bubble < BB_COUNT && d.urg >= 1 && d.urg <= 9) valid++;
+    }
+    printf("llm: %d of %d answers valid and possible, %.0f us a decision on this PC\n", valid, n, us / n);
+    CHECK(valid == n, "every answer is valid and its first action possible (constrained decoding, spec 10.5)");
+    char path[256]; snprintf(path, sizeof path, "%s", getenv("LILI_Q4CHECK") ? getenv("LILI_Q4CHECK") : "../model/out/lili/q4check_S.jsonl");
+    FILE *f = fopen(path, "r");
+    if (f) {
+        char line[1024]; int same = 0, tot = 0, dec_same = 0, dec = 0, in_two = 0;
+        while (fgets(line, sizeof line, f)) {
+            int toks[F_COUNT + 2], k = 0, want = -1, want2 = -1; float gap = 0; char *c = strchr(line, '[');
+            while (c && k < F_COUNT + 2) { c++; toks[k++] = (int)strtol(c, &c, 10); if (*c == ']') break; }
+            char *a = strstr(line, "\"a1\":"); if (a) want = atoi(a + 5);
+            a = strstr(line, "\"a2\":"); if (a) want2 = atoi(a + 5);
+            a = strstr(line, "\"m\":"); if (a) gap = (float)atof(a + 4);
+            if (k != F_COUNT + 2 || want < 0) continue;
+            const float *lg = q4_model_prefill_lili(toks, k);
+            int best = SCHEMA_SLOT_FIRST[SLOT_A1];
+            for (int i = 0; i < SCHEMA_SLOT_N[SLOT_A1]; i++) if (lg[SCHEMA_SLOT_FIRST[SLOT_A1] + i] > lg[best]) best = SCHEMA_SLOT_FIRST[SLOT_A1] + i;
+            same += best == want; tot++; in_two += best == want || best == want2;
+            if (gap > 0.05f) { dec++; dec_same += best == want; }
+        }
+        fclose(f);
+        printf("llm: Q4 vs fp32 first action: all %d of %d (%.1f %%), where fp32 is decided (gap > 0.05) %d of %d (%.1f %%), in fp32's two %.1f %%\n",
+               same, tot, tot ? 100.0 * same / tot : 0, dec_same, dec, dec ? 100.0 * dec_same / dec : 0, tot ? 100.0 * in_two / tot : 0);
+        /* the near-ties are the teacher's coin tosses (pickup_rope | pickup_plush): counted apart (docs/decisions.md, M8.1) */
+        CHECK(dec > 0 && dec_same * 100 >= dec * 95, "the 4-bit model agrees with fp32 on >= 95 % of the decided first actions (spec 10.11)");
+        CHECK(in_two * 100 >= tot * 99, "and its choice is one of fp32's two likeliest (>= 99 %)");
+    } else printf("llm: no %s (model/q4check_lili.py), the Q4 vs fp32 check skipped\n", path);
+    s_probe_llm = true; int bad = 0;
+    static const uint8_t A1[] = { ACT_PICKUP_ROPE, ACT_PICKUP_PLUSH, ACT_BRING_TOY }, A2[] = { ACT_HIDE_BENCH, ACT_PEEK_BENCH }, A3[] = { ACT_GOTO_FRONT, ACT_ASK_PET },
+        A4[] = { ACT_SLEEP_NOOK }, A5[] = { ACT_GO_SUNBEAM, ACT_NAP_SUNBEAM }, A7[] = { ACT_MISCHIEF_FLOOR }, A8[] = { ACT_USE_PAD }, A9[] = { ACT_HIDE_BUSH, ACT_PEEK_BUSH },
+        A10[] = { ACT_GO_BOWLS, ACT_EAT }, A12[] = { ACT_PLAY_BOW, ACT_BRING_TOY, ACT_ZOOMIES };
+    bad += probe("P1", fx_p1, A1, 3, 100, NULL) < 0.8f; bad += probe("P2", fx_p2, A2, 2, 100, NULL) < 0.9f; bad += probe("P3", fx_p3, A3, 2, 100, NULL) < 0.5f;
+    bad += probe("P3m", fx_p3, A7, 1, 100, NULL) > 0; bad += probe("P4", fx_p4, A4, 1, 100, NULL) < 0.8f; bad += probe("P5", fx_p5, A5, 2, 100, NULL) < 0.4f;
+    bad += probe("P7", fx_p7, A7, 1, 100, NULL) < 0.4f; bad += probe("P8", fx_p8, A8, 1, 100, NULL) < 0.85f; bad += probe("P9", fx_p9, A9, 2, 100, NULL) < 0.3f;
+    bad += probe("P10", fx_p10, A10, 2, 100, NULL) < 0.85f; { float same = 1; probe("P11", fx_p11, A1, 0, 100, &same); printf("probe P11  same kind: %.2f\n", same); bad += same > 0.15f; }
+    bad += probe("P12", fx_p12, A12, 3, 100, NULL) < 0.6f;
+    s_probe_llm = false;
+    printf("llm: the device engine misses %d of the 12 probes (sampled at 0.8, 100 samples each)\n", bad);
+    CHECK(bad <= 1, "the model on the device's engine keeps the probes (at most one borderline miss of sampling)");
+    {   /* spec 12 M8.4: an hour of her life on the model: no freeze, no fall back to the rules, varied answers */
+        world_init(&s_world, 93); s_world.season_force = s_world.daypart_force = -1; life_init(&s_world, life_local(2026, 10, 8, 9, 0, 0));
+        brain_use_llm(true); static int seen[ACT_COUNT]; int asks = 0, rules = 0, kinds = 0;
+        for (int i = 0; i < 3600 * 15; i++) {
+            brain_tick(&s_world, 1.0f / 15.0f); plan_tick(&s_world, 0, 1.0f / 15.0f); world_tick(&s_world, 1.0f / 15.0f);
+            if (s_world.ask_t == 0) { asks++; if (s_world.rule != BRAIN_RULE_LLM) rules++; else seen[s_world.plans[0].d.a[0]]++; }
+            if (i % 9000 == 0 && i) { life_owner(&s_world); ev_t e = { EV_WHISTLE, 0, 0, 0 }; world_handle_event(&s_world, &e); }
+        }
+        brain_use_llm(false);
+        for (int a = 0; a < ACT_COUNT; a++) kinds += seen[a] > 0;
+        printf("llm: an hour on the model: %d questions, %d answered by the rules, %d different first actions\n", asks, rules, kinds);
+        CHECK(asks > 100 && rules == 0 && kinds >= 8, "an hour of life on the model: it keeps answering, and variedly");
+    }
+    printf("selftest-llm: ok\n");
     return 0;
 }
 
@@ -1233,7 +1467,14 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--selftest-save")) return selftest_save();
     if (argc > 1 && !strcmp(argv[1], "--selftest-probes")) return selftest_probes();
     if (argc > 1 && !strcmp(argv[1], "--selftest-life")) return selftest_life();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-llm")) return selftest_llm();
     if (argc > 3 && !strcmp(argv[1], "--dump-prompts")) return dump_prompts(argv[2], atoi(argv[3]));
+    if (argc > 2 && !strcmp(argv[1], "--dump-probes")) return dump_probes(argv[2]);
+    if (argc > 2 && !strcmp(argv[1], "--dump-traces")) {
+        double hours = 24; int seed = 1;
+        for (int i = 3; i + 1 < argc; i += 2) { if (!strcmp(argv[i], "--hours")) hours = atof(argv[i + 1]); else if (!strcmp(argv[i], "--seed")) seed = atoi(argv[i + 1]); }
+        return dump_traces(argv[2], hours, seed);
+    }
     if (argc > 1 && !strcmp(argv[1], "--selftest-render")) return selftest_render(argc > 2 && !strcmp(argv[2], "--update"));
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
     if (argc > 2 && !strcmp(argv[1], "--inspector-shot")) return inspector_shot(argv[2]);
@@ -1253,6 +1494,7 @@ int main(int argc, char **argv) {
     ui_build();
     nav_init(&s_nav);
     sim_load(argc > 1 && !strcmp(argv[1], "--fresh"));
+    for (int i = 1; i + 1 < argc; i++) if (!strcmp(argv[i], "--brain") && !strcmp(argv[i + 1], "llm") && sim_model_load()) brain_use_llm(true);
     if (argc > 1 && !strcmp(argv[1], "--demo")) demo_start();      /* the window with the tour already running (G stops it) */
     if (argc > 1 && !strcmp(argv[1], "--anim-viewer")) {           /* optional: the animation to start at, by name */
         s_av.on = true;

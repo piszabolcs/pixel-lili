@@ -28,8 +28,9 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 | M5.6 energiaállapotok (DIM, DESK, POCKET, PWR, felvételre üdvözlés) | hiányzik | IMU- és PMIC-kód kell, és a panelen kézzel kipróbálni [G] |
 | M6.1-M6.5 szabálymotor agy | kész | séma, kódoló (C = Python 1000/1000), 46 sablon (H1-H15), életciklus, habozás; P1-P12 mind teljesül; a panelen bekapcsoláskor Lili a saját agyával él (BOOT: demó) |
 | M6.6 egy hét élet a panelen | [G] vár | a gazdi szerint "ez Lili"? a viselkedés a `model/teacher_rules.yaml`-ben hangolható |
-| M7 LLM tanítása | nincs elkezdve | |
-| M8 agy az eszközön | nincs elkezdve | |
+| M7.1-M7.4 LLM tanítása | kész | 184 ezer pár (`lilisim --dump-traces`), egyik szokás sem 1 % alatt; S, M tanítva az RTX 5060-on (3-4 perc); S: A1 87 %, top-2 93,6 %, P1-P12 mind teljesül (`model/eval_lili.py`). A vizualizáló Gradio-felület nem készült el |
+| M7.5 B szintű tanár (Ollama) | hiányzik | opcionális |
+| M8.1-M8.4 agy az eszközön | kész | S modell, 4 bit, 2,76 MB, sématrailer; C motor: 100 % érvényes válasz, Q4 = fp32 99,2 % a határozott esetekben; a panelen Core 1-en, **1,7 mp/döntés**, 33-37 fps; egy óra élet a modellel a szimulátorban (`--selftest-llm`). A panelen bekapcsoláskor a modell dönt, ha van a partíción, különben a szabálymotor |
 | M9 hang | nincs elkezdve | M9.1 [G]: videók kellenek |
 | M10 felület | nincs elkezdve | |
 | M11 hosszútávú teszt, v1.0 | nincs elkezdve | M11.1 [G] |

@@ -1,10 +1,12 @@
 # the diag's table: the same nvs / phy offsets as the pocket-tank's (partitions.csv in ../),
-# one factory app where its ota_0 sits. The model partition (0x290000) is not listed and
-# is never written: flashing the pocket-tank set back (bootloader, table, otadata, app) restores it.
+# one factory app where its ota_0 sits.
+# model (2026-10-27, M8): Lili's brain model (model/export_lili_q4.py), read in place through an mmap, where the
+# pocket-tank keeps its fish model (going back to the tank needs its model flashed again; tools/flash_216.py model).
 # assets (2026-10-27, spec 5.10): the pack (assets/build/assets.pak), read in place through an mmap;
 # tools/flash_216.py lili / pak writes it. The pocket-tank's own table calls this range its spiffs.
 # Name,     Type, SubType, Offset,   Size,     Flags
 nvs,        data, nvs,     0x9000,   0x6000,
 phy_init,   data, phy,     0xf000,   0x1000,
 factory,    app,  factory, 0x10000,  0x280000,
+model,      data, 0x40,    0x290000, 0x800000,
 assets,     data, 0x41,    0xA90000, 0x570000,
