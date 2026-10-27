@@ -2,10 +2,10 @@
 set(PT ${CMAKE_CURRENT_LIST_DIR}/../../main)
 set(LILI ${CMAKE_CURRENT_LIST_DIR}/../../../common/lili)
 idf_component_register(
-    SRCS lili_main.c touch_216.c
-         ${LILI}/lili_world.c ${LILI}/lili_demo.c ${LILI}/nav.c ${LILI}/gesture.c ${LILI}/plan.c ${LILI}/toys.c ${LILI}/schema_gen.c ${LILI}/render8.c ${LILI}/palette.c ${LILI}/palette_gen.c ${LILI}/pak.c ${LILI}/mask.c ${LILI}/maps_gen.c ${LILI}/events.c
+    SRCS lili_main.c touch_216.c ${PT}/../components/tankcore/rtc_port_pcf85063.c
+         ${LILI}/lili_world.c ${LILI}/lili_demo.c ${LILI}/nav.c ${LILI}/gesture.c ${LILI}/plan.c ${LILI}/toys.c ${LILI}/schema_gen.c ${LILI}/life.c ${LILI}/save.c ${LILI}/render8.c ${LILI}/palette.c ${LILI}/palette_gen.c ${LILI}/pak.c ${LILI}/mask.c ${LILI}/maps_gen.c ${LILI}/events.c
          ${PT}/display_port_sh8601.c
-    INCLUDE_DIRS "." ${PT} ${CMAKE_CURRENT_LIST_DIR}/../../../common ${LILI}
+    INCLUDE_DIRS "." ${PT} ${PT}/../components/tankcore ${CMAKE_CURRENT_LIST_DIR}/../../../common ${LILI}
     REQUIRES esp_driver_spi esp_driver_i2c esp_driver_gpio esp_lcd nvs_flash esp_timer esp_psram esp_hw_support esp_partition
 )
 # the painted world's pack (tools/pack_assets.py) is not in the app image any more (2026-10-27): with the M3.5

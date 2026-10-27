@@ -2,6 +2,7 @@
  * Hungarian accents, and this is a developer tool; the game's own pixel font (M10) has them. */
 #include "inspector.h"
 #include "plan.h"
+#include "life.h"
 #include "lili_demo.h"
 #include <stdio.h>
 #include <string.h>
@@ -136,13 +137,16 @@ void inspector_update(float fps, float frame_ms) {
     const world_t *w = s_world; const actor_t *a = &w->actors[0];
     uint32_t seen = 0; for (int i = 0; i < EV_COUNT; i++) seen += w->events_seen[i];
     char plan[64]; plan_describe(w, 0, plan, sizeof plan);
+    char needs[96]; lili_date_t dt; life_date(world_now(w), &dt);
+    snprintf(needs, sizeof needs, "%02d.%02d %02d:%02d  eh %.1f en %.1f ke %.1f un %.1f ma %.1f ho %.1f%s", dt.month, dt.day, dt.hour, dt.minute,
+             w->hunger, w->energy, w->happy, w->bored, w->lonely, w->bladder, w->things.guilty ? " BUNOS" : "");
     lv_label_set_text_fmt(s_status,
         "fps %.1f   keret %.2f ms\n"
         "nezet: %s   ido: %.0f s\n"
         "Lili: %s  x %.0f  y %.0f  z %.0f  irany %s\n"
         "evszak: %s   napszak: %s\n"
-        "esemenyek: %u   (eldobva %u)\n%s",
+        "esemenyek: %u   (eldobva %u)\n%s\n%s",
         fps, frame_ms, VIEW[w->view], w->clock_s,
         a->present ? VIEW[a->view] : "nincs", a->x, a->y, a->z, DIR[a->dir],
-        SEASON[w->season_force + 1], PART[w->daypart_force + 1], (unsigned)seen, (unsigned)s_q->dropped, plan);
+        SEASON[w->season_force + 1], PART[w->daypart_force + 1], (unsigned)seen, (unsigned)s_q->dropped, plan, needs);
 }

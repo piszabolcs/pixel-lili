@@ -9,6 +9,7 @@
 #include "pak.h"
 #include "lili_world.h"
 #include "gesture.h"
+#include "life.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -171,7 +172,7 @@ bool plan_possible(const world_t *w, int actor, int act) {
     if ((n & N_WARM) && season > 1) return false;
     if ((n & N_WINTER) && season != 3) return false;
     if ((n & N_ON_RUG) && !on_rug(a)) return false;
-    /* N_NO_MEMORIAL: the calendar (M5.3) says whether it is September 12th; until then it is never */
+    if ((n & N_NO_MEMORIAL) && world_day(w) == DAY_MEMORIAL) return false;   /* H15: never on September 12th (spec 10.5) */
     return true;
 }
 
@@ -281,6 +282,16 @@ static bool next_action(world_t *w, int actor, plan_t *p, int from) {
     return false;
 }
 
+static int life_of(int a) {                                   /* a reflex's effect on the needs, else the action itself */
+    switch (a) {
+    case RX_PET_END: return LIFE_PET;
+    case RX_GREET: return LIFE_GREET;
+    case RX_FORGIVEN: return LIFE_FORGIVEN;
+    case RX_CALL: case RX_CALL_OTHER: return LIFE_CALL;
+    case RX_FETCH: case RX_TEASE: return LIFE_FETCH;
+    default: return a < ACT_COUNT ? a : -1;
+    }
+}
 static int finish(world_t *w, int actor, plan_t *p) {
     actor_t *a = &w->actors[actor];
     nav_stop(&w->bodies[actor]);
@@ -374,6 +385,7 @@ int plan_tick(world_t *w, int actor, float dt) {
     }
 next_act:
     nav_stop(b);
+    life_after_action(w, actor, life_of(p->d.a[p->ai]));          /* what it satisfied (spec 9.1) */
     if (!next_action(w, actor, p, p->ai + 1)) return finish(w, actor, p);
     return PLAN_RUNNING;
 }

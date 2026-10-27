@@ -84,6 +84,14 @@ typedef struct {
     things_t things;
     plan_t   plans[MAX_ACTORS];    /* plans[i] drives bodies[i] */
     int16_t  sparkle_x, sparkle_y; float sparkle_t;   /* a care tap's sparkle (spec 8.10), seconds left */
+    /* the fifth layer (spec 9, life.c): the needs 0..10, the clock, the owner */
+    float    hunger, energy, happy, bored, lonely, bladder;
+    int64_t  epoch0;               /* local seconds (since 1970, no zone) at clock_s = 0: the RTC / the PC's clock */
+    float    owner_t;              /* seconds since the owner last did something (a finger, the voice, a shake) */
+    int8_t   day_force;            /* -1 = from the date, else DAY_* (the sim's special-day check) */
+    uint8_t  last_kind;            /* the brain's "last activity" (F22): LAST_* in life.c */
+    float    last_t;               /* seconds in that kind of activity (F23) */
+    uint32_t pets, plays;          /* statistics (spec 9.7) */
     bool     finger_down;          /* the finger on the glass (follow_finger), set by the platform each frame */
     int16_t  finger_x, finger_y;
 } world_t;

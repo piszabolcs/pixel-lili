@@ -4,6 +4,7 @@
 #include "maps_gen.h"
 #include "toys.h"
 #include "plan.h"
+#include "life.h"
 #include "nav.h"
 #include <stdlib.h>
 #include <string.h>
@@ -17,7 +18,10 @@ uint32_t world_rand(world_t *w) {                      /* xorshift32: fast, tiny
 void world_init(world_t *w, uint32_t seed) {
     memset(w, 0, sizeof *w);
     w->seed = seed;
-    w->rng = seed ? seed : 0x2545F491u;                /* xorshift must never hold 0 */
+    /* the seed mixed first (murmur3's fmix32): xorshift's first draws from small neighbouring seeds are close to each
+       other, so 1000 worlds seeded 1000..1999 all made the same first choice (found by --selftest-offline) */
+    uint32_t h = seed; h ^= h >> 16; h *= 0x85EBCA6Bu; h ^= h >> 13; h *= 0xC2B2AE35u; h ^= h >> 16;
+    w->rng = h ? h : 0x2545F491u;                      /* xorshift must never hold 0 */
     w->view = VIEW_ROOM;
     w->season_force = -1; w->daypart_force = -1;       /* memset gave 0 = "spring": -1 means "from the date / the clock" */
     w->shake_cover = -1;
@@ -31,6 +35,7 @@ void world_init(world_t *w, uint32_t seed) {
     lili->vis = 1.0f;
     toys_init(w);
     w->things.food = w->things.water = 3;                /* the bowls start full, the pad clean */
+    life_init(w, life_local(LILI_DEFAULT_DATE, (int)LILI_START_HOUR, 0, 0));   /* the platform sets the real clock after */
 }
 
 /* deep in a bush (a "hide_" zone of the map she is in) she fades out, out of it she fades back in
@@ -64,6 +69,7 @@ void world_tick(world_t *w, float dt) {
     if (w->shake_cover >= 0) w->shake_t += dt;
     if (w->sparkle_t > 0) w->sparkle_t -= dt;
     toys_tick(w, dt);
+    life_tick(w, dt);
     for (int i = 0; i < MAX_ACTORS; i++) {
         actor_t *a = &w->actors[i];
         if (!a->present) continue;
@@ -94,6 +100,7 @@ void world_switch_view(world_t *w) {
 
 void world_handle_event(world_t *w, const ev_t *e) {
     if (e->type < EV_COUNT) w->events_seen[e->type]++;
+    if (e->type <= EV_VOICE_ACTIVITY && e->type != EV_NONE) life_owner(w);   /* the finger, the body, the voice: the owner is there */
     if (e->type == EV_TAP && world_care_tap(w, e->a, e->b)) return;   /* a bowl, the pad, a spot: the owner's care (spec 8.10) */
     reflex_event(w, e);                                  /* the reflexes first (spec 8.8): 0 ms, past the brain */
     switch (e->type) {
@@ -210,11 +217,13 @@ static void draw_actor(render8_t *r, const actor_t *a) {    /* the sprite from t
  * The time of day is the palette itself (the LUT): one tone per daypart over the picture's own colours. */
 #include <math.h>
 
-int world_season(const world_t *w) { return w->season_force >= 0 && w->season_force <= 3 ? w->season_force : LILI_SEASON_DEFAULT; }
+int world_season(const world_t *w) {
+    if (w->season_force >= 0 && w->season_force <= 3) return w->season_force;
+    lili_date_t d; life_date(world_now(w), &d); return life_season_of(d.month);          /* spec 9.4: from the date */
+}
 int world_daypart(const world_t *w) {
     if (w->daypart_force >= 0 && w->daypart_force <= 3) return w->daypart_force;
-    float h = fmodf(LILI_START_HOUR + w->clock_s / 3600.0f, 24.0f);
-    return h >= 6 && h < 12 ? 0 : h >= 12 && h < 18 ? 1 : h >= 18 && h < 21 ? 2 : 3;
+    lili_date_t d; life_date(world_now(w), &d); return life_daypart_of(d.hour);          /* spec 9.3: from the clock */
 }
 bool world_painted(void) { pak_image_t im; return s_pak && pak_image(s_pak, IMG_ROOM, &im); }
 

@@ -30,6 +30,12 @@
 #include "gesture.h"
 #include "touch_216.h"
 #include "plan.h"
+#include "life.h"
+#include "save.h"
+#include "rtc_port.h"
+#include "nvs_flash.h"
+#include "nvs.h"
+#include <time.h>
 
 static const char *TAG = "lili";
 #define PIN_BOOT 0
@@ -78,6 +84,28 @@ static void fill_stripe(uint16_t *dst, int y0, int n, void *ctx) {
     s_fill_us += esp_timer_get_time() - t;
 }
 
+/* the save (spec 9.7): the NVS blob "lili_save"; the clock: the RTC (local time, spec 5.6) through time() */
+static int64_t s_first_start;
+extern i2c_master_bus_handle_t board_i2c_bus(void);
+static void lili_save(void) {
+    uint8_t buf[SAVE_MAX]; const int n = save_write(&s_world, s_first_start, buf, sizeof buf); nvs_handle_t h;
+    if (!n || nvs_open("lili", NVS_READWRITE, &h) != ESP_OK) return;
+    nvs_set_blob(h, "lili_save", buf, (size_t)n); nvs_commit(h); nvs_close(h);
+}
+static void lili_load(void) {
+    if (nvs_flash_init() != ESP_OK) { nvs_flash_erase(); nvs_flash_init(); }
+    const bool clock = rtc_port_init(board_i2c_bus());
+    const int64_t now = (int64_t)time(NULL);
+    life_init(&s_world, now); s_first_start = now;
+    uint8_t buf[SAVE_MAX]; size_t n = sizeof buf; nvs_handle_t h; int64_t at = 0;
+    if (nvs_open("lili", NVS_READONLY, &h) == ESP_OK) { if (nvs_get_blob(h, "lili_save", buf, &n) != ESP_OK) n = 0; nvs_close(h); } else n = 0;
+    if (!n || !save_read(&s_world, buf, (int)n, &at, &s_first_start)) { ESP_LOGI(TAG, "save: none, a new start (clock %s)", clock ? "from the RTC" : "unset"); return; }
+    s_world.clock_s = 0; s_world.epoch0 = at;
+    offline_log_t lg; const int sc = clock && now > at ? life_offline(&s_world, now - at, &lg) : SCENE_GREET;
+    s_world.epoch0 = now - (int64_t)s_world.clock_s;
+    ESP_LOGI(TAG, "save: away %.1f h -> %s", clock && now > at ? (now - at) / 3600.0 : 0.0, life_scene_name(sc));
+}
+
 static void keys_init(void) {
     gpio_config_t pu = { .pin_bit_mask = (1ULL << PIN_BOOT) | (1ULL << PIN_KEY3), .mode = GPIO_MODE_INPUT, .pull_up_en = GPIO_PULLUP_ENABLE };
     gpio_config(&pu);
@@ -113,6 +141,7 @@ void app_main(void) {
     ev_init(&s_q);
     nav_init(s_nav);
     s_touch = touch216_init();
+    lili_load();
     if (s_pak.data) demo_start();
     memset(s_bg, 0, sizeof *s_bg);
     ESP_LOGI(TAG, "up: world %u B, canvas %u B, mask %u B, static-layer cache %u B | internal heap %u KB free", (unsigned)sizeof s_world, (unsigned)sizeof *s_r8, (unsigned)sizeof *s_mask, (unsigned)sizeof *s_bg,
@@ -134,6 +163,7 @@ void app_main(void) {
         }
         ev_t ev; while (ev_pop(&s_q, &ev)) { ESP_LOGI(TAG, "event %s %d %d %d", ev_name((ev_type_t)ev.type), ev.a, ev.b, ev.c); world_handle_event(&s_world, &ev); }
         if (demo_active()) demo_tick(&s_world, dt); else plan_tick(&s_world, 0, dt);
+        { static float save_t; save_t += dt; if (save_t > 300.0f && !demo_active()) { save_t = 0; lili_save(); } }   /* every 5 minutes (spec 9.7) */
         world_tick(&s_world, dt);
         int64_t t1 = esp_timer_get_time();
         world_render_cached(&s_world, s_r8, s_bg);

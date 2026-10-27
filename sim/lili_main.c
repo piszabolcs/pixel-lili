@@ -11,6 +11,8 @@
  *   ./lilisim --anim-viewer [name]    the window: one animation from all 8 directions (A/arrows, Tab yard size, Space pause)
  *   ./lilisim --anim-viewer-shot DIR [frame]  headless, DIR/<anim>.ppm of the viewer for every animation
  *   ./lilisim --snapshot DIR          headless, both views x 4 seasons x 4 dayparts as DIR/<view>_<season>_<daypart>.ppm
+ *   ./lilisim [--fresh]               the window keeps Lili in lili_save.bin: the time away is lived when it opens
+ *                                     (spec 9.6), and she is saved every 5 minutes and at Q (--fresh: a new start)
  *
  * The fish simulator (main.c) is untouched and still builds with make SQUARE=1. */
 #include <stdio.h>
@@ -777,6 +779,134 @@ static int selftest_toys(void) {
     return 0;
 }
 
+/* ---- M5: the needs, the pad and the guilt, the calendar, the time away, the save ---- */
+#include "life.h"
+#include "save.h"
+/* --selftest-progress (spec 9.1-9.2, M5.1-M5.2) */
+static int selftest_progress(void) {
+    nav_init(&s_nav); world_init(&s_world, 61); actor_t *l = &s_world.actors[0];
+    const float h0 = s_world.hunger, b0 = s_world.bladder, lo0 = s_world.lonely;
+    l->anim = ANIM_IDLE_STAND;
+    for (int i = 0; i < 3600; i++) life_tick(&s_world, 1.0f);       /* an hour awake, alone */
+    CHECK(fabsf(s_world.hunger - h0 - 0.35f) < 0.01f && fabsf(s_world.bladder - b0 - 0.45f) < 0.01f && fabsf(s_world.lonely - lo0 - 0.6f) < 0.01f,
+          "an hour alone: hunger +0.35, bladder +0.45, lonely +0.6 (spec 9.1)");
+    const float e0 = s_world.energy; l->anim = ANIM_SLEEP_CURL;
+    for (int i = 0; i < 3600; i++) life_tick(&s_world, 1.0f);
+    CHECK(fabsf(s_world.energy - (e0 + 2.5f > 10 ? 10 : e0 + 2.5f)) < 0.01f, "an hour asleep: energy +2.5");
+    l->anim = ANIM_IDLE_STAND; s_world.lonely = 6;
+    for (int i = 0; i < 3600; i++) { life_owner(&s_world); life_tick(&s_world, 1.0f); }
+    CHECK(fabsf(s_world.lonely - 4.0f) < 0.01f, "an hour with the owner: lonely -2");
+    s_world.hunger = 7; s_world.bladder = 3; plan_one(&s_world, 0, ACT_EAT, ST_WALK); run_plan(30);
+    CHECK(s_world.hunger < 0.01f && fabsf(s_world.bladder - 5.0f) < 0.05f && s_world.things.food == 2, "eating: one serving, hunger 0, bladder +2");
+    s_world.bored = 8; plan_one(&s_world, 0, ACT_PLAY_BOW, ST_WALK); run_plan(10);
+    CHECK(fabsf(s_world.bored - 5.0f) < 0.05f, "playing: bored -3");
+    /* the pad (spec 9.2): used after one visit, full after the second; the floor: a spot and guilt */
+    s_world.bladder = 9; plan_one(&s_world, 0, ACT_USE_PAD, ST_WALK); run_plan(30);
+    CHECK(s_world.things.pad == 1 && s_world.bladder < 0.01f && !s_world.things.guilty, "the pad once: used, no guilt, bladder 0");
+    s_world.bladder = 9; plan_one(&s_world, 0, ACT_USE_PAD, ST_WALK); run_plan(30);
+    CHECK(s_world.things.pad == 2, "the pad twice: full");
+    s_world.bladder = 9; plan_one(&s_world, 0, ACT_MISCHIEF_FLOOR, ST_WALK); run_plan(30);
+    CHECK(s_world.things.n_mess == 1 && s_world.things.guilty && s_world.bladder < 0.01f, "the floor: a spot, guilty");
+    /* H9's chance (spec 9.2) */
+    s_world.bored = 5; s_world.lonely = 5; s_world.things.pad = 0;
+    CHECK(fabsf(life_mischief_p(&s_world, DAY_NORMAL) - 0.05f) < 0.001f, "content, a clean pad: p = 0.05");
+    s_world.bored = 10; s_world.lonely = 10; s_world.things.pad = 2;
+    CHECK(fabsf(life_mischief_p(&s_world, DAY_NORMAL) - 0.85f) < 0.001f, "bored, lonely, the pad full: p capped at 0.85");
+    CHECK(life_mischief_p(&s_world, DAY_MEMORIAL) == 0, "on September 12th: p = 0");
+    CHECK(life_bucket(0) == 0 && life_bucket(5.5f) == 5 && life_bucket(10) == 9, "the brain's buckets 0..9");
+    printf("selftest-progress: ok\n");
+    return 0;
+}
+/* --selftest-calendar (spec 9.3-9.5, M5.3) */
+static int selftest_calendar(void) {
+    lili_date_t d;
+    life_date(life_local(2026, 10, 27, 13, 5, 9), &d);
+    CHECK(d.year == 2026 && d.month == 10 && d.day == 27 && d.hour == 13 && d.minute == 5 && d.second == 9, "a local time round trip");
+    life_date(life_local(2028, 2, 29, 23, 59, 59) + 1, &d);
+    CHECK(d.year == 2028 && d.month == 3 && d.day == 1 && d.hour == 0, "a leap day rolls into March");
+    life_date(0, &d); CHECK(d.year == 1970 && d.month == 1 && d.day == 1, "the epoch");
+    CHECK(life_daypart_of(7) == 0 && life_daypart_of(12) == 0 && life_daypart_of(13) == 1 && life_daypart_of(17) == 1 && life_daypart_of(18) == 2 &&
+          life_daypart_of(21) == 2 && life_daypart_of(22) == 3 && life_daypart_of(6) == 3, "the dayparts' borders (spec 9.3)");
+    CHECK(life_season_of(3) == 0 && life_season_of(5) == 0 && life_season_of(6) == 1 && life_season_of(9) == 2 && life_season_of(12) == 3 && life_season_of(2) == 3, "the seasons by month (spec 9.4)");
+    CHECK(life_day_of(1, 15) == DAY_ADOPT && life_day_of(6, 27) == DAY_BDAY && life_day_of(9, 12) == DAY_MEMORIAL && life_day_of(9, 13) == DAY_NORMAL, "the special days (spec 9.5, D-04)");
+    world_init(&s_world, 71); s_world.season_force = -1; s_world.daypart_force = -1;
+    life_init(&s_world, life_local(2026, 7, 3, 15, 0, 0));
+    CHECK(world_season(&s_world) == 1 && world_daypart(&s_world) == 1 && world_day(&s_world) == DAY_NORMAL, "the world from its clock: summer afternoon");
+    s_world.clock_s += 8 * 3600;                                     /* 23:00 */
+    CHECK(world_daypart(&s_world) == 3, "and the clock moves the daypart");
+    life_init(&s_world, life_local(2026, 9, 12, 10, 0, 0));
+    CHECK(world_day(&s_world) == DAY_MEMORIAL && !plan_possible(&s_world, 0, ACT_MISCHIEF_FLOOR), "September 12th: no mischief at all (H15, spec 10.5)");
+    life_init(&s_world, life_local(2026, 9, 13, 10, 0, 0));
+    CHECK(plan_possible(&s_world, 0, ACT_MISCHIEF_FLOOR), "the next day it is possible again");
+    printf("selftest-calendar: ok\n");
+    return 0;
+}
+/* --selftest-offline (spec 9.6, M5.4): the time away, deterministic, its events and scenes in their bands */
+static int selftest_offline(void) {
+    nav_init(&s_nav);
+    int scenes[5] = { 0 }, floors = 0, pads = 0; const int N = 400;
+    for (int k = 0; k < N; k++) {                                    /* away 1..36 h, leaving at every hour of the day, many seeds */
+        world_init(&s_world, 1000 + k); s_world.season_force = -1; s_world.daypart_force = -1;
+        life_init(&s_world, life_local(2026, 10, 5, (k * 5) % 24, 0, 0));
+        offline_log_t lg; const int sc = life_offline(&s_world, (1 + k % 36) * 3600, &lg);
+        scenes[sc]++; floors += lg.pees_floor; pads += lg.pees_pad;
+    }
+    printf("offline: %d absences: greet %d, guilty %d, caught %d, outside %d, asleep %d; pees: pad %d, floor %d\n",
+           N, scenes[0], scenes[1], scenes[2], scenes[3], scenes[4], pads, floors);
+    for (int i = 0; i < 5; i++) CHECK(scenes[i] > 0, "every wake-up scene happens");
+    CHECK(pads > 0 && floors > 0, "both the pad and the floor happen");
+    int short_floor = 0, short_n = 0;                                /* a contented dog, a clean pad, 3 hours: mostly no spot */
+    for (int k = 0; k < 200; k++) {
+        world_init(&s_world, 3000 + k); life_init(&s_world, life_local(2026, 10, 5, 10, 0, 0)); s_world.bladder = 7;
+        offline_log_t lg; life_offline(&s_world, 3 * 3600, &lg); short_floor += lg.pees_floor; short_n += lg.pees_floor + lg.pees_pad;
+    }
+    printf("offline: 3 h away, content: %d pees, %d on the floor\n", short_n, short_floor);
+    CHECK(short_n > 150 && short_floor * 5 < short_n, "short and content: the pad, the floor under one time in five (p = 0.05 + a little)");
+    world_t a, b; world_init(&a, 77); world_init(&b, 77);
+    life_init(&a, life_local(2026, 10, 5, 9, 0, 0)); life_init(&b, life_local(2026, 10, 5, 9, 0, 0));
+    s_world = a; int sa = life_offline(&s_world, 20 * 3600, NULL); a = s_world;
+    s_world = b; int sb = life_offline(&s_world, 20 * 3600, NULL); b = s_world;
+    CHECK(sa == sb && a.hunger == b.hunger && a.things.n_mess == b.things.n_mess && a.actors[0].x == b.actors[0].x, "the same seed and absence: the same story");
+    world_init(&s_world, 78); life_init(&s_world, life_local(2026, 10, 5, 9, 0, 0));
+    life_offline(&s_world, 400LL * 86400, NULL);
+    CHECK(s_world.lonely == 10 && s_world.bored == 10, "a year away is cut to 30 days: everything saturated");
+    int mem_floor = 0;
+    for (int k = 0; k < 100; k++) {                                  /* a whole September 12th away: never the floor */
+        world_init(&s_world, 2000 + k); life_init(&s_world, life_local(2026, 9, 12, 0, 10, 0)); s_world.bored = s_world.lonely = 9; s_world.things.pad = 2;
+        offline_log_t lg; life_offline(&s_world, 23 * 3600, &lg); mem_floor += lg.pees_floor;
+    }
+    CHECK(mem_floor == 0, "away on September 12th: no spot on the floor");
+    printf("selftest-offline: ok\n");
+    return 0;
+}
+/* --selftest-save (spec 9.7, M5.5): a round trip, a broken byte refused, an older (shorter) save read with defaults */
+static int selftest_save(void) {
+    nav_init(&s_nav); world_init(&s_world, 81);
+    s_world.hunger = 4.25f; s_world.lonely = 6.5f; s_world.things.n_mess = 2; s_world.things.mess[1][0] = 123; s_world.things.guilty = true;
+    s_world.things.pad = 1; s_world.things.food = 1; s_world.actors[0].view = VIEW_YARD; s_world.actors[0].x = 300.5f; s_world.pets = 42;
+    toy_pick(&s_world, TOY_ROPE, 0);
+    uint8_t buf[SAVE_MAX]; const int n = save_write(&s_world, 1234567, buf, sizeof buf);
+    CHECK(n > 40 && n <= SAVE_MAX, "the save fits its buffer");
+    world_t keep = s_world; world_init(&s_world, 82); int64_t at = 0, first = 0;
+    CHECK(save_read(&s_world, buf, n, &at, &first), "a save reads back");
+    CHECK(s_world.hunger == keep.hunger && s_world.lonely == keep.lonely && s_world.things.n_mess == 2 && s_world.things.mess[1][0] == 123 &&
+          s_world.things.guilty && s_world.things.pad == 1 && s_world.things.food == 1 && s_world.actors[0].view == VIEW_YARD &&
+          s_world.actors[0].x == 300.5f && s_world.pets == 42 && s_world.things.toys[TOY_ROPE].held_by == 0 && first == 1234567 && at == world_now(&keep),
+          "every field comes back");
+    for (int i = 0; i < n; i += 7) { buf[i] ^= 0x10; CHECK(!save_read(&s_world, buf, n, NULL, NULL), "a flipped bit is refused (CRC, magic, length)"); buf[i] ^= 0x10; }
+    /* an older save: the same layout cut after the needs (a v0 that knew less), its CRC made right */
+    uint8_t old[SAVE_MAX]; memcpy(old, buf, (size_t)n);
+    const int plen = 8 + 8 + 6 * 4; old[6] = (uint8_t)plen; old[7] = 0;
+    uint32_t c = 0xFFFFFFFFu; for (int i = 0; i < 8 + plen; i++) { c ^= old[i]; for (int k = 0; k < 8; k++) c = c >> 1 ^ (0xEDB88320u & (0u - (c & 1))); } c = ~c;
+    old[8 + plen] = (uint8_t)c; old[9 + plen] = (uint8_t)(c >> 8); old[10 + plen] = (uint8_t)(c >> 16); old[11 + plen] = (uint8_t)(c >> 24);
+    world_init(&s_world, 83);
+    CHECK(save_read(&s_world, old, 12 + plen, NULL, NULL) && s_world.hunger == keep.hunger && s_world.things.food == 3 && s_world.actors[0].view == VIEW_ROOM,
+          "an older, shorter save reads: its fields, and the defaults after them");
+    CHECK(!save_read(&s_world, (const uint8_t *)"LSAVxxxx", 8, NULL, NULL), "garbage is refused");
+    printf("selftest-save: ok (%d B)\n", n);
+    return 0;
+}
+
 static double now_us(void) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); return ts.tv_sec * 1e6 + ts.tv_nsec / 1e3; }
 static int bench(void) {
     canvas_init(); world_init(&s_world, 1);
@@ -861,6 +991,32 @@ static int viewer_shot(const char *dir, int frame_no) {
     return 0;
 }
 
+/* the save (spec 9.7): this folder's lili_save.bin; the PC's local time is the clock */
+#define SIM_SAVE "lili_save.bin"
+static int64_t s_first_start;
+static int64_t pc_local_now(void) {                 /* the PC's wall clock as local seconds (life.c's own calendar: no zone) */
+    time_t t = time(NULL); const struct tm *lt = localtime(&t);
+    return life_local(lt->tm_year + 1900, lt->tm_mon + 1, lt->tm_mday, lt->tm_hour, lt->tm_min, lt->tm_sec);
+}
+static void sim_save(void) {
+    uint8_t buf[SAVE_MAX]; int n = save_write(&s_world, s_first_start, buf, sizeof buf);
+    FILE *f = n ? fopen(SIM_SAVE, "wb") : NULL;
+    if (f) { fwrite(buf, 1, (size_t)n, f); fclose(f); }
+}
+static void sim_load(bool fresh) {
+    const int64_t now = pc_local_now();
+    life_init(&s_world, now); s_first_start = now;
+    if (fresh) { printf("save: a fresh start\n"); return; }
+    uint8_t buf[SAVE_MAX]; FILE *f = fopen(SIM_SAVE, "rb"); int n = f ? (int)fread(buf, 1, sizeof buf, f) : 0; if (f) fclose(f);
+    int64_t at = 0;
+    if (n <= 0 || !save_read(&s_world, buf, n, &at, &s_first_start)) { printf("save: none (%s), a new start\n", SIM_SAVE); return; }
+    s_world.clock_s = 0; s_world.epoch0 = at;                       /* back to the save's moment, then the time away up to now */
+    offline_log_t lg; const int sc = life_offline(&s_world, now - at, &lg);
+    s_world.epoch0 = now - (int64_t)s_world.clock_s;
+    char line[96]; snprintf(line, sizeof line, "away %.1f h: %s (pad %d, floor %d, meals %d)", (now - at) / 3600.0, life_scene_name(sc), lg.pees_pad, lg.pees_floor, lg.meals);
+    puts(line); inspector_log(line);
+}
+
 static void frame_cb(lv_timer_t *t) {
     (void)t;
     double t0 = now_us();
@@ -877,6 +1033,8 @@ static void frame_cb(lv_timer_t *t) {
     drain_events();
     if (s_av.on) { if (!s_av.pause) s_av.t += dt; viewer_draw(); }
     else { if (demo_active()) demo_tick(&s_world, dt); else plan_tick(&s_world, 0, dt); world_tick(&s_world, dt); frame(); }
+    static float save_t; save_t += dt;
+    if (save_t > 300.0f && !demo_active()) { save_t = 0; sim_save(); }                /* every 5 minutes (spec 9.7) */
     lv_obj_invalidate(s_canvas);
     if (dt > 0) s_fps = s_fps > 0 ? 0.9f * s_fps + 0.1f / dt : 1.0f / dt;
     s_frame_ms = (float)((now_us() - t0) / 1000.0);
@@ -934,6 +1092,10 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--selftest-plan")) return selftest_plan();
     if (argc > 1 && !strcmp(argv[1], "--selftest-reflex")) return selftest_reflex();
     if (argc > 1 && !strcmp(argv[1], "--selftest-toys")) return selftest_toys();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-progress")) return selftest_progress();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-calendar")) return selftest_calendar();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-offline")) return selftest_offline();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-save")) return selftest_save();
     if (argc > 1 && !strcmp(argv[1], "--selftest-render")) return selftest_render(argc > 2 && !strcmp(argv[2], "--update"));
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
     if (argc > 2 && !strcmp(argv[1], "--inspector-shot")) return inspector_shot(argv[2]);
@@ -952,6 +1114,7 @@ int main(int argc, char **argv) {
     ev_init(&s_q);
     ui_build();
     nav_init(&s_nav);
+    sim_load(argc > 1 && !strcmp(argv[1], "--fresh"));
     if (argc > 1 && !strcmp(argv[1], "--demo")) demo_start();      /* the window with the tour already running (G stops it) */
     if (argc > 1 && !strcmp(argv[1], "--anim-viewer")) {           /* optional: the animation to start at, by name */
         s_av.on = true;
@@ -960,7 +1123,7 @@ int main(int argc, char **argv) {
     }
     for (;;) {
         uint32_t wait = lv_timer_handler();
-        if (key_edge(SDL_SCANCODE_Q)) break;
+        if (key_edge(SDL_SCANCODE_Q)) { if (!s_av.on && !demo_active()) sim_save(); break; }
         if (s_av.on) {
             int step = key_edge(SDL_SCANCODE_A) || key_edge(SDL_SCANCODE_RIGHT) ? 1 : key_edge(SDL_SCANCODE_LEFT) ? -1 : 0;
             if (step) { s_av.k = (s_av.k + step + N_ANIMS) % N_ANIMS; s_av.t = 0; viewer_announce(); }

@@ -73,3 +73,6 @@ assets/blender/lili_live_*.blend
 
 # the self-contained review page (tools/review_page.py, ~12 MB, regenerated)
 docs/review/animaciok.html
+
+# the simulator's save (spec 9.7)
+sim/lili_save.bin
