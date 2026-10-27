@@ -3,6 +3,7 @@
 #include "inspector.h"
 #include "plan.h"
 #include "life.h"
+#include "brain.h"
 #include "lili_demo.h"
 #include <stdio.h>
 #include <string.h>
@@ -136,9 +137,10 @@ void inspector_update(float fps, float frame_ms) {
     static const char *const DIR[] = { "S", "SW", "W", "NW", "N", "NE", "E", "SE" };
     const world_t *w = s_world; const actor_t *a = &w->actors[0];
     uint32_t seen = 0; for (int i = 0; i < EV_COUNT; i++) seen += w->events_seen[i];
-    char plan[64]; plan_describe(w, 0, plan, sizeof plan);
+    char plan[96], pl[64]; plan_describe(w, 0, pl, sizeof pl);
+    snprintf(plan, sizeof plan, "%s\nagy: %s (habozas %.2f)", pl, w->rule == BRAIN_RULE_LLM ? "modell" : w->rule >= 0 ? BRAIN_RULES[w->rule].id : "-", w->margin);
     char needs[96]; lili_date_t dt; life_date(world_now(w), &dt);
-    snprintf(needs, sizeof needs, "%02d.%02d %02d:%02d  eh %.1f en %.1f ke %.1f un %.1f ma %.1f ho %.1f%s", dt.month, dt.day, dt.hour, dt.minute,
+    snprintf(needs, sizeof needs, "%02d.%02d %02d:%02d  eh %.0f en %.0f ke %.0f un %.0f ma %.0f ho %.0f%s", dt.month, dt.day, dt.hour, dt.minute,
              w->hunger, w->energy, w->happy, w->bored, w->lonely, w->bladder, w->things.guilty ? " BUNOS" : "");
     lv_label_set_text_fmt(s_status,
         "fps %.1f   keret %.2f ms\n"
