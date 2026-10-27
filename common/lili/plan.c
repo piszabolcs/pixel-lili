@@ -276,12 +276,12 @@ static void effect(world_t *w, int actor, int fx) {
 
 void plan_start(world_t *w, int actor, const decision_t *d) {
     plan_t *p = &w->plans[actor];
-    const uint8_t hide = p->hide;
+    const uint8_t hide = p->hide, rounds = p->rounds;
     memset(p, 0, sizeof *p);
-    const uint8_t rounds = p->rounds;
     p->d = *d; p->status = PLAN_RUNNING; p->hide = hide; p->prio = 255; p->rounds = rounds; p->toy = -1;
     nav_stop(&w->bodies[actor]);
     w->bodies[actor].style = (uint8_t)plan_style(d->style, d->urg);
+    if (d->bubble != BB_NONE && d->bubble < BB_COUNT) { w->bubble = d->bubble; w->bubble_t = 2.5f; }   /* what she thinks, for a moment */
 }
 void plan_one(world_t *w, int actor, int act, int style) {
     decision_t d = { { (uint8_t)act, ACT_NONE, ACT_NONE }, (uint8_t)style, FC_NEUTRAL, BB_NONE, 5, 1.0f };
@@ -431,7 +431,7 @@ static bool deep_asleep(const world_t *w, int actor) { return plan_asleep(w, act
 static bool fire(world_t *w, int actor, int rx, int prio, int bubble) {
     plan_t *p = &w->plans[actor];
     if (p->status == PLAN_RUNNING && p->prio < prio) return false;
-    decision_t d = { { (uint8_t)rx, ACT_NONE, ACT_NONE }, ST_TROT, FC_NEUTRAL, (uint8_t)bubble, 7, 1.0f };
+    decision_t d = { { (uint8_t)rx, ACT_NONE, ACT_NONE }, ST_TROT, FC_NEUTRAL, (uint8_t)bubble, 7, 1.0f };   /* plan_start shows the bubble */
     if (rx != RX_TEASE && rx != RX_TIRED) p->rounds = 0;
     plan_start(w, actor, &d);
     p->prio = (uint8_t)prio;

@@ -98,6 +98,8 @@ typedef struct {
     uint8_t  ask_now;                      /* a trigger is waiting (spec 10.6) */
     uint8_t  mark[6];                      /* the triggers' last states: hungry, bursting, tired, view, spots, owner */
     int8_t   rule;                         /* the last decision's template (-1 = none) */
+    uint8_t  bubble; float bubble_t;       /* the thought bubble over her head (spec 10.4 BB_*, D-09) and how long it stays */
+    bool     bubbles_on;                   /* the setting (spec 7.8): the simulator on, the panel after the owner's try (D-09) */
     float    margin;                       /* and its top-2 margin */
     bool     finger_down;          /* the finger on the glass (follow_finger), set by the platform each frame */
     int16_t  finger_x, finger_y;

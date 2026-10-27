@@ -1510,6 +1510,7 @@ int main(int argc, char **argv) {
         s_debug = argc > 3 && !strcmp(argv[3], "--debug");
         canvas_init(); world_init(&s_world, 1234);
         if (getenv("LILI_VIEW")) s_world.view = (view_t)(atoi(getenv("LILI_VIEW")) % VIEW_COUNT);   /* 1 = the yard */
+        if (getenv("LILI_BUBBLE")) { s_world.bubble = (uint8_t)atoi(getenv("LILI_BUBBLE")); s_world.bubble_t = 2; }   /* a thought bubble (BB_*) */
         frame(); write_ppm(argv[2], s_fb);
         printf("wrote %s\n", argv[2]); return 0;
     }

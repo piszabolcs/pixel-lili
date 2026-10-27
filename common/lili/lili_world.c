@@ -6,6 +6,7 @@
 #include "plan.h"
 #include "life.h"
 #include "brain.h"
+#include "schema_gen.h"
 #include "nav.h"
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +28,7 @@ void world_init(world_t *w, uint32_t seed) {
     w->season_force = -1; w->daypart_force = -1;       /* memset gave 0 = "spring": -1 means "from the date / the clock" */
     w->shake_cover = -1;
     w->rule = -1;
+    w->bubbles_on = CONFIG_LILI_THOUGHT_BUBBLES;
     actor_t *lili = &w->actors[0];
     lili->present = true;
     lili->view = VIEW_ROOM;
@@ -70,6 +72,7 @@ void world_tick(world_t *w, float dt) {
     w->clock_s += dt;
     if (w->shake_cover >= 0) w->shake_t += dt;
     if (w->sparkle_t > 0) w->sparkle_t -= dt;
+    if (w->bubble_t > 0) w->bubble_t -= dt;
     toys_tick(w, dt);
     life_tick(w, dt);
     for (int i = 0; i < MAX_ACTORS; i++) {
@@ -458,6 +461,32 @@ static void draw_sparkle(const world_t *w, render8_t *r) {
     }
 }
 
+/* ---- the thought bubble (spec 10.4, M10.4): a small round bubble over her head with an icon, in Lili's palette slots;
+   9 x 9 icons as bit rows (bit 8 = the leftmost pixel) ---- */
+static const uint16_t BUBBLE_ICON[BB_COUNT][9] = {
+    [BB_HEART]    = { 0x000, 0x0C6, 0x1EF, 0x1FF, 0x1FF, 0x0FE, 0x07C, 0x038, 0x010 },
+    [BB_NOTE]     = { 0x01E, 0x01E, 0x012, 0x012, 0x012, 0x072, 0x0F6, 0x0E0, 0x000 },
+    [BB_QUESTION] = { 0x07C, 0x0C6, 0x006, 0x00C, 0x018, 0x030, 0x000, 0x030, 0x030 },
+    [BB_EXCLAIM]  = { 0x030, 0x030, 0x030, 0x030, 0x030, 0x030, 0x000, 0x030, 0x030 },
+    [BB_SWEAT]    = { 0x010, 0x010, 0x038, 0x038, 0x07C, 0x07C, 0x07C, 0x038, 0x000 },
+    [BB_ZZZ]      = { 0x1F0, 0x020, 0x040, 0x0F8, 0x000, 0x00F, 0x002, 0x004, 0x00F },
+    [BB_FOOD]     = { 0x000, 0x038, 0x07C, 0x000, 0x1FF, 0x0FE, 0x0FE, 0x07C, 0x000 },
+    [BB_ROPE]     = { 0x000, 0x180, 0x1C0, 0x0E0, 0x070, 0x038, 0x01C, 0x00E, 0x006 },
+    [BB_PLUSH]    = { 0x082, 0x1C7, 0x0FE, 0x0D6, 0x0FE, 0x07C, 0x0FE, 0x0FE, 0x07C },
+};
+static void draw_bubble(const world_t *w, render8_t *r, int x, int top) {
+    if (!w->bubbles_on || w->bubble_t <= 0 || w->bubble == BB_NONE || w->bubble >= BB_COUNT) return;
+    uint8_t dark, mid, light, warm; lili_slots(r, &dark, &mid, &light, &warm);
+    const int bx = x + 10, by = top - 16;                          /* up and to the right of her head */
+    r8_fill(r, bx - 9, by - 7, 19, 15, dark); r8_fill(r, bx - 8, by - 8, 17, 17, dark);
+    r8_fill(r, bx - 8, by - 6, 17, 13, light); r8_fill(r, bx - 7, by - 7, 15, 15, light);
+    r8_fill(r, bx - 5, by + 9, 3, 3, dark); r8_fill(r, bx - 4, by + 10, 1, 1, light);   /* the little trail to her head */
+    r8_fill(r, bx - 8, by + 13, 2, 2, dark);
+    const uint8_t ink = w->bubble == BB_HEART || w->bubble == BB_FOOD ? warm : dark;
+    for (int row = 0; row < 9; row++) for (int c = 0; c < 9; c++)
+        if (BUBBLE_ICON[w->bubble][row] >> (8 - c) & 1) r8_fill(r, bx - 4 + c, by - 4 + row, 1, 1, ink);
+}
+
 static void painted_fg(const world_t *w, render8_t *r) {
     enum { MAXD = 16 }; int16_t key[MAXD]; int8_t who[MAXD]; int n = 0;  /* who: prop slot, or -1 - actor */
     pak_image_t props[IMG_COVERS_PER_SEASON + 3]; int np = 0;
@@ -486,6 +515,14 @@ static void painted_fg(const world_t *w, render8_t *r) {
         else painted_actor(w, r, &w->actors[-1 - who[i]]);
     }
     draw_sparkle(w, r);
+    {   /* her thought over everything, where her head is */
+        const actor_t *a = &w->actors[0]; sprite_set_t set; sprite_frame_t fr;
+        if (a->present && a->view == w->view && a->vis > 0.5f) {
+            const bool yard = w->view == VIEW_YARD;
+            const int top = ((yard && world_actor_frame(a, ANIM_YARD_OFFSET, &set, &fr)) || world_actor_frame(a, 0, &set, &fr)) ? (int)(a->y - a->z) - set.pivot_y : (int)(a->y - a->z) - 60;
+            draw_bubble(w, r, (int)a->x, top);
+        }
+    }
 }
 
 uint32_t world_bg_key(const world_t *w) {               /* placeholder: the view only; painted: view, season and daypart */
