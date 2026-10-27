@@ -146,7 +146,7 @@ static void compose_card(ui_t *u, const world_t *w, const render8_t *r) {
         }
         if (i == 2) snprintf(v, sizeof v, "%s", w->bubbles_on ? "be" : "ki");
         if (i == 3) snprintf(v, sizeof v, "%s", w->set_search ? "be" : "ki");
-        if (i == 4) { lili_date_t dt; life_date(world_now(w), &dt); snprintf(v, sizeof v, "%02d:%02d", dt.hour, dt.minute); }
+        if (i == 4) { lili_date_t dt; life_date(world_now(w), &dt); if (w->clock_ok) snprintf(v, sizeof v, "%02d:%02d", dt.hour, dt.minute); else snprintf(v, sizeof v, "állítsd be!"); }
         text(d, W, H, W - 20 - text_w(v, 2), y + 8, 2, i == 4 ? rgb(230, 225, 215) : WHITE, v);
     }
 }

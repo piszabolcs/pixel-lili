@@ -107,7 +107,11 @@ static void lili_load(void) {
     life_init(&s_world, now); s_first_start = now;
     uint8_t buf[SAVE_MAX]; size_t n = sizeof buf; nvs_handle_t h; int64_t at = 0;
     if (nvs_open("lili", NVS_READONLY, &h) == ESP_OK) { if (nvs_get_blob(h, "lili_save", buf, &n) != ESP_OK) n = 0; nvs_close(h); } else n = 0;
-    if (!n || !save_read(&s_world, buf, (int)n, &at, &s_first_start)) { ESP_LOGI(TAG, "save: none, a new start (clock %s)", clock ? "from the RTC" : "unset"); return; }
+    s_world.clock_ok = clock;
+    if (!n || !save_read(&s_world, buf, (int)n, &at, &s_first_start)) {     /* the first start (M10.7): a greeting; no clock: the card asks for the time */
+        ESP_LOGI(TAG, "save: none, a first start (clock %s%s)", clock ? "from the RTC" : "unset", clock ? "" : ": settime YYYY-MM-DDTHH:MM:SS on the console");
+        reflex_greet(&s_world); return;
+    }
     s_world.clock_s = 0; s_world.epoch0 = at;
     offline_log_t lg; const int sc = clock && now > at ? life_offline(&s_world, now - at, &lg) : SCENE_GREET;
     s_world.epoch0 = now - (int64_t)s_world.clock_s;

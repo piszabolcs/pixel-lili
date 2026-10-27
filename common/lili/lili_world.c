@@ -30,6 +30,7 @@ void world_init(world_t *w, uint32_t seed) {
     w->rule = -1;
     w->bubbles_on = CONFIG_LILI_THOUGHT_BUBBLES;
     w->set_bright = 2; w->set_volume = 2; w->set_search = CONFIG_LILI_SEARCH_HINT;
+    w->went_t = 1e6f; w->clock_ok = true;
     actor_t *lili = &w->actors[0];
     lili->present = true;
     lili->view = VIEW_ROOM;
@@ -74,6 +75,8 @@ void world_tick(world_t *w, float dt) {
     if (w->shake_cover >= 0) w->shake_t += dt;
     if (w->sparkle_t > 0) w->sparkle_t -= dt;
     if (w->bubble_t > 0) w->bubble_t -= dt;
+    w->went_t += dt;
+    if (w->actors[0].view != w->went_view) { w->went_view = (uint8_t)w->actors[0].view; w->went_t = 0; }   /* through the door */
     toys_tick(w, dt);
     life_tick(w, dt);
     for (int i = 0; i < MAX_ACTORS; i++) {
@@ -488,6 +491,20 @@ static void draw_bubble(const world_t *w, render8_t *r, int x, int top) {
         if (BUBBLE_ICON[w->bubble][row] >> (8 - c) & 1) r8_fill(r, bx - 4 + c, by - 4 + row, 1, 1, ink);
 }
 
+/* the search hint (spec 8.4, M10.5, D-06; off unless set): she went to the other place a moment ago: a paw print
+   at the edge she left by (the room's door at the top, the yard's house door at the bottom), for 8 s, blinking */
+static void draw_search_hint(const world_t *w, render8_t *r) {
+    if (!w->set_search || w->went_t > 8.0f || w->actors[0].view == w->view) return;
+    if ((int)(w->went_t * 2) % 2) return;
+    static const uint16_t PAW[9] = { 0x044, 0x0EE, 0x044, 0x101, 0x07C, 0x0FE, 0x0FE, 0x07C, 0x000 };
+    uint8_t dark, mid, light, warm; lili_slots(r, &dark, &mid, &light, &warm);
+    const int x = LILI_LOG_W / 2 - 9, y = w->view == VIEW_ROOM ? 186 : LILI_LOG_H - 40;
+    for (int row = 0; row < 9; row++) for (int c = 0; c < 9; c++)
+        if (PAW[row] >> (8 - c) & 1) { r8_fill(r, x + 2 * c - 1, y + 2 * row - 1, 4, 4, dark); }
+    for (int row = 0; row < 9; row++) for (int c = 0; c < 9; c++)
+        if (PAW[row] >> (8 - c) & 1) r8_fill(r, x + 2 * c, y + 2 * row, 2, 2, light);
+}
+
 static void painted_fg(const world_t *w, render8_t *r) {
     enum { MAXD = 16 }; int16_t key[MAXD]; int8_t who[MAXD]; int n = 0;  /* who: prop slot, or -1 - actor */
     pak_image_t props[IMG_COVERS_PER_SEASON + 3]; int np = 0;
@@ -516,6 +533,7 @@ static void painted_fg(const world_t *w, render8_t *r) {
         else painted_actor(w, r, &w->actors[-1 - who[i]]);
     }
     draw_sparkle(w, r);
+    draw_search_hint(w, r);
     {   /* her thought over everything, where her head is */
         const actor_t *a = &w->actors[0]; sprite_set_t set; sprite_frame_t fr;
         if (a->present && a->view == w->view && a->vis > 0.5f) {

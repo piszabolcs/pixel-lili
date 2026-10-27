@@ -1326,6 +1326,18 @@ static int selftest_ui(void) {
     for (int i = 0; i < 200; i++) ui_tick(&s_ui, 0.03f);
     CHECK(s_ui.show < 0.01f && !ui_tap(&s_ui, &s_world, 300, 50), "4 s untouched: the bar slides away, and a tap there is the world's again");
     uint16_t c[5]; CHECK(font_glyph(0x151, c) && font_glyph(0x170, c) && font_glyph(0xE1, c) && !font_glyph(0x4E2D, c), "the font has ő, Ű, á (and no CJK)");
+    {   /* the search hint (D-06): off by default; on, a paw at the room's door for 8 s after she went out */
+        static render8_t a, b; world_init(&s_world, 62); world_tick(&s_world, 0.01f);
+        world_render(&s_world, &a); s_world.actors[0].view = VIEW_YARD; world_tick(&s_world, 0.01f); world_render(&s_world, &b);
+        long d1 = 0; for (int i = 0; i < LILI_LOG_W * LILI_LOG_H; i++) d1 += a.px[i] != b.px[i];
+        s_world.actors[0].view = VIEW_ROOM; world_tick(&s_world, 0.01f); s_world.set_search = true; world_render(&s_world, &a);
+        s_world.actors[0].view = VIEW_YARD; world_tick(&s_world, 0.01f); world_render(&s_world, &b);
+        long d2 = 0; for (int y = 170; y < 220; y++) for (int x = 200; x < 280; x++) d2 += a.px[y * LILI_LOG_W + x] != b.px[y * LILI_LOG_W + x];
+        for (int i = 0; i < 300; i++) world_tick(&s_world, 0.03f);
+        world_render(&s_world, &a); long d3 = 0; for (int y = 170; y < 220; y++) for (int x = 200; x < 280; x++) d3 += a.px[y * LILI_LOG_W + x] != b.px[y * LILI_LOG_W + x];
+        CHECK(d2 > 20 && d3 > 20, "the search hint on: a paw at the room's door after she went out, gone after 8 s");
+        (void)d1;
+    }
     printf("selftest-ui: ok\n");
     return 0;
 }
@@ -1433,7 +1445,7 @@ static void sim_load(bool fresh) {
     if (fresh) { printf("save: a fresh start\n"); return; }
     uint8_t buf[SAVE_MAX]; FILE *f = fopen(SIM_SAVE, "rb"); int n = f ? (int)fread(buf, 1, sizeof buf, f) : 0; if (f) fclose(f);
     int64_t at = 0;
-    if (n <= 0 || !save_read(&s_world, buf, n, &at, &s_first_start)) { printf("save: none (%s), a new start\n", SIM_SAVE); return; }
+    if (n <= 0 || !save_read(&s_world, buf, n, &at, &s_first_start)) { printf("save: none (%s), a first start: a greeting\n", SIM_SAVE); reflex_greet(&s_world); return; }
     s_world.clock_s = 0; s_world.epoch0 = at;                       /* back to the save's moment, then the time away up to now */
     offline_log_t lg; const int sc = life_offline(&s_world, now - at, &lg);
     s_world.epoch0 = now - (int64_t)s_world.clock_s;

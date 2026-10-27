@@ -102,6 +102,9 @@ typedef struct {
     bool     bubbles_on;                   /* the setting (spec 7.8): the simulator on, the panel after the owner's try (D-09) */
     uint8_t  set_bright, set_volume;       /* the settings card (spec 7.8): brightness 0..2, volume 0..3 */
     bool     set_muted, set_search;        /* the sound off; the search hint (D-06) */
+    bool     clock_ok;                     /* the clock is real (an RTC or the PC); false: the settings card asks for the time (M10.7) */
+    float    went_t;                       /* seconds since she went through the door to the other place (the search hint) */
+    uint8_t  went_view;                    /* the place she was in a tick ago */
     float    margin;                       /* and its top-2 margin */
     bool     finger_down;          /* the finger on the glass (follow_finger), set by the platform each frame */
     int16_t  finger_x, finger_y;
