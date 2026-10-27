@@ -201,10 +201,10 @@ static int selftest(void) {
     for (int i = 0; i < EV_QUEUE_LEN + 8; i++) ev_push(&q, EV_TIME_SKIP, i, 0);          /* 8 more than it holds: wraps, drops the oldest */
     CHECK(q.dropped == 8 && q.count == EV_QUEUE_LEN, "a full queue drops the oldest 8");
     CHECK(ev_pop(&q, &e) && e.a == 8, "the survivors start at the 9th event");
-    CHECK(!strcmp(ev_name(EV_SHAKE), "SHAKE") && EV_COUNT == 17 && (int)(sizeof s_world.events_seen / sizeof s_world.events_seen[0]) == EV_COUNT,
+    CHECK(!strcmp(ev_name(EV_SHAKE), "SHAKE") && !strcmp(ev_name(EV_APPROACH), "APPROACH") && !strcmp(ev_name(EV_SET_DAYPART), "SET_DAYPART") && (int)(sizeof s_world.events_seen / sizeof s_world.events_seen[0]) == EV_COUNT,
           "event names, and the world's counters cover every type");
     world_init(&s_world, 1);
-    ev_t sv = { EV_SWITCH_VIEW, 0, 0 }, ts = { EV_TIME_SKIP, 3600, 0 }, ss = { EV_SET_SEASON, 3, 0 }, dp = { EV_SET_DAYPART, 9, 0 }, wh = { EV_WHISTLE, 0, 0 };
+    ev_t sv = { EV_SWITCH_VIEW, 0, 0, 0 }, ts = { EV_TIME_SKIP, 3600, 0, 0 }, ss = { EV_SET_SEASON, 3, 0, 0 }, dp = { EV_SET_DAYPART, 9, 0, 0 }, wh = { EV_WHISTLE, 0, 0, 0 };
     world_handle_event(&s_world, &sv); world_handle_event(&s_world, &ts); world_handle_event(&s_world, &ss); world_handle_event(&s_world, &dp); world_handle_event(&s_world, &wh);
     CHECK(s_world.view == VIEW_YARD && s_world.clock_s == 3600.0f && s_world.season_force == 3, "view, time skip and season events act on the world");
     CHECK(s_world.daypart_force == -1, "an out-of-range daypart means from-the-clock");
@@ -375,6 +375,7 @@ static int selftest(void) {
 /* ---------- the demo tour: common/lili/lili_demo.c (the panel runs the same script) ---------- */
 #include "lili_demo.h"
 #include "nav.h"
+#include "gesture.h"
 static nav_scratch_t s_nav;                           /* the path search's work area (nav.h) */
 /* --demo-record DIR [fps]: one round of the tour, headless, as DIR/f00000.ppm ... (tools: ffmpeg -> mp4) */
 static int demo_record(const char *dir, int fps) {
@@ -546,6 +547,67 @@ static int selftest_render(bool update) {
     return 0;
 }
 
+/* --selftest-gesture (spec 5.3, M4.3): synthetic strokes through gesture.c, each giving its event */
+static int g_run(gesture_t *g, const gesture_ctx_t *c, ev_queue_t *q, const int (*pts)[3], int n) {   /* pts: x, y, t; the last one lifts */
+    for (int i = 0; i < n; i++) gesture_feed(g, c, i < n - 1, pts[i][0], pts[i][1], (uint32_t)pts[i][2], q);
+    return q->count;
+}
+static bool g_has(ev_queue_t *q, ev_type_t type, ev_t *out) {
+    for (int i = 0; i < q->count; i++) { const ev_t *e = &q->q[(q->head + i) % EV_QUEUE_LEN]; if (e->type == type) { if (out) *out = *e; return true; } }
+    return false;
+}
+static int g_count(ev_queue_t *q, ev_type_t type) {
+    int n = 0; for (int i = 0; i < q->count; i++) n += q->q[(q->head + i) % EV_QUEUE_LEN].type == type; return n;
+}
+static int selftest_gesture(void) {
+    gesture_t g; gesture_ctx_t c; ev_queue_t q; ev_t e;
+    memset(&c, 0, sizeof c);
+    c.lili = (g_rect_t){ 200, 200, 260, 260 }; c.door = (g_rect_t){ 196, 30, 278, 166 };
+    c.n_toys = 1; c.toy_x[0] = 360; c.toy_y[0] = 360;
+    gesture_init(&g);
+    { static const int P[][3] = { { 100, 300, 0 }, { 102, 301, 60 }, { 102, 301, 120 } }; ev_init(&q); g_run(&g, &c, &q, P, 3); }
+    CHECK(q.count == 1 && g_has(&q, EV_TAP, &e) && e.a == 100 && e.b == 300, "a short still touch is a TAP where it landed");
+    { static const int P[][3] = { { 230, 100, 0 }, { 230, 100, 100 } }; ev_init(&q); g_run(&g, &c, &q, P, 2); }
+    CHECK(q.count == 1 && g_has(&q, EV_SWITCH_VIEW, NULL), "a tap on the door switches the view");
+    { static const int P[][3] = { { 100, 300, 0 }, { 103, 302, 300 }, { 104, 302, 650 }, { 104, 302, 900 }, { 104, 302, 950 } }; ev_init(&q); g_run(&g, &c, &q, P, 5); }
+    CHECK(q.count == 1 && g_has(&q, EV_LONG, &e) && e.a == 100, "a long still press is one LONG, and no TAP at its release");
+    {   /* the rub: back and forth over her, 25 px every 80 ms */
+        static int P[20][3]; for (int i = 0; i < 20; i++) { P[i][0] = 220 + (i % 2) * 25; P[i][1] = 230; P[i][2] = i * 80; }
+        ev_init(&q); g_run(&g, &c, &q, (const int (*)[3])P, 20);
+    }
+    CHECK(g_count(&q, EV_PET_START) == 1 && g_count(&q, EV_PET_TICK) >= 2 && g_count(&q, EV_PET_END) == 1 && !g_has(&q, EV_TAP, NULL), "a rub over her: PET_START, PET_TICKs, PET_END at the lift");
+    {   /* the same back and forth away from her: nothing */
+        static int P[20][3]; for (int i = 0; i < 20; i++) { P[i][0] = 60 + (i % 2) * 25; P[i][1] = 400; P[i][2] = i * 80; }
+        ev_init(&q); g_run(&g, &c, &q, (const int (*)[3])P, 20);
+    }
+    CHECK(q.count == 0, "rubbing the floor is no pet (and a moved press no tap)");
+    {   /* the flick: from the toy, 30 px every 16 ms (1875 px / s) */
+        static int P[7][3]; for (int i = 0; i < 7; i++) { P[i][0] = 360 + i * 30; P[i][1] = 360 - i * 10; P[i][2] = i * 16; }
+        P[6][0] = P[5][0]; P[6][1] = P[5][1]; P[6][2] = P[5][2];
+        ev_init(&q); g_run(&g, &c, &q, (const int (*)[3])P, 7);
+    }
+    CHECK(g_has(&q, EV_FLICK, &e) && e.a > 600 && e.b < 0 && e.c == 0 && !g_has(&q, EV_DROP, NULL), "a fast stroke from the toy is a FLICK with its velocity and the toy");
+    {   /* the drag: from the toy, 2 px every 16 ms */
+        static int P[30][3]; for (int i = 0; i < 30; i++) { P[i][0] = 360 - i * 2; P[i][1] = 360; P[i][2] = i * 16; }
+        ev_init(&q); g_run(&g, &c, &q, (const int (*)[3])P, 30);
+    }
+    CHECK(g_count(&q, EV_DRAG) > 5 && g_has(&q, EV_DROP, &e) && e.c == 0 && !g_has(&q, EV_FLICK, NULL), "a slow stroke from the toy drags it, and drops it at the lift");
+    {   /* the approach: she bows, the finger comes nearer at ~90 px / s */
+        c.bowing = true;
+        static int P[40][3]; for (int i = 0; i < 40; i++) { P[i][0] = 230; P[i][1] = 440 - i * 3; P[i][2] = i * 33; }
+        ev_init(&q); g_run(&g, &c, &q, (const int (*)[3])P, 40);
+        c.bowing = false;
+    }
+    CHECK(g_count(&q, EV_APPROACH) >= 3 && g_has(&q, EV_APPROACH, &e) && e.a < 240, "nearing her slowly while she bows: APPROACH with the distance");
+    {   /* the edge swipe: from the bottom edge, up 140 px */
+        static int P[12][3]; for (int i = 0; i < 12; i++) { P[i][0] = 240; P[i][1] = 472 - i * 13; P[i][2] = i * 20; }
+        ev_init(&q); g_run(&g, &c, &q, (const int (*)[3])P, 12);
+    }
+    CHECK(g_count(&q, EV_SWITCH_VIEW) == 1 && q.count == 1, "a swipe up from the bottom edge switches the view, once");
+    printf("selftest-gesture: ok\n");
+    return 0;
+}
+
 static double now_us(void) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); return ts.tv_sec * 1e6 + ts.tv_nsec / 1e3; }
 static int bench(void) {
     canvas_init(); world_init(&s_world, 1);
@@ -574,7 +636,7 @@ static void drain_events(void) {
     ev_t e;
     while (ev_pop(&s_q, &e)) {
         char line[72];
-        snprintf(line, sizeof line, "%7.1f  %-14s %d %d", s_world.clock_s, ev_name((ev_type_t)e.type), e.a, e.b);
+        snprintf(line, sizeof line, e.c ? "%7.1f  %-14s %d %d %d" : "%7.1f  %-14s %d %d", s_world.clock_s, ev_name((ev_type_t)e.type), e.a, e.b, e.c);
         inspector_log(line); puts(line);
         world_handle_event(&s_world, &e);
     }
@@ -636,6 +698,12 @@ static void frame_cb(lv_timer_t *t) {
     uint32_t now = SDL_GetTicks();
     float dt = (now - s_last_ms) / 1000.0f; s_last_ms = now;
     if (dt > 0.1f) dt = 0.1f;                           /* a dragged window pauses time, not jumps it */
+    if (!s_av.on) {                                     /* the mouse on the picture is the finger (M4.3) */
+        static gesture_t g; gesture_ctx_t gc; int fx, fy;
+        world_gesture_ctx(&s_world, &gc);
+        const bool fd = inspector_finger(&fx, &fy);
+        gesture_feed(&g, &gc, fd, fx, fy, now, &s_q);
+    }
     drain_events();
     if (s_av.on) { if (!s_av.pause) s_av.t += dt; viewer_draw(); }
     else { demo_tick(&s_world, dt); world_tick(&s_world, dt); frame(); }
@@ -692,6 +760,7 @@ int main(int argc, char **argv) {
     pak_load("../assets/build/assets.pak");
     if (argc > 1 && !strcmp(argv[1], "--selftest")) return selftest();
     if (argc > 1 && !strcmp(argv[1], "--selftest-nav")) return selftest_nav();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-gesture")) return selftest_gesture();
     if (argc > 1 && !strcmp(argv[1], "--selftest-render")) return selftest_render(argc > 2 && !strcmp(argv[2], "--update"));
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
     if (argc > 2 && !strcmp(argv[1], "--inspector-shot")) return inspector_shot(argv[2]);

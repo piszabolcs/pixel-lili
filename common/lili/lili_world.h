@@ -36,5 +36,9 @@ bool     world_painted(void);                          /* the pak holds the owne
 /* the sprite frame an actor shows now (offset: ANIM_YARD_OFFSET for the yard's size); a reversed animation
    (ANIM_REVERSE_OF) plays its source's frames backwards. false = no such set in the pak */
 bool     world_actor_frame(const actor_t *a, uint16_t offset, sprite_set_t *set, sprite_frame_t *fr);
+/* what the finger needs to know about the shown view (gesture.c): her box on the screen, whether she bows,
+   the door's tap area */
+#include "gesture.h"
+void     world_gesture_ctx(const world_t *w, gesture_ctx_t *c);
 
 #endif

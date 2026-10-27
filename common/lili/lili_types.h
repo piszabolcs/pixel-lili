@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "config.h"
+#include "events.h"
 
 typedef enum { VIEW_ROOM = 0, VIEW_YARD = 1, VIEW_COUNT } view_t;
 
@@ -42,7 +43,7 @@ typedef struct {
     view_t   view;             /* the place the owner is looking at */
     int8_t   season_force;     /* -1 = from the date, 0..3 = forced (the sim's 1-4 keys, spec 9.4) */
     int8_t   daypart_force;    /* -1 = from the clock, 0..3 = forced (the sim's D key, spec 9.3) */
-    uint32_t events_seen[17];  /* per ev_type_t (17 = EV_COUNT): what has reached the world, for tests and the inspector */
+    uint32_t events_seen[EV_COUNT];  /* per ev_type_t: what has reached the world, for tests and the inspector */
     actor_t  actors[MAX_ACTORS];
     body_t   bodies[MAX_ACTORS];   /* bodies[i] moves actors[i] */
     int8_t   shake_cover;          /* the yard cover (IMG_COVER k) that shakes once as she goes into it (spec 8.5), -1 = none */

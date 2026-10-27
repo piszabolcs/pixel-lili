@@ -27,6 +27,8 @@
 #include "pak.h"
 #include "lili_demo.h"
 #include "nav.h"
+#include "gesture.h"
+#include "touch_216.h"
 
 static const char *TAG = "lili";
 #define PIN_BOOT 0
@@ -44,6 +46,7 @@ static bgcache_t *s_bg;                        /* PSRAM: the static layer (floor
 static ev_queue_t s_q;
 static pak_t     s_pak;                        /* the pack, in place in its flash partition (through the cache) */
 static nav_scratch_t *s_nav;                   /* PSRAM: the path search (nav.h, ~200 KB) */
+static bool      s_touch;                      /* the touch chip answered */
 static int64_t   s_fill_us;                    /* time spent making stripes (this window) */
 
 static void *psram(size_t n) { return heap_caps_aligned_alloc(64, (n + 63) & ~(size_t)63, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
@@ -108,6 +111,7 @@ void app_main(void) {
     world_init(&s_world, esp_random());
     ev_init(&s_q);
     nav_init(s_nav);
+    s_touch = touch216_init();
     if (s_pak.data) demo_start();
     memset(s_bg, 0, sizeof *s_bg);
     ESP_LOGI(TAG, "up: world %u B, canvas %u B, mask %u B, static-layer cache %u B | internal heap %u KB free", (unsigned)sizeof s_world, (unsigned)sizeof *s_r8, (unsigned)sizeof *s_mask, (unsigned)sizeof *s_bg,
@@ -120,7 +124,13 @@ void app_main(void) {
         float dt = (t0 - last) / 1e6f; last = t0;
         if (dt > 0.1f) dt = 0.1f;
         keys_poll();
-        ev_t ev; while (ev_pop(&s_q, &ev)) { ESP_LOGI(TAG, "event %s %d %d", ev_name((ev_type_t)ev.type), ev.a, ev.b); world_handle_event(&s_world, &ev); }
+        if (s_touch) {                                  /* the finger, through the gestures (M4.3) */
+            static gesture_t g; gesture_ctx_t gc; int tx, ty;
+            world_gesture_ctx(&s_world, &gc);
+            const bool down = touch216_read(&tx, &ty);
+            gesture_feed(&g, &gc, down, tx, ty, (uint32_t)(t0 / 1000), &s_q);
+        }
+        ev_t ev; while (ev_pop(&s_q, &ev)) { ESP_LOGI(TAG, "event %s %d %d %d", ev_name((ev_type_t)ev.type), ev.a, ev.b, ev.c); world_handle_event(&s_world, &ev); }
         demo_tick(&s_world, dt);
         world_tick(&s_world, dt);
         int64_t t1 = esp_timer_get_time();

@@ -425,3 +425,26 @@ void world_debug_draw(const world_t *w, render8_t *r) {      /* M: the walkable 
         r8_fill(r, p->x, p->y - p->z - 2, 1, 5, PAL_WHITE);
     }
 }
+
+void world_gesture_ctx(const world_t *w, gesture_ctx_t *c) {
+    memset(c, 0, sizeof *c);
+    const actor_t *a = &w->actors[0];
+    sprite_set_t set; sprite_frame_t fr;
+    if (a->present && a->view == w->view && a->vis > 0.5f) {
+        const bool yard = w->view == VIEW_YARD;
+        if ((yard && world_actor_frame(a, ANIM_YARD_OFFSET, &set, &fr)) || world_actor_frame(a, 0, &set, &fr)) {
+            const int x = (int)a->x - set.pivot_x, y = (int)(a->y - a->z) - set.pivot_y;
+            c->lili = (g_rect_t){ (int16_t)x, (int16_t)y, (int16_t)(x + set.cell_w), (int16_t)(y + set.cell_h) };
+        } else {                                                    /* the capsule placeholder's size */
+            c->lili = (g_rect_t){ (int16_t)(a->x - 22), (int16_t)(a->y - a->z - 38), (int16_t)(a->x + 22), (int16_t)(a->y - a->z + 2) };
+        }
+        c->bowing = a->anim == ANIM_PLAY_BOW;
+    }
+    /* the door: the room's door picture, the yard's house door at the bottom (spot_door_yard, a finger wide around it) */
+    const map_t *m = world_map(w, w->view);
+    for (int i = 0; i < m->n_props; i++) if (!strcmp(m->props[i].name, "door")) {
+        const map_prop_t *p = &m->props[i]; c->door = (g_rect_t){ p->x, p->y, (int16_t)(p->x + p->w), (int16_t)(p->y + p->h) };
+    }
+    const map_point_t *dy = &m->points[SPOT_DOOR_YARD];
+    if (w->view == VIEW_YARD && dy->z >= 0) c->door = (g_rect_t){ (int16_t)(dy->x - 32), (int16_t)(dy->y - 12), (int16_t)(dy->x + 32), (int16_t)LILI_LOG_H };
+}

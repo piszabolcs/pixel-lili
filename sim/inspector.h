@@ -13,7 +13,8 @@
 /* build the panel at x = LILI_PHYS_W on the active screen; buttons push into `q`, the
    Debug button flips *debug, the cycle buttons read the world */
 void inspector_init(world_t *w, ev_queue_t *q, bool *debug);
-void inspector_bind_canvas(lv_obj_t *canvas);       /* a press on the picture is an EV_TAP, a long press an EV_LONG (logical px) */
+void inspector_bind_canvas(lv_obj_t *canvas);       /* the mouse on the picture is the finger (inspector_finger) */
+bool inspector_finger(int *x, int *y);               /* the finger is down on the picture, and where (logical px) */
 void inspector_log(const char *line);                /* one console line (newest at the bottom, the last 9 kept) */
 void inspector_update(float fps, float frame_ms);   /* refresh the state readout (call a few times a second) */
 

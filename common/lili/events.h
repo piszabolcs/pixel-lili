@@ -12,8 +12,9 @@
 
 typedef enum {
     EV_NONE = 0,
-    /* the finger (spec 5.3); a, b = logical x, y */
-    EV_TAP, EV_LONG, EV_PET_START, EV_PET_TICK, EV_PET_END, EV_FLICK, EV_EDGE_SWIPE,
+    /* the finger (spec 5.3, gesture.c); a, b = logical x, y, except: FLICK a, b = vx, vy (px / s), c = the toy;
+       DRAG / DROP c = the toy (the finger moves it / lets it go); APPROACH a = the finger's distance to her */
+    EV_TAP, EV_LONG, EV_PET_START, EV_PET_TICK, EV_PET_END, EV_FLICK, EV_EDGE_SWIPE, EV_DRAG, EV_DROP, EV_APPROACH,
     /* the body (spec 5.5) */
     EV_PICKUP, EV_SHAKE,
     /* the voice (spec 5.8) */
@@ -26,13 +27,14 @@ typedef enum {
     EV_COUNT
 } ev_type_t;
 
-typedef struct { uint8_t type; int16_t a, b; } ev_t;
+typedef struct { uint8_t type; int16_t a, b, c; } ev_t;
 
 #define EV_QUEUE_LEN 32       /* a power of two; a full queue drops the OLDEST (fresh input beats stale) */
 typedef struct { ev_t q[EV_QUEUE_LEN]; uint8_t head, count; uint32_t dropped; } ev_queue_t;
 
 void        ev_init(ev_queue_t *q);
 void        ev_push(ev_queue_t *q, ev_type_t type, int a, int b);
+void        ev_push3(ev_queue_t *q, ev_type_t type, int a, int b, int c);
 bool        ev_pop(ev_queue_t *q, ev_t *out);
 const char *ev_name(ev_type_t type);
 

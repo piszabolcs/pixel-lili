@@ -75,17 +75,26 @@ void inspector_init(world_t *w, ev_queue_t *q, bool *debug) {
     lv_label_set_text(s_console_label, "");
 }
 
+/* the mouse on the picture is the finger: its state each frame goes to gesture.c (lili_main.c), which makes the
+   taps, long presses, rubs, flicks and swipes (M4.3) */
+static bool s_finger; static int s_fx, s_fy;
 static void on_canvas(lv_event_t *e) {
     lv_point_t p; lv_indev_t *in = lv_indev_active();
+    const lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_RELEASED || code == LV_EVENT_PRESS_LOST) { s_finger = false; return; }
     if (!in) return;
     lv_indev_get_point(in, &p);
-    ev_push(s_q, lv_event_get_code(e) == LV_EVENT_LONG_PRESSED ? EV_LONG : EV_TAP, p.x / LILI_SCALE, p.y / LILI_SCALE);   /* physical -> logical px */
+    s_finger = true; s_fx = p.x / LILI_SCALE; s_fy = p.y / LILI_SCALE;           /* physical -> logical px */
 }
 void inspector_bind_canvas(lv_obj_t *canvas) {
     lv_obj_add_flag(canvas, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_remove_flag(canvas, LV_OBJ_FLAG_SCROLL_CHAIN | LV_OBJ_FLAG_GESTURE_BUBBLE);
     lv_obj_add_event_cb(canvas, on_canvas, LV_EVENT_PRESSED, NULL);
-    lv_obj_add_event_cb(canvas, on_canvas, LV_EVENT_LONG_PRESSED, NULL);
+    lv_obj_add_event_cb(canvas, on_canvas, LV_EVENT_PRESSING, NULL);
+    lv_obj_add_event_cb(canvas, on_canvas, LV_EVENT_RELEASED, NULL);
+    lv_obj_add_event_cb(canvas, on_canvas, LV_EVENT_PRESS_LOST, NULL);
 }
+bool inspector_finger(int *x, int *y) { *x = s_fx; *y = s_fy; return s_finger; }
 
 void inspector_log(const char *line) {
     if (s_nlines == 9) { memmove(s_lines[0], s_lines[1], sizeof s_lines[0] * 8); s_nlines = 8; }
