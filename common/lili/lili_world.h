@@ -33,5 +33,8 @@ const map_t *world_map(const world_t *w, view_t v);
 int      world_season(const world_t *w);               /* 0 spring .. 3 winter: forced, else LILI_SEASON_DEFAULT (the RTC's date from M5) */
 int      world_daypart(const world_t *w);              /* 0 morning, 1 afternoon, 2 evening, 3 night: forced, else from the clock */
 bool     world_painted(void);                          /* the pak holds the owner's painted backgrounds (else the placeholder shapes) */
+/* the sprite frame an actor shows now (offset: ANIM_YARD_OFFSET for the yard's size); a reversed animation
+   (ANIM_REVERSE_OF) plays its source's frames backwards. false = no such set in the pak */
+bool     world_actor_frame(const actor_t *a, uint16_t offset, sprite_set_t *set, sprite_frame_t *fr);
 
 #endif

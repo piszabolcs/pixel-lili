@@ -8,6 +8,8 @@
  *   ./lilisim --screenshot out.ppm    headless, one frame to a PPM
  *   ./lilisim --demo                  the window with the demo tour running (G toggles it)
  *   ./lilisim --demo-record DIR [fps] headless, one round of the demo tour as PPM frames
+ *   ./lilisim --anim-viewer [name]    the window: one animation from all 8 directions (A/arrows, Tab yard size, Space pause)
+ *   ./lilisim --anim-viewer-shot DIR [frame]  headless, DIR/<anim>.ppm of the viewer for every animation
  *
  * The fish simulator (main.c) is untouched and still builds with make SQUARE=1. */
 #include <stdio.h>
@@ -73,6 +75,15 @@ static void placeholder_mode(bool on) {
     world_set_pak(on || !s_pak.data ? NULL : &s_pak);
     if (on) { pal_master(pal); r8_set_palette(&s_r8, pal); }
 }
+/* the animations in spec 7.4's order: A01-A09 (M3.5; sit down, then stand up, the same frames backwards),
+   then the ones already in the game; the A key and the --anim-viewer step through it */
+static const struct { uint16_t id; const char *name; } ANIMS[] = {
+    { ANIM_IDLE_STAND, "idle_stand" }, { ANIM_IDLE_SIT_BLINK, "idle_sit_blink" }, { ANIM_SIT_DOWN, "sit_down" },
+    { ANIM_STAND_UP, "stand_up" }, { ANIM_WALK, "walk" }, { ANIM_TROT, "trot" }, { ANIM_RUN, "run" },
+    { ANIM_TIPTOE, "tiptoe" }, { ANIM_SCURRY, "scurry" }, { ANIM_PANT_SMILE, "pant_smile" },
+    { ANIM_PLAY_BOW, "play_bow" }, { ANIM_BARK_HEAD_FLIP, "bark_head_flip" }, { ANIM_EAT_DRINK, "eat_drink" },
+    { ANIM_DRINK, "drink" }, { ANIM_SLEEP_CURL, "sleep_curl" }, { ANIM_LOOK_AROUND, "look_around" } };
+enum { N_ANIMS = (int)(sizeof ANIMS / sizeof ANIMS[0]) };
 static const map_prop_t *prop_named(const map_t *m, const char *name) {
     for (int i = 0; i < m->n_props; i++) if (!strcmp(m->props[i].name, name)) return &m->props[i];
     return NULL;
@@ -404,6 +415,56 @@ static void drain_events(void) {
     }
 }
 
+/* ---------- --anim-viewer (spec 7.5 B8): one animation from all 8 directions at once ----------
+ * The compass on a 3 x 3 grid (N at the top, S at the bottom, the middle cell shows the frame count), at the
+ * game's size on the master palette's floor (Lili's colours are the same slots in every palette), drawn through
+ * the game's own world_actor_frame, so a reversed animation (stand_up) plays as the game plays it.
+ * Window: A / Right next, Left previous, Tab the yard's size, Space pause, . one frame on (paused), Q quit.
+ * Headless: --anim-viewer-shot DIR [frame] writes DIR/<anim>.ppm for every animation (default frame 2). */
+static struct { int k; bool on, yard, pause; float t; } s_av;
+static void viewer_draw(void) {
+    static const int8_t GX[DIR_COUNT] = { 1, 0, 0, 0, 1, 2, 2, 2 }, GY[DIR_COUNT] = { 2, 2, 1, 0, 0, 0, 1, 2 };   /* S SW W NW N NE E SE */
+    enum { CELL = LILI_LOG_W / 3 };
+    uint8_t pal[256][3];
+    if (pak_palette(&s_pak, pal)) r8_set_palette(&s_r8, pal);
+    r8_clear(&s_r8, PAL_FLOOR + 5);
+    for (int i = 1; i < 3; i++) { r8_fill(&s_r8, i * CELL, 0, 1, LILI_LOG_H, PAL_FLOOR + 3); r8_fill(&s_r8, 0, i * CELL, LILI_LOG_W, 1, PAL_FLOOR + 3); }
+    sprite_set_t set; sprite_frame_t fr; int n = 0, shown = 0;
+    for (int d = 0; d < DIR_COUNT; d++) {
+        actor_t a = { 0 }; a.anim = ANIMS[s_av.k].id; a.dir = (dir8_t)d; a.anim_t = s_av.t;
+        const int px = GX[d] * CELL + CELL / 2, py = GY[d] * CELL + CELL * 4 / 5;
+        r8_fill(&s_r8, px - 30, py, 61, 1, PAL_FLOOR + 2);                          /* the ground line under the paws */
+        if (world_actor_frame(&a, s_av.yard ? ANIM_YARD_OFFSET : 0, &set, &fr)) { pak_blit(&s_r8, &set, &fr, px, py); n = set.n_frames; shown++; }
+    }
+    if (n) {                                                                         /* the middle cell: one tick per frame, the current one lit */
+        int f = (int)(s_av.t * set.fps); if (!set.loop && f >= n) f = n - 1; else f %= n;
+        if (ANIM_REVERSE_OF(ANIMS[s_av.k].id)) f = n - 1 - f;
+        for (int i = 0; i < n; i++) r8_fill(&s_r8, CELL + (CELL - n * 12) / 2 + i * 12, CELL + CELL / 2 - 4, 9, 9, i == f ? PAL_WHITE : PAL_FLOOR + 2);
+    }
+    if (!shown) r8_fill(&s_r8, CELL + 20, CELL + 20, CELL - 40, CELL - 40, PAL_DEBUG);   /* no such set in the pak */
+    r8_flush_rows(&s_r8, s_fb, 0, LILI_PHYS_H);
+    mask_apply_rows(&s_mask, s_fb, 0, LILI_PHYS_H);
+}
+static void viewer_announce(void) {
+    sprite_set_t set; char line[72]; const uint16_t id = ANIMS[s_av.k].id, src = ANIM_REVERSE_OF(id) ? ANIM_REVERSE_OF(id) : id;
+    if (pak_sprite_set(&s_pak, (uint16_t)(src + (s_av.yard ? ANIM_YARD_OFFSET : 0)), &set))
+        snprintf(line, sizeof line, "viewer: %s (%d)%s, %d fr, %d fps, %s, %dx%d%s", ANIMS[s_av.k].name, id, s_av.yard ? " yard" : "",
+                 set.n_frames, set.fps, set.loop ? "loop" : "once", set.cell_w, set.cell_h, ANIM_REVERSE_OF(id) ? ", reversed" : "");
+    else snprintf(line, sizeof line, "viewer: %s (%d): not in the pak", ANIMS[s_av.k].name, id);
+    inspector_log(line); puts(line);
+}
+static int viewer_shot(const char *dir, int frame_no) {
+    canvas_init(); char path[512];
+    for (s_av.k = 0; s_av.k < N_ANIMS; s_av.k++) {
+        sprite_set_t set; const uint16_t id = ANIMS[s_av.k].id;
+        if (!pak_sprite_set(&s_pak, ANIM_REVERSE_OF(id) ? ANIM_REVERSE_OF(id) : id, &set)) continue;
+        s_av.t = (frame_no + 0.5f) / set.fps; viewer_draw();
+        snprintf(path, sizeof path, "%s/%s.ppm", dir, ANIMS[s_av.k].name); write_ppm(path, s_fb);
+    }
+    printf("viewer: %d animations, frame %d -> %s\n", N_ANIMS, frame_no, dir);
+    return 0;
+}
+
 static void frame_cb(lv_timer_t *t) {
     (void)t;
     double t0 = now_us();
@@ -411,9 +472,8 @@ static void frame_cb(lv_timer_t *t) {
     float dt = (now - s_last_ms) / 1000.0f; s_last_ms = now;
     if (dt > 0.1f) dt = 0.1f;                           /* a dragged window pauses time, not jumps it */
     drain_events();
-    demo_tick(&s_world, dt);
-    world_tick(&s_world, dt);
-    frame();
+    if (s_av.on) { if (!s_av.pause) s_av.t += dt; viewer_draw(); }
+    else { demo_tick(&s_world, dt); world_tick(&s_world, dt); frame(); }
     lv_obj_invalidate(s_canvas);
     if (dt > 0) s_fps = s_fps > 0 ? 0.9f * s_fps + 0.1f / dt : 1.0f / dt;
     s_frame_ms = (float)((now_us() - t0) / 1000.0);
@@ -469,6 +529,7 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--bench")) return bench();
     if (argc > 2 && !strcmp(argv[1], "--inspector-shot")) return inspector_shot(argv[2]);
     if (argc > 2 && !strcmp(argv[1], "--demo-record")) return demo_record(argv[2], argc > 3 ? atoi(argv[3]) : 12);
+    if (argc > 2 && !strcmp(argv[1], "--anim-viewer-shot")) return viewer_shot(argv[2], argc > 3 ? atoi(argv[3]) : 2);
     if (argc > 2 && !strcmp(argv[1], "--screenshot")) {
         s_debug = argc > 3 && !strcmp(argv[3], "--debug");
         canvas_init(); world_init(&s_world, 1234);
@@ -482,9 +543,26 @@ int main(int argc, char **argv) {
     ui_build();
     demo_init(&s_demo_scr);
     if (argc > 1 && !strcmp(argv[1], "--demo")) demo_start();      /* the window with the tour already running (G stops it) */
+    if (argc > 1 && !strcmp(argv[1], "--anim-viewer")) {           /* optional: the animation to start at, by name */
+        s_av.on = true;
+        for (int k = 0; argc > 2 && k < N_ANIMS; k++) if (!strcmp(argv[2], ANIMS[k].name)) s_av.k = k;
+        viewer_announce();
+    }
     for (;;) {
         uint32_t wait = lv_timer_handler();
         if (key_edge(SDL_SCANCODE_Q)) break;
+        if (s_av.on) {
+            int step = key_edge(SDL_SCANCODE_A) || key_edge(SDL_SCANCODE_RIGHT) ? 1 : key_edge(SDL_SCANCODE_LEFT) ? -1 : 0;
+            if (step) { s_av.k = (s_av.k + step + N_ANIMS) % N_ANIMS; s_av.t = 0; viewer_announce(); }
+            if (key_edge(SDL_SCANCODE_TAB)) { s_av.yard = !s_av.yard; viewer_announce(); }
+            if (key_edge(SDL_SCANCODE_SPACE)) s_av.pause = !s_av.pause;
+            if (key_edge(SDL_SCANCODE_PERIOD) && s_av.pause) {
+                sprite_set_t set; const uint16_t id = ANIMS[s_av.k].id;
+                if (pak_sprite_set(&s_pak, ANIM_REVERSE_OF(id) ? ANIM_REVERSE_OF(id) : id, &set)) s_av.t += 1.0f / set.fps;
+            }
+            SDL_Delay(wait < 5 ? wait : 5);
+            continue;
+        }
         if (key_edge(SDL_SCANCODE_TAB))    ev_push(&s_q, EV_SWITCH_VIEW, 0, 0);
         if (key_edge(SDL_SCANCODE_W))      ev_push(&s_q, EV_WHISTLE, 0, 0);
         if (key_edge(SDL_SCANCODE_N))      ev_push(&s_q, EV_CALL_NAME, 0, 0);
@@ -496,17 +574,10 @@ int main(int argc, char **argv) {
         if (key_edge(SDL_SCANCODE_M)) s_debug = !s_debug;
         if (key_edge(SDL_SCANCODE_A)) {
             actor_t *l = &s_world.actors[0];
-            /* spec 7.4's order: A01-A09 (M3.5; sit down, then stand up, the same frames backwards), then the rest */
-            static const struct { uint16_t id; const char *name; } cyc[] = {
-                { ANIM_IDLE_STAND, "idle_stand" }, { ANIM_IDLE_SIT_BLINK, "idle_sit_blink" }, { ANIM_SIT_DOWN, "sit_down" },
-                { ANIM_STAND_UP, "stand_up" }, { ANIM_WALK, "walk" }, { ANIM_TROT, "trot" }, { ANIM_RUN, "run" },
-                { ANIM_TIPTOE, "tiptoe" }, { ANIM_SCURRY, "scurry" }, { ANIM_PANT_SMILE, "pant_smile" },
-                { ANIM_PLAY_BOW, "play_bow" }, { ANIM_BARK_HEAD_FLIP, "bark_head_flip" }, { ANIM_EAT_DRINK, "eat_drink" },
-                { ANIM_DRINK, "drink" }, { ANIM_SLEEP_CURL, "sleep_curl" }, { ANIM_LOOK_AROUND, "look_around" } };
-            enum { NC = (int)(sizeof cyc / sizeof cyc[0]) }; int k = 0;
-            while (k < NC && cyc[k].id != l->anim) k++;
-            k = (k + 1) % NC; l->anim = cyc[k].id; l->anim_t = 0;
-            char line[72]; snprintf(line, sizeof line, "%7.1f  A: %s (%d)", s_world.clock_s, cyc[k].name, cyc[k].id);
+            int k = 0;
+            while (k < N_ANIMS && ANIMS[k].id != l->anim) k++;
+            k = (k + 1) % N_ANIMS; l->anim = ANIMS[k].id; l->anim_t = 0;
+            char line[72]; snprintf(line, sizeof line, "%7.1f  A: %s (%d)", s_world.clock_s, ANIMS[k].name, ANIMS[k].id);
             inspector_log(line); puts(line);
         }
         if (key_edge(SDL_SCANCODE_G)) { if (demo_active()) demo_stop(); else demo_start(); }

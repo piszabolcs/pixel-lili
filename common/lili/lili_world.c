@@ -134,7 +134,7 @@ static void draw_prop(render8_t *r, const map_prop_t *p) {
 /* the frame an actor shows now: its animation's set (offset: ANIM_YARD_OFFSET for the yard's size), or the set
    it plays backwards (stand_up is sit_down reversed: ANIM_REVERSE_OF, tools/pixellab_to_sprites.py REVERSED).
    A one-shot set holds its last frame; reversed, that is the first frame of the set it plays. */
-static bool actor_frame(const actor_t *a, uint16_t offset, sprite_set_t *set, sprite_frame_t *fr) {
+bool world_actor_frame(const actor_t *a, uint16_t offset, sprite_set_t *set, sprite_frame_t *fr) {
     const uint16_t rev = ANIM_REVERSE_OF(a->anim);
     if (!s_pak || !a->anim || !pak_sprite_set(s_pak, (uint16_t)((rev ? rev : a->anim) + offset), set)) return false;
     int frame = (int)(a->anim_t * set->fps);
@@ -147,7 +147,7 @@ static void draw_actor(render8_t *r, const actor_t *a) {    /* the sprite from t
     int x = (int)a->x, y = (int)(a->y - a->z);
     const int K = LILI_K;
     sprite_set_t set; sprite_frame_t fr;
-    if (actor_frame(a, 0, &set, &fr)) { pak_blit(r, &set, &fr, x, y); return; }
+    if (world_actor_frame(a, 0, &set, &fr)) { pak_blit(r, &set, &fr, x, y); return; }
     r8_fill(r, x - 11 * K, y - 13 * K, 22 * K, 14 * K, PAL_OUTLINE);
     r8_fill(r, x - 10 * K, y - 12 * K, 20 * K, 12 * K, PAL_FUR + 5);
     r8_fill(r, x - 6 * K, y - 7 * K, 12 * K, 7 * K, PAL_FUR_W + 5);     /* the white chest (L3) */
@@ -295,7 +295,7 @@ static void painted_actor(const world_t *w, render8_t *r, const actor_t *a) {
     sprite_set_t set; sprite_frame_t fr;
     if (a->vis <= 0.02f) return;                                          /* gone into a bush */
     /* outdoors the smaller set: the yard is painted at a smaller scale than the room (the owner, 2026-10-23) */
-    if ((w->view == VIEW_YARD && actor_frame(a, ANIM_YARD_OFFSET, &set, &fr)) || actor_frame(a, 0, &set, &fr)) {
+    if ((w->view == VIEW_YARD && world_actor_frame(a, ANIM_YARD_OFFSET, &set, &fr)) || world_actor_frame(a, 0, &set, &fr)) {
         if (a->vis >= 0.5f) actor_shadow(w, r, a, &set, &fr);
         /* fading in or out of a bush: an ordered (Bayer 4 x 4) dither, the 8-bit canvas has no alpha */
         pak_blit_dither(r, &set, &fr, (int)a->x, (int)(a->y - a->z), (int)(a->vis * 16.0f + 0.5f));
