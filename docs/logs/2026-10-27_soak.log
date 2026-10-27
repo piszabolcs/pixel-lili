@@ -1,0 +1,259 @@
+--- 14:36:03 port COM3 open
+14:36:06 I (11871) lili: 30.4 fps | per frame: tick 1363 us, render 13393I (227679) lili: 31.2 fps | per frame: tick 1369 us, render 12952 us, flush 17318 us (fill 15016, wire wait 42, send 2187) | internal heap 185 KB, min 185 KB
+14:36:09 I (230991) lili: brain: model -> zoomies pant_idle act_none (margin 0.17, 1774 ms)
+14:36:11 I (232691) lili: 28.5 fps | per frame: tick 1529 us, render 15356 us, flush 17824 us (fill 15494, wire wait 42, send 2210) | internal heap 185 KB, min 185 KB
+14:36:16 I (237721) lili: 30.8 fps | per frame: tick 1453 us, render 13179 us, flush 17318 us (fill 15015, wire wait 42, send 2187) | internal heap 185 KB, min 185 KB
+14:36:21 I (242738) lili: 31.1 fps | per frame: tick 1396 us, render 13017 us, flush 17306 us (fill 15007, wire wait 41, send 2184) | internal heap 185 KB, min 185 KB
+14:36:24 I (245726) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.16, 1770 ms)
+14:36:26 I (247742) lili: 28.6 fps | per frame: tick 1521 us, render 15227 us, flush 17826 us (fill 15491, wire wait 42, send 2216) | internal heap 185 KB, min 185 KB
+14:36:31 I (252754) lili: 31.1 fps | per frame: tick 1425 us, render 13102 us, flush 17301 us (fill 15006, wire wait 41, send 2182) | internal heap 185 KB, min 185 KB
+14:36:36 I (257763) lili: 30.0 fps | per frame: tick 1399 us, render 14011 us, flush 17578 us (fill 15273, wire wait 42, send 2188) | internal heap 185 KB, min 185 KB
+14:36:37 I (258466) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1768 ms)
+14:36:41 I (262764) lili: 28.2 fps | per frame: tick 1489 us, render 15790 us, flush 17859 us (fill 15530, wire wait 42, send 2210) | internal heap 185 KB, min 185 KB
+14:36:42 I (263346) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1776 ms)
+14:36:46 I (267764) lili: 30.0 fps | per frame: tick 1414 us, render 14197 us, flush 17481 us (fill 15170, wire wait 42, send 2194) | internal heap 185 KB, min 185 KB
+14:36:51 I (272793) lili: 31.2 fps | per frame: tick 1370 us, render 12967 us, flush 17319 us (fill 15018, wire wait 41, send 2187) | internal heap 185 KB, min 185 KB
+14:36:56 I (277254) lili: brain: model -> zoomies pant_idle act_none (margin 0.17, 1768 ms)
+14:36:56 I (277813) lili: 28.5 fps | per frame: tick 1494 us, render 15281 us, flush 17824 us (fill 15495, wire wait 42, send 2211) | internal heap 185 KB, min 185 KB
+14:37:01 I (282838) lili: 30.8 fps | per frame: tick 1475 us, render 13185 us, flush 17321 us (fill 15020, wire wait 42, send 2186) | internal heap 185 KB, min 185 KB
+14:37:06 I (287861) lili: 30.9 fps | per frame: tick 1419 us, render 13142 us, flush 17313 us (fill 15012, wire wait 41, send 2187) | internal heap 185 KB, min 185 KB
+14:37:11 I (292525) lili: brain: model -> zoomies pant_idle act_none (margin 0.15, 1774 ms)
+14:37:11 I (292877) lili: 28.5 fps | per frame: tick 1485 us, render 15330 us, flush 17834 us (fill 15500, wire wait 42, send 2215) | internal heap 185 KB, min 185 KB
+14:37:16 I (297909) lili: 31.0 fps | per frame: tick 1465 us, render 13061 us, flush 17321 us (fill 15020, wire wait 42, send 2187) | internal heap 185 KB, min 185 KB
+14:37:21 I (302916) lili: 30.8 fps | per frame: tick 1420 us, render 13236 us, flush 17307 us (fill 15010, wire wait 41, send 2184) | internal heap 185 KB, min 185 KB
+14:37:26 I (307100) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.15, 1773 ms)
+14:37:26 I (307931) lili: 28.5 fps | per frame: tick 1489 us, render 15366 us, flush 17817 us (fill 15486, wire wait 42, send 2213) | internal heap 185 KB, min 185 KB
+14:37:32 I (312959) lili: 31.2 fps | per frame: tick 1457 us, render 12726 us, flush 17321 us (fill 15016, wire wait 42, send 2190) | internal heap 185 KB, min 185 KB
+14:37:36 I (317970) lili: 31.1 fps | per frame: tick 1376 us, render 13159 us, flush 17309 us (fill 15014, wire wait 41, send 2180) | internal heap 185 KB, min 185 KB
+14:37:41 I (323006) lili: 30.4 fps | per frame: tick 1388 us, render 13618 us, flush 17514 us (fill 15204, wire wait 41, send 2194) | internal heap 185 KB, min 185 KB
+14:37:42 I (323967) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1766 ms)
+14:37:46 I (328032) lili: 29.4 fps | per frame: tick 1444 us, render 14688 us, flush 17618 us (fill 15298, wire wait 42, send 2203) | internal heap 185 KB, min 185 KB
+14:37:52 I (333061) lili: 31.2 fps | per frame: tick 1364 us, render 13142 us, flush 17279 us (fill 14984, wire wait 41, send 2181) | internal heap 185 KB, min 185 KB
+14:37:56 I (337875) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1771 ms)
+14:37:57 I (338067) lili: 28.6 fps | per frame: tick 1468 us, render 15345 us, flush 17798 us (fill 15475, wire wait 41, send 2205) | internal heap 185 KB, min 185 KB
+14:38:02 I (343099) lili: 31.2 fps | per frame: tick 1362 us, render 13115 us, flush 17323 us (fill 15024, wire wait 41, send 2185) | internal heap 185 KB, min 185 KB
+14:38:04 I (345764) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1766 ms)
+14:38:07 I (348113) lili: 28.5 fps | per frame: tick 1483 us, render 15426 us, flush 17812 us (fill 15486, wire wait 42, send 2208) | internal heap 185 KB, min 185 KB
+14:38:12 I (353149) lili: 29.6 fps | per frame: tick 1409 us, render 14343 us, flush 17654 us (fill 15343, wire wait 42, send 2194) | internal heap 185 KB, min 185 KB
+14:38:12 I (353666) lili: brain: model -> zoomies pant_idle act_none (margin 0.17, 1769 ms)
+14:38:17 I (358181) lili: 29.6 fps | per frame: tick 1510 us, render 14125 us, flush 17471 us (fill 15155, wire wait 42, send 2200) | internal heap 185 KB, min 185 KB
+14:38:22 I (363203) lili: 30.9 fps | per frame: tick 1453 us, render 13136 us, flush 17301 us (fill 15002, wire wait 41, send 2185) | internal heap 185 KB, min 185 KB
+14:38:27 I (368210) lili: 31.2 fps | per frame: tick 1369 us, render 13242 us, flush 17298 us (fill 15006, wire wait 41, send 2178) | internal heap 185 KB, min 185 KB
+14:38:29 I (370174) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.16, 1770 ms)
+14:38:32 I (373232) lili: 28.3 fps | per frame: tick 1526 us, render 15443 us, flush 17828 us (fill 15493, wire wait 42, send 2216) | internal heap 185 KB, min 185 KB
+14:38:37 I (378259) lili: 31.0 fps | per frame: tick 1391 us, render 13216 us, flush 17312 us (fill 15017, wire wait 41, send 2181) | internal heap 185 KB, min 185 KB
+14:38:41 I (382368) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1770 ms)
+14:38:42 I (383280) lili: 28.5 fps | per frame: tick 1474 us, render 15317 us, flush 17823 us (fill 15496, wire wait 42, send 2207) | internal heap 185 KB, min 185 KB
+14:38:47 I (388281) lili: 31.2 fps | per frame: tick 1366 us, render 13067 us, flush 17322 us (fill 15029, wire wait 41, send 2179) | internal heap 185 KB, min 185 KB
+14:38:49 I (390276) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1768 ms)
+14:38:52 I (393297) lili: 28.5 fps | per frame: tick 1469 us, render 15483 us, flush 17810 us (fill 15486, wire wait 42, send 2206) | internal heap 185 KB, min 185 KB
+14:38:57 I (398178) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1770 ms)
+14:38:57 I (398308) lili: 28.5 fps | per frame: tick 1470 us, render 15278 us, flush 17826 us (fill 15501, wire wait 42, send 2206) | internal heap 185 KB, min 185 KB
+14:39:01 I (403057) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1778 ms)
+14:39:02 I (403313) lili: 28.4 fps | per frame: tick 1465 us, render 15663 us, flush 17811 us (fill 15488, wire wait 42, send 2204) | internal heap 185 KB, min 185 KB
+14:39:07 I (408345) lili: 31.2 fps | per frame: tick 1365 us, render 13133 us, flush 17316 us (fill 15019, wire wait 41, send 2182) | internal heap 185 KB, min 185 KB
+14:39:12 I (413374) lili: 31.2 fps | per frame: tick 1369 us, render 12956 us, flush 17316 us (fill 15017, wire wait 41, send 2184) | internal heap 185 KB, min 185 KB
+14:39:16 I (416971) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1769 ms)
+14:39:17 I (418385) lili: 28.5 fps | per frame: tick 1485 us, render 15378 us, flush 17817 us (fill 15489, wire wait 41, send 2209) | internal heap 185 KB, min 185 KB
+14:39:22 I (423407) lili: 30.9 fps | per frame: tick 1372 us, render 13303 us, flush 17397 us (fill 15100, wire wait 42, send 2181) | internal heap 185 KB, min 185 KB
+14:39:23 I (424865) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1769 ms)
+14:39:27 I (428421) lili: 28.3 fps | per frame: tick 1484 us, render 15641 us, flush 17843 us (fill 15518, wire wait 42, send 2207) | internal heap 185 KB, min 185 KB
+14:39:28 I (429747) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1765 ms)
+14:39:32 I (433428) lili: 29.0 fps | per frame: tick 1453 us, render 15150 us, flush 17699 us (fill 15374, wire wait 42, send 2207) | internal heap 185 KB, min 185 KB
+14:39:37 I (438458) lili: 31.2 fps | per frame: tick 1371 us, render 12970 us, flush 17320 us (fill 15018, wire wait 41, send 2188) | internal heap 185 KB, min 185 KB
+14:39:39 I (440647) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1768 ms)
+14:39:42 I (443473) lili: 28.5 fps | per frame: tick 1475 us, render 15478 us, flush 17816 us (fill 15489, wire wait 42, send 2209) | internal heap 185 KB, min 185 KB
+14:39:47 I (448504) lili: 31.2 fps | per frame: tick 1368 us, render 12981 us, flush 17325 us (fill 15023, wire wait 41, send 2188) | internal heap 185 KB, min 185 KB
+14:39:52 I (453525) lili: 30.5 fps | per frame: tick 1388 us, render 13509 us, flush 17494 us (fill 15189, wire wait 42, send 2189) | internal heap 185 KB, min 185 KB
+14:39:53 I (454568) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1769 ms)
+14:39:57 I (458545) lili: 28.3 fps | per frame: tick 1474 us, render 15696 us, flush 17856 us (fill 15532, wire wait 42, send 2205) | internal heap 185 KB, min 185 KB
+14:39:58 I (459448) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1781 ms)
+14:40:02 I (463577) lili: 29.4 fps | per frame: tick 1444 us, render 14731 us, flush 17596 us (fill 15275, wire wait 42, send 2203) | internal heap 185 KB, min 185 KB
+14:40:07 I (468580) lili: 31.2 fps | per frame: tick 1371 us, render 12999 us, flush 17330 us (fill 15028, wire wait 41, send 2188) | internal heap 185 KB, min 185 KB
+14:40:09 I (470308) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1750 ms)
+14:40:12 I (473585) lili: 28.6 fps | per frame: tick 1474 us, render 15420 us, flush 17789 us (fill 15464, wire wait 42, send 2207) | internal heap 185 KB, min 185 KB
+14:40:17 I (478614) lili: 31.2 fps | per frame: tick 1369 us, render 12969 us, flush 17319 us (fill 15016, wire wait 41, send 2189) | internal heap 185 KB, min 185 KB
+14:40:20 I (481219) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1769 ms)
+14:40:22 I (483633) lili: 28.5 fps | per frame: tick 1483 us, render 15448 us, flush 17812 us (fill 15489, wire wait 42, send 2205) | internal heap 185 KB, min 185 KB
+14:40:27 I (488664) lili: 31.2 fps | per frame: tick 1368 us, render 13004 us, flush 17325 us (fill 15024, wire wait 41, send 2187) | internal heap 185 KB, min 185 KB
+14:40:32 I (493686) lili: 30.9 fps | per frame: tick 1379 us, render 13203 us, flush 17400 us (fill 15099, wire wait 42, send 2186) | internal heap 185 KB, min 185 KB
+14:40:34 I (495146) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1772 ms)
+14:40:37 I (498692) lili: 28.4 fps | per frame: tick 1483 us, render 15628 us, flush 17851 us (fill 15524, wire wait 42, send 2208) | internal heap 185 KB, min 185 KB
+14:40:39 I (500018) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1766 ms)
+14:40:42 I (503700) lili: 29.0 fps | per frame: tick 1455 us, render 15153 us, flush 17694 us (fill 15368, wire wait 42, send 2208) | internal heap 185 KB, min 185 KB
+14:40:47 I (508729) lili: 31.2 fps | per frame: tick 1369 us, render 12970 us, flush 17321 us (fill 15020, wire wait 41, send 2187) | internal heap 185 KB, min 185 KB
+14:40:49 I (510917) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1768 ms)
+14:40:52 I (513745) lili: 28.5 fps | per frame: tick 1482 us, render 15465 us, flush 17817 us (fill 15488, wire wait 42, send 2210) | internal heap 185 KB, min 185 KB
+14:40:57 I (518776) lili: 31.2 fps | per frame: tick 1369 us, render 12981 us, flush 17326 us (fill 15024, wire wait 41, send 2188) | internal heap 185 KB, min 185 KB
+14:41:02 I (523798) lili: 30.5 fps | per frame: tick 1387 us, render 13517 us, flush 17495 us (fill 15190, wire wait 42, send 2189) | internal heap 185 KB, min 185 KB
+14:41:03 I (524840) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1770 ms)
+14:41:07 I (528817) lili: 28.3 fps | per frame: tick 1481 us, render 15689 us, flush 17854 us (fill 15526, wire wait 42, send 2208) | internal heap 185 KB, min 185 KB
+14:41:08 I (529720) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1781 ms)
+14:41:12 I (533849) lili: 29.4 fps | per frame: tick 1444 us, render 14725 us, flush 17594 us (fill 15274, wire wait 42, send 2202) | internal heap 185 KB, min 185 KB
+14:41:17 I (538878) lili: 31.2 fps | per frame: tick 1371 us, render 12969 us, flush 17321 us (fill 15019, wire wait 41, send 2187) | internal heap 185 KB, min 185 KB
+14:41:22 I (543627) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1768 ms)
+14:41:22 I (543888) lili: 28.5 fps | per frame: tick 1487 us, render 15299 us, flush 17811 us (fill 15486, wire wait 42, send 2207) | internal heap 185 KB, min 185 KB
+14:41:27 I (548920) lili: 31.2 fps | per frame: tick 1362 us, render 13110 us, flush 17326 us (fill 15033, wire wait 42, send 2178) | internal heap 185 KB, min 185 KB
+14:41:30 I (551521) lili: brain: model -> zoomies pant_idle act_none (margin 0.17, 1767 ms)
+14:41:32 I (553948) lili: 28.2 fps | per frame: tick 1525 us, render 15455 us, flush 17824 us (fill 15492, wire wait 42, send 2213) | internal heap 185 KB, min 185 KB
+14:41:37 I (558966) lili: 30.3 fps | per frame: tick 1464 us, render 13423 us, flush 17310 us (fill 15006, wire wait 41, send 2190) | internal heap 185 KB, min 185 KB
+14:41:42 I (563969) lili: 31.2 fps | per frame: tick 1368 us, render 13029 us, flush 17322 us (fill 15031, wire wait 41, send 2178) | internal heap 185 KB, min 185 KB
+14:41:44 I (565947) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.15, 1776 ms)
+14:41:47 I (568988) lili: 28.5 fps | per frame: tick 1526 us, render 15168 us, flush 17839 us (fill 15504, wire wait 42, send 2216) | internal heap 185 KB, min 185 KB
+14:41:53 I (574001) lili: 31.1 fps | per frame: tick 1438 us, render 12884 us, flush 17321 us (fill 15015, wire wait 41, send 2191) | internal heap 185 KB, min 185 KB
+14:41:58 I (579032) lili: 31.2 fps | per frame: tick 1366 us, render 13075 us, flush 17325 us (fill 15025, wire wait 41, send 2186) | internal heap 185 KB, min 185 KB
+14:42:02 I (584062) lili: 31.2 fps | per frame: tick 1372 us, render 12943 us, flush 17323 us (fill 15025, wire wait 41, send 2184) | internal heap 185 KB, min 185 KB
+14:42:05 I (586638) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1774 ms)
+14:42:08 I (589073) lili: 28.5 fps | per frame: tick 1476 us, render 15441 us, flush 17825 us (fill 15498, wire wait 42, send 2207) | internal heap 185 KB, min 185 KB
+14:42:13 I (594107) lili: 29.4 fps | per frame: tick 1420 us, render 14499 us, flush 17682 us (fill 15368, wire wait 42, send 2196) | internal heap 185 KB, min 185 KB
+14:42:13 I (594528) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1768 ms)
+14:42:18 I (599123) lili: 28.1 fps | per frame: tick 1491 us, render 15853 us, flush 17859 us (fill 15533, wire wait 42, send 2208) | internal heap 185 KB, min 185 KB
+14:42:18 I (599414) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1780 ms)
+14:42:23 I (604124) lili: 30.6 fps | per frame: tick 1414 us, render 13654 us, flush 17400 us (fill 15097, wire wait 41, send 2188) | internal heap 185 KB, min 185 KB
+14:42:28 I (609153) lili: 31.2 fps | per frame: tick 1370 us, render 12970 us, flush 17318 us (fill 15021, wire wait 41, send 2183) | internal heap 185 KB, min 185 KB
+14:42:32 I (613325) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1768 ms)
+14:42:33 I (614161) lili: 28.6 fps | per frame: tick 1483 us, render 15372 us, flush 17807 us (fill 15481, wire wait 42, send 2207) | internal heap 185 KB, min 185 KB
+14:42:37 I (618204) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1782 ms)
+14:42:38 I (619164) lili: 28.4 fps | per frame: tick 1465 us, render 15648 us, flush 17831 us (fill 15502, wire wait 42, send 2209) | internal heap 185 KB, min 185 KB
+14:42:43 I (624179) lili: 31.1 fps | per frame: tick 1368 us, render 13111 us, flush 17317 us (fill 15021, wire wait 41, send 2182) | internal heap 185 KB, min 185 KB
+14:42:48 I (629208) lili: 31.2 fps | per frame: tick 1369 us, render 12946 us, flush 17327 us (fill 15029, wire wait 41, send 2184) | internal heap 185 KB, min 185 KB
+14:42:51 I (632131) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1767 ms)
+14:42:53 I (634224) lili: 28.5 fps | per frame: tick 1477 us, render 15412 us, flush 17808 us (fill 15483, wire wait 42, send 2207) | internal heap 185 KB, min 185 KB
+14:42:58 I (639236) lili: 30.1 fps | per frame: tick 1395 us, render 13847 us, flush 17565 us (fill 15262, wire wait 42, send 2187) | internal heap 185 KB, min 185 KB
+14:42:59 I (640033) lili: brain: model -> zoomies pant_idle act_none (margin 0.17, 1771 ms)
+14:43:03 I (644247) lili: 29.1 fps | per frame: tick 1540 us, render 14594 us, flush 17566 us (fill 15243, wire wait 42, send 2205) | internal heap 185 KB, min 185 KB
+14:43:08 I (649248) lili: 31.2 fps | per frame: tick 1432 us, render 13050 us, flush 17324 us (fill 15024, wire wait 42, send 2185) | internal heap 185 KB, min 185 KB
+14:43:13 I (654268) lili: 30.3 fps | per frame: tick 1386 us, render 13943 us, flush 17505 us (fill 15206, wire wait 41, send 2184) | internal heap 185 KB, min 185 KB
+14:43:14 I (655113) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1764 ms)
+14:43:18 I (659280) lili: 29.5 fps | per frame: tick 1501 us, render 14590 us, flush 17557 us (fill 15241, wire wait 42, send 2199) | internal heap 185 KB, min 185 KB
+14:43:20 I (661817) body: energy: OFF
+14:43:27 I (668894) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:43:38 I (679571) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:43:49 I (690248) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:44:02 I (703974) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:44:07 I (708612) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:44:18 I (719290) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:44:31 I (733018) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:44:36 I (737656) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:44:50 I (751384) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:44:58 I (759071) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1426 ms)
+14:45:02 I (763710) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:45:13 I (774387) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:45:24 I (785064) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:45:37 I (798792) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:45:48 I (809469) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:46:02 I (823196) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:46:06 I (827835) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:46:20 I (841562) lili: brain: model -> zoomies pant_idle act_none (margin 0.17, 1427 ms)
+14:46:34 I (855534) lili: brain: model -> go_sunbeam act_none act_none (margin 0.18, 1425 ms)
+14:46:44 I (865296) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:46:54 I (875974) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:47:05 I (886651) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:47:19 I (900379) lili: brain: model -> zoomies pant_idle act_none (margin 0.17, 1427 ms)
+14:47:35 I (916368) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.18, 1425 ms)
+14:47:50 I (931436) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:48:01 I (942113) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:48:11 I (952791) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:48:22 I (963467) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:48:36 I (977195) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:48:43 I (984883) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:48:48 I (989520) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:49:02 I (1003247) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:49:06 I (1007884) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:49:20 I (1021610) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:49:31 I (1032287) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:49:44 I (1046014) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:49:49 I (1050651) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:50:00 I (1061328) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:50:10 I (1072005) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:50:21 I (1082682) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:50:35 I (1096409) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:50:43 I (1104097) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:50:47 I (1108735) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:51:01 I (1122461) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:51:06 I (1127098) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:51:16 I (1137775) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:51:27 I (1148452) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:51:41 I (1162180) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:51:48 I (1169867) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:51:56 I (1177555) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:52:04 I (1185243) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:52:14 I (1195919) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:52:25 I (1206600) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:52:39 I (1220328) lili: brain: model -> zoomies pant_idle act_none (margin 0.17, 1427 ms)
+14:52:54 I (1235827) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.16, 1425 ms)
+14:53:10 I (1251079) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:53:23 I (1264806) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:53:31 I (1272493) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:53:39 I (1280180) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:53:43 I (1284818) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:53:57 I (1298544) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:54:05 I (1306232) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:54:18 I (1319959) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:54:23 I (1324597) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:54:37 I (1338324) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:54:41 I (1342961) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:54:52 I (1353638) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:55:03 I (1364315) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:55:17 I (1378041) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:55:21 I (1382680) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:55:32 I (1393356) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1426 ms)
+14:55:43 I (1404034) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:55:56 I (1417762) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:56:04 I (1425450) lili: brain: model -> zoomies pant_idle act_none (margin 0.17, 1425 ms)
+14:56:19 I (1440768) lili: brain: model -> head_tilt nap_sunbeam act_none (margin 0.15, 1427 ms)
+14:56:38 I (1459619) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:56:52 I (1473347) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:56:59 I (1481035) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:57:07 I (1488722) lili: brain: model -> zoomies pant_idle act_none (margin 0.17, 1425 ms)
+14:57:22 I (1503186) lili: brain: model -> go_sunbeam act_none act_none (margin 0.16, 1427 ms)
+14:57:33 I (1515083) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:57:47 I (1528811) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:58:01 I (1542538) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:58:06 I (1547176) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:58:19 I (1560904) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+14:58:24 I (1565543) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:58:38 I (1579270) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+14:58:45 I (1586958) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1425 ms)
+14:58:50 I (1591596) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:59:04 I (1605323) lili: brain: model -> zoomies pant_idle act_none (margin 0.17, 1425 ms)
+14:59:20 I (1621065) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.16, 1425 ms)
+14:59:36 I (1637355) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:59:50 I (1651082) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+14:59:57 I (1658769) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+15:00:08 I (1669446) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+15:00:19 I (1680123) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+15:00:32 I (1693849) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+15:00:37 I (1698487) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+15:00:51 I (1712214) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1425 ms)
+15:00:55 I (1716852) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+15:01:09 I (1730579) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1425 ms)
+15:01:14 I (1735216) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+15:01:24 I (1745894) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+15:01:38 I (1759620) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+15:01:43 I (1764259) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+15:01:57 I (1777986) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+15:02:01 I (1782624) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+15:02:15 I (1796352) lili: brain: model -> zoomies pant_idle act_none (margin 0.17, 1427 ms)
+15:02:31 I (1812952) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.15, 1427 ms)
+15:02:50 I (1831497) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1425 ms)
+15:02:55 I (1836134) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+15:03:05 I (1846812) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+15:03:16 I (1857489) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+15:03:30 I (1871216) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+15:03:37 I (1878905) lili: brain: model -> go_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+15:03:45 I (1886593) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+15:03:50 I (1891232) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+15:04:03 I (1904960) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+15:04:08 I (1909598) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+15:04:19 I (1920276) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+15:04:29 I (1930953) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+15:04:43 I (1944679) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+15:04:48 I (1949317) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+15:04:58 I (1959994) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1427 ms)
+15:05:12 I (1973721) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1427 ms)
+15:05:17 I (1978359) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+15:05:27 I (1989035) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1425 ms)
+15:05:38 I (1999713) lili: brain: model -> nap_sunbeam act_none act_none (margin 0.17, 1427 ms)
+15:05:49 I (2010390) lili: brain: model -> nap_sunbeam pant_idle act_none (margin 0.17, 1425 ms)
+15:06:03 I (2024117) lili: brain: model -> go_sunbeam act_none act_none (margin 0.17, 1425 ms)
