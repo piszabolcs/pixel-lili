@@ -100,6 +100,8 @@ typedef struct {
     int8_t   rule;                         /* the last decision's template (-1 = none) */
     uint8_t  bubble; float bubble_t;       /* the thought bubble over her head (spec 10.4 BB_*, D-09) and how long it stays */
     bool     bubbles_on;                   /* the setting (spec 7.8): the simulator on, the panel after the owner's try (D-09) */
+    uint8_t  set_bright, set_volume;       /* the settings card (spec 7.8): brightness 0..2, volume 0..3 */
+    bool     set_muted, set_search;        /* the sound off; the search hint (D-06) */
     float    margin;                       /* and its top-2 margin */
     bool     finger_down;          /* the finger on the glass (follow_finger), set by the platform each frame */
     int16_t  finger_x, finger_y;

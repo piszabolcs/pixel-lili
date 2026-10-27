@@ -29,6 +29,7 @@ void world_init(world_t *w, uint32_t seed) {
     w->shake_cover = -1;
     w->rule = -1;
     w->bubbles_on = CONFIG_LILI_THOUGHT_BUBBLES;
+    w->set_bright = 2; w->set_volume = 2; w->set_search = CONFIG_LILI_SEARCH_HINT;
     actor_t *lili = &w->actors[0];
     lili->present = true;
     lili->view = VIEW_ROOM;

@@ -8,4 +8,5 @@ void body_init(void);                                     /* after display_port_
 bool body_poll(world_t *w, ev_queue_t *q, float dt);      /* once a frame: false = the screen is off (skip the drawing) */
 void body_owner(world_t *w);                              /* the owner did something: ACTIVE */
 int  body_state(void);
+void body_set_brightness(uint8_t level);                 /* the settings card's brightness for ACTIVE */
 #endif

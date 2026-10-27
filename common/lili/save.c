@@ -2,7 +2,8 @@
  * Layout: "LSAV", u16 version, u16 payload length, the payload, u32 CRC-32 of everything before it.
  * Payload v1 (append only, never reorder): i64 saved_at, i64 first_start, 6 x f32 needs, u8 guilty, u8 n_mess,
  * 4 x (i16, i16) spots, u8 pad, u8 food, u8 water, u8 view, f32 x, f32 y, u8 dir, u16 anim,
- * 2 x (u8 view, f32 x, f32 y, i8 held_by) toys, u32 pets, u32 plays, u8 last_kind. */
+ * 2 x (u8 view, f32 x, f32 y, i8 held_by) toys, u32 pets, u32 plays, u8 last_kind,
+ * then (appended) u8 brightness, u8 volume, u8 muted, u8 search hint, u8 bubbles. */
 #include "save.h"
 #include "life.h"
 #include <string.h>
@@ -33,6 +34,7 @@ int save_write(const world_t *w, int64_t first_start, uint8_t *buf, int cap) {
     u8(&o, (uint8_t)a->view); f32(&o, a->x); f32(&o, a->y); u8(&o, (uint8_t)a->dir); u16(&o, a->anim);
     for (int i = 0; i < TOY_COUNT; i++) { const toy_t *t = &w->things.toys[i]; u8(&o, (uint8_t)t->view); f32(&o, t->x); f32(&o, t->y); u8(&o, (uint8_t)t->held_by); }
     u32(&o, w->pets); u32(&o, w->plays); u8(&o, w->last_kind);
+    u8(&o, w->set_bright); u8(&o, w->set_volume); u8(&o, w->set_muted); u8(&o, w->set_search); u8(&o, w->bubbles_on);   /* settings (appended 2026-10-27) */
     const int len = o.n - start;
     if (o.n + 4 > cap) return 0;
     buf[6] = (uint8_t)len; buf[7] = (uint8_t)(len >> 8);
@@ -78,6 +80,8 @@ bool save_read(world_t *w, const uint8_t *buf, int len, int64_t *saved_at, int64
         const int8_t h = (int8_t)g8(&r, 0xFF); t->held_by = h >= 0 && h < MAX_ACTORS ? h : -1; t->z = t->vx = t->vy = t->vz = 0;
     }
     w->pets = g32(&r, 0); w->plays = g32(&r, 0); w->last_kind = g8(&r, 7);
+    w->set_bright = g8(&r, w->set_bright) % 3; w->set_volume = g8(&r, w->set_volume) % 4; w->set_muted = g8(&r, w->set_muted) != 0;
+    w->set_search = g8(&r, w->set_search) != 0; w->bubbles_on = g8(&r, w->bubbles_on) != 0;
     if (saved_at) *saved_at = at;
     if (first_start) *first_start = first;
     return true;

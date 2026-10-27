@@ -28,6 +28,7 @@
 #include "maps_gen.h"
 #include "events.h"
 #include "pak.h"
+#include "ui.h"
 #include "lvgl/lvgl.h"
 #include <SDL2/SDL.h>
 
@@ -38,6 +39,7 @@ static pak_t s_pak;                          /* ../assets/build/assets.pak, read
 static uint16_t s_fb[LILI_PHYS_W * LILI_PHYS_H];
 static mask_t s_mask;
 static bool s_debug;                                   /* M: the corner-zone debug layer */
+static ui_t s_ui;                                      /* the glass status bar and the settings card (M10) */
 
 static void pak_load(const char *path) {
     FILE *f = fopen(path, "rb"); if (!f) { printf("pak: no %s (placeholder graphics)\n", path); return; }
@@ -56,8 +58,10 @@ static void canvas_init(void) {
 static void frame(void) {
     world_render_cached(&s_world, &s_r8, &s_bg);
     if (s_debug) { world_debug_draw(&s_world, &s_r8); mask_debug_draw(&s_r8, PAL_DEBUG); }
+    ui_prepare(&s_ui, &s_world, &s_r8);                /* the glass interface, frosted from this picture (M10) */
     r8_flush_rows(&s_r8, s_fb, 0, LILI_PHYS_H);        /* the sim takes the whole frame; the panel takes stripes */
     mask_apply_rows(&s_mask, s_fb, 0, LILI_PHYS_H);    /* the glass's corners and edge fade, on the same rows */
+    ui_apply_rows(&s_ui, s_fb, 0, LILI_PHYS_H);
 }
 
 /* ---------- headless ---------- */
@@ -1299,6 +1303,33 @@ static int selftest_motion(void) {
     return 0;
 }
 
+/* --selftest-ui (spec 7.8, M10.1-M10.3): the bar slides in and away, frosted over the picture, its taps are its
+   own (mute, the gear), the settings card's rows change the settings, the accents are in the font */
+#include "font5x9.h"
+static int selftest_ui(void) {
+    canvas_init(); world_init(&s_world, 61); ui_init(&s_ui);
+    frame(); static uint16_t before[LILI_PHYS_W * LILI_PHYS_H]; memcpy(before, s_fb, sizeof before);
+    ui_show(&s_ui); for (int i = 0; i < 10; i++) ui_tick(&s_ui, 0.03f);
+    frame();
+    long changed = 0; for (int y = 18; y < 82; y++) for (int x = 60; x < 420; x++) changed += s_fb[y * LILI_PHYS_W + x] != before[y * LILI_PHYS_W + x];
+    CHECK(s_ui.show > 0.99f && changed > 15000, "BOOT: the bar slides down over the top of the picture");
+    CHECK(s_fb[240 * LILI_PHYS_W + 240] == before[240 * LILI_PHYS_W + 240], "the rest of the picture is untouched");
+    CHECK(ui_tap(&s_ui, &s_world, 60 + 290, 50) && s_world.set_muted, "a tap on the speaker mutes");
+    CHECK(ui_tap(&s_ui, &s_world, 60 + 330, 50) && s_ui.settings, "a tap on the gear opens the settings");
+    const uint8_t b0 = s_world.set_bright; ui_tap(&s_ui, &s_world, 240, UI_CARD_Y + 56 + 10);
+    CHECK(s_world.set_bright == (b0 + 1) % 3, "the brightness row steps the brightness");
+    const bool bub = s_world.bubbles_on; ui_tap(&s_ui, &s_world, 240, UI_CARD_Y + 56 + 2 * 44 + 10);
+    CHECK(s_world.bubbles_on != bub, "the bubbles row switches the thought bubbles");
+    frame(); CHECK(s_fb[(UI_CARD_Y + 150) * LILI_PHYS_W + 240] != before[(UI_CARD_Y + 150) * LILI_PHYS_W + 240], "the card is drawn");
+    ui_tap(&s_ui, &s_world, 240, UI_CARD_Y + 56 + 5 * 44 + 10);
+    CHECK(!s_ui.settings, "Bezárás closes the card");
+    for (int i = 0; i < 200; i++) ui_tick(&s_ui, 0.03f);
+    CHECK(s_ui.show < 0.01f && !ui_tap(&s_ui, &s_world, 300, 50), "4 s untouched: the bar slides away, and a tap there is the world's again");
+    uint16_t c[5]; CHECK(font_glyph(0x151, c) && font_glyph(0x170, c) && font_glyph(0xE1, c) && !font_glyph(0x4E2D, c), "the font has ő, Ű, á (and no CJK)");
+    printf("selftest-ui: ok\n");
+    return 0;
+}
+
 static double now_us(void) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); return ts.tv_sec * 1e6 + ts.tv_nsec / 1e3; }
 static int bench(void) {
     canvas_init(); world_init(&s_world, 1);
@@ -1329,6 +1360,7 @@ static void drain_events(void) {
         char line[72];
         snprintf(line, sizeof line, e.c ? "%7.1f  %-14s %d %d %d" : "%7.1f  %-14s %d %d", s_world.clock_s, ev_name((ev_type_t)e.type), e.a, e.b, e.c);
         inspector_log(line); puts(line);
+        if (e.type == EV_TAP && ui_tap(&s_ui, &s_world, e.a, e.b)) continue;   /* the interface's tap, not the world's */
         world_handle_event(&s_world, &e);
     }
 }
@@ -1424,6 +1456,7 @@ static void frame_cb(lv_timer_t *t) {
         world_finger(&s_world, fd, fx, fy);
     }
     drain_events();
+    ui_tick(&s_ui, dt);
     if (s_av.on) { if (!s_av.pause) s_av.t += dt; viewer_draw(); }
     else { if (demo_active()) demo_tick(&s_world, dt); else { brain_tick(&s_world, dt); plan_tick(&s_world, 0, dt); } world_tick(&s_world, dt); frame(); }
     static float save_t; save_t += dt;
@@ -1439,7 +1472,7 @@ static void ui_build(void) {
     lv_init();
     lv_tick_set_cb(tick_cb);
     lv_display_t *disp = lv_sdl_window_create(LILI_PHYS_W + INSPECTOR_W, LILI_PHYS_H);
-    lv_sdl_window_set_title(disp, "Pixel Lili sim  (Tab szoba/udvar, W futty, N nev, Enter felvetel, Space razas, T +1 ora, 1-4 evszak, D napszak, A animacio, R irany, M debug, Q kilepes)");
+    lv_sdl_window_set_title(disp, "Pixel Lili sim  (Tab szoba/udvar, W futty, N nev, Enter felvetel, Space razas, T +1 ora, 1-4 evszak, D napszak, A animacio, R irany, B allapotsav, M debug, Q kilepes)");
     lv_sdl_mouse_create();
     lv_draw_buf_init(&s_draw_buf, LILI_PHYS_W, LILI_PHYS_H, LV_COLOR_FORMAT_RGB565, LILI_PHYS_W * 2, s_fb, sizeof s_fb);
     s_canvas = lv_canvas_create(lv_screen_active());
@@ -1493,6 +1526,7 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--selftest-life")) return selftest_life();
     if (argc > 1 && !strcmp(argv[1], "--selftest-llm")) return selftest_llm();
     if (argc > 1 && !strcmp(argv[1], "--selftest-motion")) return selftest_motion();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-ui")) return selftest_ui();
     if (argc > 3 && !strcmp(argv[1], "--dump-prompts")) return dump_prompts(argv[2], atoi(argv[3]));
     if (argc > 2 && !strcmp(argv[1], "--dump-probes")) return dump_probes(argv[2]);
     if (argc > 2 && !strcmp(argv[1], "--dump-traces")) {
@@ -1511,6 +1545,7 @@ int main(int argc, char **argv) {
         canvas_init(); world_init(&s_world, 1234);
         if (getenv("LILI_VIEW")) s_world.view = (view_t)(atoi(getenv("LILI_VIEW")) % VIEW_COUNT);   /* 1 = the yard */
         if (getenv("LILI_BUBBLE")) { s_world.bubble = (uint8_t)atoi(getenv("LILI_BUBBLE")); s_world.bubble_t = 2; }   /* a thought bubble (BB_*) */
+        if (getenv("LILI_UI")) { ui_init(&s_ui); s_ui.has_battery = true; s_ui.battery = 0.8f; ui_show(&s_ui); s_ui.show = 1; s_ui.settings = atoi(getenv("LILI_UI")) > 1; }   /* the bar (1), the card too (2) */
         frame(); write_ppm(argv[2], s_fb);
         printf("wrote %s\n", argv[2]); return 0;
     }
@@ -1551,6 +1586,7 @@ int main(int argc, char **argv) {
         for (int k = 0; k < 4; k++) if (key_edge(SDL_SCANCODE_1 + k)) ev_push(&s_q, EV_SET_SEASON, k, 0);
         if (key_edge(SDL_SCANCODE_D)) { int c = s_world.daypart_force; ev_push(&s_q, EV_SET_DAYPART, c >= 3 ? -1 : c + 1, 0); }
         if (key_edge(SDL_SCANCODE_M)) s_debug = !s_debug;
+        if (key_edge(SDL_SCANCODE_B)) ui_show(&s_ui);                  /* the panel's BOOT: the glass status bar (spec 7.8) */
         if (key_edge(SDL_SCANCODE_A)) {
             actor_t *l = &s_world.actors[0];
             int k = 0;

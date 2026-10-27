@@ -63,6 +63,7 @@ void body_init(void) {
 }
 
 int body_state(void) { return s_state; }
+void body_set_brightness(uint8_t level) { if (level != s_bright_active) { s_bright_active = level; if (s_state == BODY_ACTIVE) display_port_set_brightness(level); } }
 
 static void set_state(int st, world_t *w) {
     if (st == s_state) return;
