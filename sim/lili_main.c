@@ -731,7 +731,7 @@ static int selftest_plan(void) {
     /* the toys (spec 8.9): a throw flies, bounces, slides and stops on the floor of its own view */
     world_init(&s_world, 6); toy_t *ty = &s_world.things.toys[TOY_ROPE];
     ty->x = 240; ty->y = 300; toy_throw(&s_world, TOY_ROPE, 3000, -400);
-    CHECK(ty->vz > 0 && ty->vx > 0 && ty->vx <= 180.0f * LILI_K + 1, "a flick's speed is scaled and capped");
+    CHECK(ty->vz > 0 && ty->vx > 0 && ty->vx <= 210.0f * LILI_K + 1, "a flick's speed is scaled and capped");   /* toys.c TOY_THROW_MAX */
     float maxz = 0; for (int i = 0; i < 300; i++) { toys_tick(&s_world, 1.0f / 30.0f); if (ty->z > maxz) maxz = ty->z; CHECK(nav_clear(VIEW_ROOM, (int)ty->x, (int)ty->y, 0), "the toy stays on the room's floor"); }
     printf("toy: highest %.1f px, at rest at (%.0f, %.0f), z %.1f, v (%.2f, %.2f, %.2f)\n", maxz, ty->x, ty->y, ty->z, ty->vx, ty->vy, ty->vz);
     CHECK(maxz > 6 && ty->z == 0 && ty->vx == 0 && ty->vy == 0, "it flies up, comes down and stops");
@@ -824,8 +824,9 @@ static int selftest_reflex(void) {
    on its own, in her mouth it follows her head and goes with her through the door */
 static int selftest_toys(void) {
     nav_init(&s_nav); world_init(&s_world, 51); toy_t *ty = &s_world.things.toys[TOY_ROPE];
-    /* the owner (2026-10-28): it spun, flew far and bounced like a rubber ball. A rope thuds: a short arc, at most one
-       little hop after a hard throw, a short slide; it turns over in the air only and lies the way it landed */
+    /* the owner (2026-10-28): it spun, flew far and bounced like a rubber ball; then it was a rock that could not be
+       thrown. Between the two: a real arc, at most one little hop, a short slide, not across the room (the ball: 370 px);
+       it turns over in the air only, a few times, and lies the way it landed */
     ty->x = 200; ty->y = 300; toy_throw(&s_world, TOY_ROPE, 2400, 0);
     int landings = 0, turns = 0, rest_turns = 0; float lastz = 0, land_x = -1, flight_x = ty->x; uint8_t rot = ty->rot; bool rested = false;
     for (int i = 0; i < 300; i++) {
@@ -837,8 +838,8 @@ static int selftest_toys(void) {
         CHECK(ty->view == VIEW_ROOM && nav_clear(VIEW_ROOM, (int)ty->x, (int)ty->y, 0), "a thrown toy stays on its view's floor");
     }
     CHECK(landings >= 1 && landings <= 2, "it lands with at most one little hop");
-    CHECK(rest_turns == 0 && turns <= 4, "it turns over only in the air, a few times");
-    CHECK(land_x - flight_x > 20 && ty->x - land_x < 30 && ty->x - flight_x < 200, "a short arc and a short slide, no flying away");
+    CHECK(rest_turns == 0 && turns >= 2 && turns <= 8, "it turns over only in the air, a few times");
+    CHECK(land_x - flight_x > 100 && ty->x - land_x < 90 && ty->x - flight_x < 300, "a real arc and a short slide, no flying across the room");
     ty->x = 400; ty->y = 390; ty->z = 0; toy_throw(&s_world, TOY_ROPE, 6000, 0);     /* hard at the right wall (below the bench, which is not floor since 2026-10-27) */
     bool back = false; for (int i = 0; i < 200; i++) { toys_tick(&s_world, 1.0f / 30.0f); if (ty->vx < 0) back = true; }
     CHECK(back && nav_clear(VIEW_ROOM, (int)ty->x, (int)ty->y, 0), "the wall sends it back");

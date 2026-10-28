@@ -8,20 +8,23 @@
 /* the owner (2026-10-28): the rope spun, flew far and bounced like a rubber ball. A knotted rope is soft and heavy:
    a short arc under a real-looking gravity (spec 8.9's 300 design px / s2 was a slow float), a thud at the landing
    (it skids on at about half its speed, at most one little hop after a hard throw), a short slide to a stop, a soft
-   wall; it turns over only in the air, one picture per TOY_TURN_PX flown, and lies the way it landed */
-#define TOY_GRAVITY    (700.0f * LILI_K)
-#define TOY_THROW_K    0.2f                                 /* the flick's finger speed -> the toy's */
-#define TOY_THROW_MAX  (180.0f * LILI_K)
-#define TOY_LIFT       0.7f                                 /* the arc: up at this part of the speed across, within: */
-#define TOY_VZ_MIN     (45.0f * LILI_K)
-#define TOY_VZ_MAX     (125.0f * LILI_K)
-#define TOY_BOUNCE     0.15f                                /* the hop's part of the landing speed, only above TOY_HOP_VZ */
-#define TOY_HOP_VZ     (75.0f * LILI_K)
-#define TOY_LAND_SKID  0.55f                                /* the speed across kept at a landing */
-#define TOY_DRAG       (150.0f * LILI_K)                    /* on the floor: a steady braking (px / s2) ... */
-#define TOY_WALL       0.3f
-#define TOY_TURN_PX    (22.0f * LILI_K)
-static const float FRICTION[TOY_COUNT] = { 6.0f, 6.0f };      /* ... and this per second: rope, plush */
+   wall; it turns over only in the air, one picture per TOY_TURN_PX flown, and lies the way it landed.
+   Then (same day): now it is a rock, it cannot be thrown; set it between the two. Measured with the flick speeds
+   700 / 1200 / 2000 px / s: the rubber ball went 206 / 353 / 370 px and slid for 2.7 s, the rock 21 / 59 / 135 px;
+   this goes 89 / 241 / 249 px, about 20 px high, one small hop, at rest in about a second, 2-6 turns in the air */
+#define TOY_GRAVITY    (480.0f * LILI_K)
+#define TOY_THROW_K    0.34f                                /* the flick's finger speed -> the toy's */
+#define TOY_THROW_MAX  (210.0f * LILI_K)
+#define TOY_LIFT       0.55f                                /* the arc: up at this part of the speed across, within: */
+#define TOY_VZ_MIN     (58.0f * LILI_K)
+#define TOY_VZ_MAX     (105.0f * LILI_K)
+#define TOY_BOUNCE     0.3f                                 /* the hop's part of the landing speed, only above TOY_HOP_VZ */
+#define TOY_HOP_VZ     (35.0f * LILI_K)
+#define TOY_LAND_SKID  0.75f                                /* the speed across kept at a landing */
+#define TOY_DRAG       (60.0f * LILI_K)                     /* on the floor: a steady braking (px / s2) ... */
+#define TOY_WALL       0.45f
+#define TOY_TURN_PX    (15.0f * LILI_K)
+static const float FRICTION[TOY_COUNT] = { 3.8f, 4.5f };      /* ... and this per second: rope, plush */
 
 void toys_init(world_t *w) {
     static const int START[TOY_COUNT] = { SPOT_ROPE_START, SPOT_PLUSH_START };
