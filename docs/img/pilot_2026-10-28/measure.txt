@@ -1,0 +1,6 @@
+sitdown2_S: 8 frames, step 0.46 (max 0.79); start vs before 0.40, end vs after 0.17 | old: step 0.27, start 0.43, end 0.86
+sitdown2_SW: 8 frames, step 0.37 (max 0.55); start vs before 0.50, end vs after 0.05 | old: step 0.32, start 0.47, end 0.81
+curlup_S: 8 frames, step 0.60 (max 0.87); start vs before 0.00, end vs after 0.04
+walkloop_S: 8 frames, step 0.48 (max 0.56); start vs before 0.14, loop seam 0.58 | old: step 0.41, start 0.46, seam 0.56
+walkloop_SE: 8 frames, step 0.39 (max 0.48); start vs before 0.07, loop seam 0.51 | old: step 0.46, start 0.80, seam 0.61
+petloop_S: 8 frames, step 0.07 (max 0.10); start vs before 0.00, loop seam 0.10 | old: step 0.10, start 0.88, seam 0.28

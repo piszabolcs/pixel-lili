@@ -315,6 +315,7 @@ static int finish(world_t *w, int actor, plan_t *p) {
        the jumps the owner saw); off the pad she stands up */
     const uint16_t an = a->anim;
     if (an == ANIM_SLEEP_CURL || an == ANIM_IDLE_SIT_BLINK || an == ANIM_CHEW_TOY || an == ANIM_SUN_SIT || an == ANIM_LIE_DOWN || an == ANIM_PANT_SMILE) {}
+    else if (pose_curled(a)) set_anim(a, ANIM_SLEEP_CURL);                                /* curled up: asleep on */
     else if (pose_posed(a, ANIM_LIE_DOWN)) set_anim(a, ANIM_LIE_DOWN);                   /* its last frame: lying still */
     else if (pose_resting(a) && an != ANIM_PEE && an != ANIM_POOP) set_anim(a, ANIM_IDLE_SIT_BLINK);
     else set_anim(a, ANIM_IDLE_STAND);

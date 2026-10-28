@@ -470,5 +470,5 @@
    "head": null
   }
  ],
- "source": "tools/pixellab_to_sprites.py (sit_down_S, sit_down_SW, sit_down_W, sit_down_NW, sit_down_N, sit_down_NE, sit_down_E, sit_down_SE)"
+ "source": "tools/pixellab_to_sprites.py (sitdown2_S, sitdown2_SW, sit_down_W, sit_down_NW, sit_down_N, sit_down_NE, sit_down_E, sit_down_SE)"
 }

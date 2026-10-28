@@ -858,6 +858,54 @@
    "start": "stand_SE",
    "action": "pouncing forward playfully with both front paws",
    "frames": 8
+  },
+  {
+   "tag": "sitdown2_S",
+   "start": "stand_S",
+   "last": "sit_S0",
+   "action": "sits down calmly onto her haunches and stays sitting, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "sitdown2_SW",
+   "start": "stand_SW",
+   "last": "sit_SW",
+   "action": "sits down calmly onto her haunches and stays sitting, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "curlup_S",
+   "start": "lie_S8",
+   "last": "curl_S",
+   "action": "curls up into a ball to sleep, tucking her head and paws in and closing her eyes, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "walkloop_S",
+   "start": "stand_S",
+   "last": "stand_S",
+   "action": "walks in place towards the viewer, one full step cycle with a calm stride, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "walkloop_SE",
+   "start": "stand_SE",
+   "last": "stand_SE",
+   "action": "walks in place to the lower right, one calm step cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "petloop_S",
+   "start": "lie_S8",
+   "last": "lie_S8",
+   "action": "lying still, eyes closing happily while petted, tail wagging slowly, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
   }
  ]
 }

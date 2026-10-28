@@ -444,6 +444,15 @@
   "loop": false,
   "reverse_of": "lie_down"
  },
+ "curl_up": {
+  "id": 39,
+  "frames": 8,
+  "fps": 8,
+  "dirs": [
+   "S"
+  ],
+  "loop": false
+ },
  "toy_rope": {
   "id": 40,
   "frames": 1,
@@ -466,5 +475,15 @@
   ],
   "loop": true,
   "extra": true
+ },
+ "uncurl": {
+  "id": 43,
+  "frames": 8,
+  "fps": 8,
+  "dirs": [
+   "S"
+  ],
+  "loop": false,
+  "reverse_of": "curl_up"
  }
 }

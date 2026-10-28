@@ -41,8 +41,8 @@ ANIMS = {
     # M3.5: spec 7.4 A01-A09, every direction (approved by the owner on 2026-10-26, trot_SE on 2026-10-27)
     "idle_stand":     (1,  6,  True,  all8("idle_stand")),
     "idle_sit_blink": (2,  6,  True,  all8("idle_sit_blink")),
-    "sit_down":       (3,  12, False, all8("sit_down")),
-    "walk":           (4,  10, True,  all8("walk")),
+    "sit_down":       (3,  12, False, dict(all8("sit_down"), S="sitdown2_S", SW="sitdown2_SW")),   # 2026-10-28: last-frame remakes (stand -> sit exactly)
+    "walk":           (4,  10, True,  dict(all8("walk"), S="walkloop_S", SE="walkloop_SE")),       # 2026-10-28: loops closed on the stand pose
     "trot":           (5,  14, True,  all8("trot")),
     "run":            (6,  18, True,  all8("run")),
     "tiptoe":         (7,  8,  True,  all8("sneak")),          # A07: PixelLab's "sneaking slowly, crouched low"
@@ -55,7 +55,7 @@ ANIMS = {
     "play_bow":       (11, 10, True,  dict(all8("play_bow"), SW="play_bow_SW_v3")),   # v3 (the owner's prompt): all four paws planted
     "bark_head_flip": (12, 10, False, {"S": "bark_S_v2", "SW": "bark_SW", "W": "bark_W", "E": "bark_E", "SE": "bark_SE"}),   # no back views (the owner, 2026-10-26)
     "chew_toy":       (15, 10, True,  {"S": "chew_rope_S", "SE": "chew_rope_SE"}),
-    "pet_enjoy":      (16, 6,  True,  {d: f"pet_enjoy_{d}" for d in ("S", "SW", "SE")}),
+    "pet_enjoy":      (16, 6,  True,  dict({d: f"pet_enjoy_{d}" for d in ("S", "SW", "SE")}, S="petloop_S")),   # 2026-10-28: from the lie-down's last frame
     "eat_drink":      (17, 8,  True,  {"W": "eat_W"}),
     "sleep_curl":     (18, 3,  True,  {"S": "sleep_curl_S"}),           # replaces the rejected SW (2026-10-26)
     "sun_sit":        (19, 4,  True,  {d: f"sun_sit_{d}" for d in ("S", "SW")}),
@@ -75,10 +75,13 @@ ANIMS = {
     "carry_trot":     (35, 14, True,  {d: f"carry_trot_{d}" for d in ("S", "SW", "W", "NW", "NE", "E", "SE")}),
     "lie_down_rope":  (36, 8,  False, {"S": "lie_down_rope_S"}),
     "chew_treat":     (37, 10, True,  {d: f"chew_treat_{d}" for d in ("S", "SE")}),
+    # 2026-10-28: lying (the lie-down's last frame) -> curled up asleep (sleep_curl's first), PixMiniMax with a last frame
+    "curl_up":        (39, 8,  False, {"S": "curlup_S"}),
 }
 # played from another set backwards: no frames of their own in the pak (common/asset_ids.h ANIM_REVERSE_OF)
 REVERSED = {"stand_up": (29, "sit_down"),    # A03's second half: sitting down backwards is standing up
-            "get_up": (38, "lie_down")}      # 2026-10-28: lying down backwards is getting up (common/lili/pose.c)
+            "get_up": (38, "lie_down"),      # 2026-10-28: lying down backwards is getting up (common/lili/pose.c)
+            "uncurl": (43, "curl_up")}       # 2026-10-28: curling up backwards is waking out of the ball
 # how a set plays where it is not once or round and round (pack_assets.py: the pak's loop byte 2 / 3). 2026-10-28, the owner:
 # "choppy, not matched": PixMiniMax makes a motion from its first frame, not a cycle, so these loops jumped back from their
 # last frame to their first (the jump was the cycle's biggest step in at least one direction); there and back has no such

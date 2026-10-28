@@ -79,10 +79,12 @@ enum {
     ANIM_LIE_DOWN_ROPE = 36,
     ANIM_CHEW_TREAT = 37,
     ANIM_GET_UP = 38,
+    ANIM_CURL_UP = 39,
     ANIM_TOY_ROPE = 40,
     ANIM_ICON_ROPE = 42,
+    ANIM_UNCURL = 43,
     ANIM_COUNT_LISTED
 };
 /* an animation drawn from another one's frames, backwards (stand_up = sit_down reversed); 0 = it has its own */
-#define ANIM_REVERSE_OF(a) ((a) == ANIM_STAND_UP ? ANIM_SIT_DOWN : (a) == ANIM_GET_UP ? ANIM_LIE_DOWN : 0)
+#define ANIM_REVERSE_OF(a) ((a) == ANIM_STAND_UP ? ANIM_SIT_DOWN : (a) == ANIM_GET_UP ? ANIM_LIE_DOWN : (a) == ANIM_UNCURL ? ANIM_CURL_UP : 0)
 #endif
