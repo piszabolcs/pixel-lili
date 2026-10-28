@@ -19,7 +19,7 @@ static int pose_of(uint16_t anim, bool end) {
     case ANIM_SLEEP_CURL:                                return PO_CURL;
     case ANIM_IDLE_SIT_BLINK: case ANIM_PANT_SMILE: case ANIM_HEAD_TILT: case ANIM_SUN_SIT: case ANIM_LOOK_AROUND:
     case ANIM_ASK_PET: case ANIM_PEE: case ANIM_POOP:   return PO_SIT;
-    case ANIM_CHEW_TOY: case ANIM_PET_ENJOY:            return PO_LIE;
+    case ANIM_CHEW_TOY: case ANIM_PET_ENJOY: case ANIM_GUILTY_PEEK: return PO_LIE;
     case 0: case ANIM_EAT_TREAT: case ANIM_CHEW_TREAT:  return PO_ANY;
     default:                                             return PO_STAND;
     }
@@ -106,6 +106,7 @@ static void step(actor_t *a) {
 void pose_snap(actor_t *a, uint16_t anim) { start(a, anim); a->want = 0; a->facing = 0; }
 bool pose_lying(const actor_t *a) { const int p = pose_of(a->anim, true); return p == PO_LIE || p == PO_CURL; }
 bool pose_curled(const actor_t *a) { return pose_of(a->anim, true) == PO_CURL; }
+int pose_near_dir(uint16_t anim, int d) { return near_dir(anim, d); }
 bool pose_settling(const actor_t *a) { return a->want != 0; }
 bool pose_posed(const actor_t *a, uint16_t move) { return a->anim != move && already(a, move); }
 bool pose_resting(const actor_t *a) { const int p = pose_of(a->anim, true); return p == PO_SIT || p == PO_LIE || p == PO_CURL; }

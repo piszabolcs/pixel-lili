@@ -187,6 +187,35 @@
   ],
   "loop": false
  },
+ "huff": {
+  "id": 13,
+  "frames": 8,
+  "fps": 10,
+  "dirs": [
+   "S",
+   "SW",
+   "W",
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE"
+  ],
+  "loop": false
+ },
+ "pickup": {
+  "id": 14,
+  "frames": 8,
+  "fps": 12,
+  "dirs": [
+   "S",
+   "SW",
+   "W",
+   "E",
+   "SE"
+  ],
+  "loop": false
+ },
  "chew_toy": {
   "id": 15,
   "frames": 8,
@@ -245,6 +274,16 @@
    "SE"
   ],
   "loop": false
+ },
+ "guilty_peek": {
+  "id": 21,
+  "frames": 8,
+  "fps": 6,
+  "dirs": [
+   "S",
+   "SW"
+  ],
+  "loop": true
  },
  "look_around": {
   "id": 23,
@@ -485,5 +524,19 @@
   ],
   "loop": false,
   "reverse_of": "curl_up"
+ },
+ "drop": {
+  "id": 44,
+  "frames": 8,
+  "fps": 12,
+  "dirs": [
+   "S",
+   "SW",
+   "W",
+   "E",
+   "SE"
+  ],
+  "loop": false,
+  "reverse_of": "pickup"
  }
 }

@@ -65,7 +65,8 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 4. PixelLab utolsó kockával (a gazdi jóváhagyta, 56 generálás): a leülés öt irányban állásból ülésbe, új összegömbölyödés (fekvésből alvásba, visszafelé a kibomlás), simogatás a fekvés végéből, a járások (séta, ügetés, futás, osonás, settenkedés, kötélhordás) hurokként zárva, a fül nem vált, a méret nem ugrik. Videók: `docs/img/pilot_2026-10-28/` (`pilot_old_vs_new.mp4`, `wave1_old_vs_new.mp4`, `wave2_old_vs_new.mp4`).
 5. A kötél a gumilabda és a szikla között (89 / 241 / 249 px gyenge, közepes és erős pöccintésre, egy kis pattanás), a szoba bal fala nem padló többé.
 6. Tölcséres érintés: a játék, a folt, a tálak, a pelenka, Lili, az ajtó és a sáv körül nagyobb a nyomható terület, és ha több is elérhető, a legközelebbi nyer; az M réteg mutatja a játék körüli kört.
-7. Elkészült (PixelLab, még nincs beépítve, a gazdi igenjére vár): puffogás (A13) 8 irányban, a kötél felvétele (A14) 5 irányban, a leejtés ugyanez visszafelé, kukucskálás a pad alól (A21) 2 irányban; videó `docs/img/pilot_2026-10-28/wave3_new.mp4`. A plüsst a gazdi Geminivel generálja (`docs/art/startframes/PROMPTS.md` 09).
+7. Beépítve (PixelLab, a gazdi jóváhagyta): puffogás (A13) 8 irányban, a kötél felvétele (A14) 5 irányban, a leejtés ugyanez visszafelé, kukucskálás a pad alól (A21) 2 irányban; videó `docs/img/pilot_2026-10-28/wave3_new.mp4`. A plüsst a gazdi Geminivel generálja (`docs/art/startframes/PROMPTS.md` 09).
+8. A flash utáni kifagyás (a kijelző el sem indult, a régi kép maradt, az érintés halott): az I2C-busz felszabadítása induláskor, türelmesebb táblafelismerés, újraindítás, ha a kijelző mégsem indul; a napló kiírja az újraindítás okát.
 
 <!-- /overview -->
 

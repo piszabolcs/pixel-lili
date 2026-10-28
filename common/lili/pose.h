@@ -23,6 +23,7 @@ bool pose_posed(const actor_t *a, uint16_t move);               /* another anima
 bool pose_resting(const actor_t *a);                            /* sitting or lying: the pose holds between decisions */
 bool pose_lying(const actor_t *a);                              /* lying or curled up */
 bool pose_curled(const actor_t *a);                             /* curled up asleep, or curling up */
+int  pose_near_dir(uint16_t anim, int d);                       /* the direction it plays in when she faces d (the nearest it has) */
 bool pose_turn(actor_t *a, dir8_t to, float dt);                /* one step towards to when it is time; true = facing it */
 void pose_tick(actor_t *a, float dt);                           /* the animation's clock, and the next animation when a move ends */
 float pose_once_len(uint16_t anim);                             /* a one-shot animation's length in seconds (a there-and-back counts both ways) */

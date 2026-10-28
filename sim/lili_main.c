@@ -417,6 +417,7 @@ static int moves_record(const char *dir) {
     snprintf(path, sizeof path, "%s/log.txt", dir); FILE *lg = fopen(path, "w");   /* frame, x, y, anim, dir, frame shown: to find a moment */
     static const struct { int act, ev; float hold; } TAKE[] = {
         { ACT_SIT, 0, 1.0f }, { ACT_GO_BOWLS, 0, 0.5f }, { ACT_SLEEP_RUG, 0, 0 }, { -1, EV_WHISTLE, 0.5f }, { -1, EV_FLICK, 1.0f },
+        { ACT_HUFF, 0, 0.8f }, { ACT_HIDE_BENCH, 0, 0 }, { ACT_PEEK_BENCH, 0, 0.5f },   /* 2026-10-28: A13, A21 (the fetch has A14's pickup and drop) */
     };
     for (int k = 0; k < (int)(sizeof TAKE / sizeof TAKE[0]); k++) {
         if (TAKE[k].act >= 0) plan_one(&s_world, 0, TAKE[k].act, ST_WALK);

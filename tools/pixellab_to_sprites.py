@@ -31,7 +31,7 @@ import sprite_clean as sc
 DIRS = pn.DIRS
 CELL, PIVOT, SLOT = pn.CELL, pn.PIVOT, 144
 TOY_SLOT, TOY_N = 184, 6                   # the toys' colours (assets/palettes/toy_colors.json): the rope keeps its blues, reds, yellows
-ROPE_ANIMS = ("tug_rope", "carry_trot", "lie_down_rope", "chew_toy")
+ROPE_ANIMS = ("tug_rope", "carry_trot", "lie_down_rope", "chew_toy", "pickup")
 
 def all8(src):
     return {d: f"{src}_{d}" for d in DIRS}
@@ -49,16 +49,21 @@ ANIMS = {
     "scurry":         (8,  16, True,  all8("scurryloop")),     # 2026-10-28: loops closed on the stand pose
     "pant_smile":     (9,  8,  True,  all8("pant_smile")),
     # M3.6 (2026-10-27): spec 7.4 A10-A27, every direction the review set has (docs/review: the owner's first round,
-    # 2026-10-26, without its hidden sheets; the rest falls back to the nearest direction). Missing: A13 huff,
-    # A14 pickup / drop, A21 guilty_peek, A22 jump_up / jump_down (no PixelLab sheets yet)
+    # 2026-10-26, without its hidden sheets; the rest falls back to the nearest direction). Missing: A22 jump_up /
+    # jump_down (no PixelLab sheets yet; A13, A14, A21 came on 2026-10-28, below)
     "head_tilt":      (10, 8,  False, {d: f"head_tilt_{d}" for d in ("S", "SW", "SE")}),
     "play_bow":       (11, 10, True,  dict(all8("play_bow"), SW="play_bow_SW_v3")),   # v3 (the owner's prompt): all four paws planted
     "bark_head_flip": (12, 10, False, {"S": "bark_S_v2", "SW": "bark_SW", "W": "bark_W", "E": "bark_E", "SE": "bark_SE"}),   # no back views (the owner, 2026-10-26)
+    # 2026-10-28 (approved by the owner): PixMiniMax with a last frame. The huff starts and ends standing; the pickup goes
+    # from standing over the rope (startframes/pickup_<dir>0) to the carry pose, no back views (the rope lay beside her)
+    "huff":           (13, 10, False, all8("huff")),
+    "pickup":         (14, 12, False, {d: f"pickup_{d}" for d in ("S", "SW", "W", "E", "SE")}),
     "chew_toy":       (15, 10, True,  {"S": "chew_rope_S", "SE": "chew_rope_SE"}),
     "pet_enjoy":      (16, 6,  True,  {d: f"petloop_{d}" for d in ("S", "SW", "SE")}),   # 2026-10-28: from the lie-down's last frame, a closed loop
     "eat_drink":      (17, 8,  True,  {"W": "eat_W"}),
     "sleep_curl":     (18, 3,  True,  {"S": "sleep_curl_S"}),           # replaces the rejected SW (2026-10-26)
     "sun_sit":        (19, 4,  True,  {d: f"sun_sit_{d}" for d in ("S", "SW")}),
+    "guilty_peek":    (21, 6,  True,  {d: f"peek_{d}" for d in ("S", "SW")}),     # 2026-10-28: lying under the bench, the eyes glance (a closed loop)
     "squat":          (20, 8,  False, {"SE": "squat_pee_SE"}),          # A20's way down; pee and poop (31, 32) hold the squat
     "look_around":    (23, 8,  False, {d: f"look_around_{d}" for d in ("S", "SW", "SE")}),
     "sniff":          (24, 8,  True,  all8("sniff")),
@@ -81,7 +86,8 @@ ANIMS = {
 # played from another set backwards: no frames of their own in the pak (common/asset_ids.h ANIM_REVERSE_OF)
 REVERSED = {"stand_up": (29, "sit_down"),    # A03's second half: sitting down backwards is standing up
             "get_up": (38, "lie_down"),      # 2026-10-28: lying down backwards is getting up (common/lili/pose.c)
-            "uncurl": (43, "curl_up")}       # 2026-10-28: curling up backwards is waking out of the ball
+            "uncurl": (43, "curl_up"),       # 2026-10-28: curling up backwards is waking out of the ball
+            "drop": (44, "pickup")}          # 2026-10-28: picking the rope up backwards is putting it down
 # how a set plays where it is not once or round and round (pack_assets.py: the pak's loop byte 2 / 3). 2026-10-28, the owner:
 # "choppy, not matched": PixMiniMax makes a motion from its first frame, not a cycle, so these loops jumped back from their
 # last frame to their first (the jump was the cycle's biggest step in at least one direction); there and back has no such

@@ -288,9 +288,9 @@ static uint8_t s_shade[SH_W * SH_H];              /* 1 contact edge, 2 cast far,
 static int shadow_hmax(uint16_t anim) {
     switch (anim) {
     case ANIM_SLEEP_CURL: return 10;
-    case ANIM_CHEW_TOY: case ANIM_CHEW_TREAT: case ANIM_LIE_DOWN_ROPE: return 18;                  /* lying, head up */
+    case ANIM_CHEW_TOY: case ANIM_CHEW_TREAT: case ANIM_LIE_DOWN_ROPE: case ANIM_GUILTY_PEEK: return 18;   /* lying, head up */
     case ANIM_PLAY_BOW: case ANIM_EAT_DRINK: case ANIM_DRINK: case ANIM_LIE_DOWN: case ANIM_TUG_ROPE:
-    case ANIM_EAT_TREAT: case ANIM_SNIFF: return 28;                                                /* head down, or going down */
+    case ANIM_EAT_TREAT: case ANIM_SNIFF: case ANIM_PICKUP: case ANIM_DROP: return 28;              /* head down, or going down */
     case ANIM_IDLE_SIT_BLINK: case ANIM_PANT_SMILE: case ANIM_LOOK_AROUND: case ANIM_BARK_HEAD_FLIP: case ANIM_HEAD_TILT:
     case ANIM_SUN_SIT: case ANIM_ASK_PET: case ANIM_PET_ENJOY: case ANIM_SQUAT: case ANIM_PEE: case ANIM_POOP: return 42;   /* sitting, squatting */
     default: return LILI_SHADOW_HMAX;
@@ -398,7 +398,9 @@ static void lili_slots(const render8_t *r, uint8_t *dark, uint8_t *mid, uint8_t 
     }
 }
 /* the animations whose frames hold the rope themselves: then it is not drawn again at her mouth */
-static bool rope_in_frames(uint16_t anim) { return anim == ANIM_CARRY_TROT || anim == ANIM_CHEW_TOY || anim == ANIM_TUG_ROPE || anim == ANIM_LIE_DOWN_ROPE; }
+static bool rope_in_frames(uint16_t anim) {      /* the pickup and the drop (2026-10-28) draw it too, on the floor and in her mouth */
+    return anim == ANIM_CARRY_TROT || anim == ANIM_CHEW_TOY || anim == ANIM_TUG_ROPE || anim == ANIM_LIE_DOWN_ROPE || anim == ANIM_PICKUP || anim == ANIM_DROP;
+}
 static void draw_toy(const world_t *w, render8_t *r, int k) {
     const toy_t *t = &w->things.toys[k];
     const actor_t *holder = t->held_by >= 0 ? &w->actors[t->held_by] : NULL;

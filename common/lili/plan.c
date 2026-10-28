@@ -1,6 +1,6 @@
 /* plan.c - see plan.h. The action table is the body's half of the brain's vocabulary: every action of
  * model/schema_lili.json is here, with its precondition and its primitives. Animations the PixelLab round has not
- * made yet stand in with the nearest ones (huff: a head tilt; the pickup: a sniff; the bench peek: a look round). */
+ * made yet stand in with the nearest ones (2026-10-28: the huff, the pickup and drop, the bench peek have their own now). */
 #include "plan.h"
 #include "nav.h"
 #include "toys.h"
@@ -16,7 +16,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum { P_END = 0, P_GOTO, P_ANIM, P_ONCE, P_WAIT, P_DIR, P_PICK, P_DROP, P_TOSS, P_VIEW, P_HIDE, P_UNHIDE, P_PEEK, P_FOLLOW, P_STYLE, P_FX, P_LOOK };
+enum { P_END = 0, P_GOTO, P_ANIM, P_ONCE, P_WAIT, P_DIR, P_PICK, P_DROP, P_TOSS, P_VIEW, P_HIDE, P_UNHIDE, P_PEEK, P_FOLLOW, P_STYLE, P_FX, P_LOOK,
+       P_PICKUP, P_PUTDOWN };
 /* walk targets: a map spot (its SPOT_* id), or one of these */
 enum { TG_FRONT = 40, TG_RANDOM, TG_RANDOM_FAR, TG_TOY, TG_ROPE, TG_PLUSH, TG_DOOR, TG_SUNBEAM, TG_BUSH_HIDE, TG_BUSH_EDGE,
        TG_BOWL_FOOD, TG_BOWL_WATER, TG_FLOOR_AWAY, TG_INSIDE, TG_TAP };
@@ -36,6 +37,8 @@ typedef struct { uint8_t op, arg; uint16_t anim; float t; } prim_t;
 #define ST(s)       { P_STYLE, s, 0, 0 }
 #define PICK(toy)   { P_PICK, toy, 0, 0 }
 #define DROP        { P_DROP, 0, 0, 0 }
+#define PICKUP(toy) { P_PICKUP, toy, 0, 0 }             /* the pick, with the rope through the pickup's frames (A14) */
+#define PUTDOWN     { P_PUTDOWN, 0, 0, 0 }               /* the drop, with the rope through the same frames backwards */
 #define TOSS        { P_TOSS, 0, 0, 0 }
 #define VIEW        { P_VIEW, 0, 0, 0 }
 #define HIDE(p)     { P_HIDE, p, 0, 0 }
@@ -69,11 +72,11 @@ static const act_t ACTS[RX_END] = {
     [ACT_ENTER_YARD]     = { N_ROOM,                { GO(TG_DOOR), VIEW, GO(TG_INSIDE), ON(ANIM_LOOK_AROUND) } },
     [ACT_ENTER_ROOM]     = { N_YARD,                { GO(TG_DOOR), VIEW, GO(TG_INSIDE), AN(ANIM_IDLE_STAND, 1.0f) } },
     /* play */
-    [ACT_PICKUP_ROPE]    = { N_ROPE | N_FREE_MOUTH, { GO(TG_ROPE), AN(ANIM_SNIFF, 0.6f), PICK(TOY_ROPE) } },
+    [ACT_PICKUP_ROPE]    = { N_ROPE | N_FREE_MOUTH, { GO(TG_ROPE), PICKUP(TOY_ROPE) } },
     [ACT_PICKUP_PLUSH]   = { N_PLUSH | N_FREE_MOUTH,{ GO(TG_PLUSH), AN(ANIM_SNIFF, 0.6f), PICK(TOY_PLUSH) } },
-    [ACT_BRING_TOY]      = { N_MOUTH,               { ST(STYLE_TROT), GO(TG_FRONT), DROP, DR(DIR_S), AN(ANIM_PLAY_BOW, 2.0f) } },
-    [ACT_DROP_TOY_FRONT] = { N_MOUTH,               { GO(TG_FRONT), DROP, DR(DIR_S), AN(ANIM_IDLE_SIT_BLINK, 1.5f) } },
-    [ACT_CHEW_TOY]       = { N_TOY_ANY,             { GO(TG_TOY), PICK(ANYTOY), DR(DIR_S), ON(ANIM_LIE_DOWN), AN(ANIM_CHEW_TOY, 5.0f) } },
+    [ACT_BRING_TOY]      = { N_MOUTH,               { ST(STYLE_TROT), GO(TG_FRONT), PUTDOWN, DR(DIR_S), AN(ANIM_PLAY_BOW, 2.0f) } },
+    [ACT_DROP_TOY_FRONT] = { N_MOUTH,               { GO(TG_FRONT), PUTDOWN, DR(DIR_S), AN(ANIM_IDLE_SIT_BLINK, 1.5f) } },
+    [ACT_CHEW_TOY]       = { N_TOY_ANY,             { GO(TG_TOY), PICKUP(ANYTOY), DR(DIR_S), ON(ANIM_LIE_DOWN), AN(ANIM_CHEW_TOY, 5.0f) } },
     [ACT_PLAY_BOW]       = { 0,                     { AN(ANIM_PLAY_BOW, 3.0f) } },
     [ACT_ZOOMIES]        = { 0,                     { ST(STYLE_SPRINT), GO(TG_RANDOM_FAR), GO(TG_RANDOM_FAR), GO(TG_RANDOM_FAR), AN(ANIM_PANT_SMILE, 2.0f) } },
     [ACT_RUN_WITH_TOY]   = { N_MOUTH,               { ST(STYLE_TROT), GO(TG_RANDOM_FAR), GO(TG_RANDOM_FAR), AN(ANIM_PLAY_BOW, 1.5f) } },
@@ -82,7 +85,7 @@ static const act_t ACTS[RX_END] = {
     [ACT_SIT]            = { 0,                     { ON(ANIM_SIT_DOWN), AN(ANIM_IDLE_SIT_BLINK, 3.0f) } },
     [ACT_LIE_DOWN]       = { 0,                     { ON(ANIM_LIE_DOWN), WT(3.0f) } },
     [ACT_BARK]           = { 0,                     { FX(FX_BARK), ON(ANIM_BARK_HEAD_FLIP) } },
-    [ACT_HUFF]           = { 0,                     { FX(FX_HUFF), ON(ANIM_HEAD_TILT) } },                 /* A13 not made yet */
+    [ACT_HUFF]           = { 0,                     { FX(FX_HUFF), ON(ANIM_HUFF) } },
     [ACT_HEAD_TILT]      = { 0,                     { ON(ANIM_HEAD_TILT) } },
     [ACT_WAG]            = { 0,                     { AN(ANIM_IDLE_STAND, 2.0f) } },                       /* her idle wags */
     [ACT_BEG]            = { 0,                     { DR(DIR_S), AN(ANIM_ASK_PET, 3.0f) } },
@@ -102,7 +105,7 @@ static const act_t ACTS[RX_END] = {
     [ACT_SNEAK_RUG]      = { 0     ,                { ON(ANIM_LOOK_AROUND), ST(STYLE_TIPTOE), GO(SPOT_RUG), ON(ANIM_LIE_DOWN), AN(ANIM_SLEEP_CURL, 6.0f) } },   /* H7 on the rug */
     [ACT_LEAVE_RUG]      = { N_ROOM | N_ON_RUG,     { ON(ANIM_STARTLE), ST(STYLE_SCURRY), GO(SPOT_CENTER), AN(ANIM_IDLE_STAND, 1.0f) } },
     [ACT_HIDE_BENCH]     = { 0     ,                { ST(STYLE_SCURRY), GO(SPOT_NOOK), DR(DIR_S), ON(ANIM_LIE_DOWN), HIDE(1), WT(3.0f) } },
-    [ACT_PEEK_BENCH]     = { N_ROOM | N_HIDDEN,     { PEEK(3.0f), DR(DIR_S), AN(ANIM_LIE_DOWN, 3.0f) } },   /* A21 not made yet: lying, her eyes under the seat */
+    [ACT_PEEK_BENCH]     = { N_ROOM | N_HIDDEN,     { PEEK(3.0f), DR(DIR_S), AN(ANIM_GUILTY_PEEK, 3.0f) } },   /* A21: lying, her eyes glancing under the seat */
     [ACT_HIDE_BUSH]      = { N_YARD,                { GO(TG_BUSH_HIDE), HIDE(2), AN(ANIM_IDLE_SIT_BLINK, 3.0f) } },
     [ACT_PEEK_BUSH]      = { N_YARD,                { GO(TG_BUSH_EDGE), DR(DIR_S), ON(ANIM_LOOK_AROUND) } },
     /* the seasons outdoors */
@@ -117,12 +120,12 @@ static const act_t ACTS[RX_END] = {
     [RX_CALL_OTHER]      = { 0, { UNHIDE, ST(STYLE_TROT), GO(TG_DOOR), VIEW, GO(TG_FRONT), DR(DIR_S), AN(ANIM_IDLE_SIT_BLINK, 1.5f) } },
     [RX_PET]             = { 0, { AN(ANIM_PET_ENJOY, 60.0f) } },
     [RX_PET_END]         = { 0, { AN(ANIM_PET_ENJOY, 2.0f) } },
-    [RX_FETCH]           = { 0, { LOOK(TG_TOY), AN(ANIM_STARTLE, 0.08f), ST(STYLE_SPRINT), GO(TG_TOY), ON(ANIM_POUNCE), PICK(ANYTOY),
-                                  ST(STYLE_TROT), GO(TG_FRONT), DROP, DR(DIR_S), AN(ANIM_PLAY_BOW, 1.5f) } },
+    [RX_FETCH]           = { 0, { LOOK(TG_TOY), AN(ANIM_STARTLE, 0.08f), ST(STYLE_SPRINT), GO(TG_TOY), ON(ANIM_POUNCE), PICKUP(ANYTOY),
+                                  ST(STYLE_TROT), GO(TG_FRONT), PUTDOWN, DR(DIR_S), AN(ANIM_PLAY_BOW, 1.5f) } },
     [RX_TEASE]           = { 0, { PICK(ANYTOY), ST(STYLE_SPRINT), GO(TG_RANDOM_FAR), LOOK(TG_FRONT), AN(ANIM_PLAY_BOW, 2.5f) } },
-    [RX_TIRED]           = { 0, { DROP, ON(ANIM_SIT_DOWN), AN(ANIM_PANT_SMILE, 3.0f) } },
-    [RX_GREET]           = { 0, { UNHIDE, ST(STYLE_TROT), GO(TG_TOY), PICK(ANYTOY), GO(TG_FRONT), DR(DIR_S), ON(ANIM_LIE_DOWN), AN(ANIM_CHEW_TOY, 6.0f) } },
-    [RX_GREET_GUILTY]    = { 0, { GO(SPOT_NOOK), DR(DIR_S), ON(ANIM_LIE_DOWN), HIDE(1), PEEK(4.0f), AN(ANIM_LIE_DOWN, 2.0f) } },
+    [RX_TIRED]           = { 0, { PUTDOWN, ON(ANIM_SIT_DOWN), AN(ANIM_PANT_SMILE, 3.0f) } },
+    [RX_GREET]           = { 0, { UNHIDE, ST(STYLE_TROT), GO(TG_TOY), PICKUP(ANYTOY), GO(TG_FRONT), DR(DIR_S), ON(ANIM_LIE_DOWN), AN(ANIM_CHEW_TOY, 6.0f) } },
+    [RX_GREET_GUILTY]    = { 0, { GO(SPOT_NOOK), DR(DIR_S), ON(ANIM_LIE_DOWN), HIDE(1), PEEK(4.0f), AN(ANIM_GUILTY_PEEK, 2.0f) } },
     [RX_SHAKE]           = { 0, { ON(ANIM_STARTLE), FX(FX_BARK), ON(ANIM_BARK_HEAD_FLIP), WT(1.0f) } },
     [RX_VOICE]           = { 0, { ON(ANIM_HEAD_TILT) } },
     [RX_TAP_LOOK]        = { 0, { LOOK(TG_TAP), WT(0.8f) } },
@@ -201,6 +204,22 @@ static bool zone_center(view_t v, const char *prefix, int pick, int16_t *x, int1
     }
     return false;
 }
+/* the rope on the floor in the pickup's first frame (and the drop's last) from her paws, by facing, the room's set: measured on
+   startframes/pickup_<dir>0 (under the carry pose's rope, on the floor line); the back views have no pickup (pose.c turns her) */
+static void pick_spot(const actor_t *a, int dir, float *x, float *y) {
+    static const int8_t DX[DIR_COUNT] = { -4, -10, -15, 0, 0, 0, 12, 6 };
+    const float k = a->view == VIEW_YARD ? 0.625f / 0.75f : 1.0f;
+    *x = a->x + DX[dir & 7] * k; *y = a->y + 4 * k;
+}
+/* the toy a pick takes: the one asked for (ANYTOY: the plan's, else the nearest), loose, here and within 48 px; -1 = none */
+static int pick_which(const world_t *w, int actor, const plan_t *p, int arg) {
+    const actor_t *a = &w->actors[actor];
+    if (toy_held(w, actor) >= 0) return -1;
+    const int t = arg == ANYTOY ? (p->toy >= 0 ? p->toy : toy_near(w, actor, 48)) : arg;
+    if (t < 0) return -1;
+    const toy_t *ty = &w->things.toys[t];
+    return ty->held_by < 0 && ty->view == a->view && fabsf(ty->x - a->x) < 48 && fabsf(ty->y - a->y) < 48 ? t : -1;
+}
 static bool target(world_t *w, int actor, int tg, int16_t *x, int16_t *y) {
     actor_t *a = &w->actors[actor]; const map_t *m = &MAPS[a->view];
     if (tg < SPOT_COUNT) { const map_point_t *p = &m->points[tg]; if (p->z < 0) return false; *x = p->x; *y = p->y; return true; }
@@ -214,7 +233,13 @@ static bool target(world_t *w, int actor, int tg, int16_t *x, int16_t *y) {
         int t = tg == TG_ROPE ? TOY_ROPE : tg == TG_PLUSH ? TOY_PLUSH : toy_held(w, actor) >= 0 ? -1 : w->plans[actor].toy >= 0 ? w->plans[actor].toy : toy_near(w, actor, 1e6f);
         if (tg == TG_TOY && toy_held(w, actor) >= 0) { *x = (int16_t)a->x; *y = (int16_t)a->y; return true; }   /* already in her mouth */
         if (t < 0 || w->things.toys[t].view != a->view) return false;
-        *x = (int16_t)w->things.toys[t].x; *y = (int16_t)(w->things.toys[t].y + 2); return true;
+        const toy_t *ty = &w->things.toys[t];
+        if (t == TOY_ROPE) {                                  /* the rope: she stops with it in front of her mouth, where the pickup has it */
+            float px, py; pick_spot(a, pose_near_dir(ANIM_PICKUP, nav_dir(ty->x - a->x, ty->y - a->y)), &px, &py);
+            const int sx = (int)(ty->x - (px - a->x)), sy = (int)(ty->y - (py - a->y));
+            if (nav_clear(a->view, sx, sy, 0)) { *x = (int16_t)sx; *y = (int16_t)sy; return true; }
+        }
+        *x = (int16_t)ty->x; *y = (int16_t)(ty->y + 2); return true;
     }
     case TG_DOOR:       *x = door->x; *y = door->y; return door->z >= 0;
     case TG_INSIDE:     *x = door->x; *y = (int16_t)(door->y + (a->view == VIEW_ROOM ? 60 : -70)); return true;
@@ -314,7 +339,8 @@ static int finish(world_t *w, int actor, plan_t *p) {
        sits on blinking, lying she lies on (2026-10-28: getting up between two sitting actions only to sit again was
        the jumps the owner saw); off the pad she stands up */
     const uint16_t an = a->anim;
-    if (an == ANIM_SLEEP_CURL || an == ANIM_IDLE_SIT_BLINK || an == ANIM_CHEW_TOY || an == ANIM_SUN_SIT || an == ANIM_LIE_DOWN || an == ANIM_PANT_SMILE) {}
+    if (an == ANIM_SLEEP_CURL || an == ANIM_IDLE_SIT_BLINK || an == ANIM_CHEW_TOY || an == ANIM_SUN_SIT || an == ANIM_LIE_DOWN || an == ANIM_PANT_SMILE ||
+        an == ANIM_GUILTY_PEEK) {}
     else if (pose_curled(a)) set_anim(a, ANIM_SLEEP_CURL);                                /* curled up: asleep on */
     else if (pose_posed(a, ANIM_LIE_DOWN)) set_anim(a, ANIM_LIE_DOWN);                   /* its last frame: lying still */
     else if (pose_resting(a) && an != ANIM_PEE && an != ANIM_POOP) set_anim(a, ANIM_IDLE_SIT_BLINK);
@@ -372,15 +398,34 @@ int plan_tick(world_t *w, int actor, float dt) {
         case P_WAIT: done = p->t >= q->t; break;
         case P_DIR:  done = pose_turn(a, (dir8_t)q->arg, dt); break;         /* 45 degrees at a time */
         case P_LOOK: { int16_t lx, ly; done = !(target(w, actor, q->arg, &lx, &ly) && (lx != (int)a->x || ly != (int)a->y)) || pose_turn(a, nav_dir(lx - a->x, ly - a->y), dt); break; }
-        case P_PICK: {
-            int t = q->arg == ANYTOY ? (toy_held(w, actor) >= 0 ? -1 : p->toy >= 0 ? p->toy : toy_near(w, actor, 48)) : q->arg;
-            if (t >= 0 && toy_held(w, actor) < 0) {
-                const toy_t *ty = &w->things.toys[t];
-                if (ty->held_by < 0 && ty->view == a->view && fabsf(ty->x - a->x) < 48 && fabsf(ty->y - a->y) < 48) toy_pick(w, t, actor);
+        case P_PICK: { const int t = pick_which(w, actor, p, q->arg); if (t >= 0) toy_pick(w, t, actor); done = true; break; }
+        case P_PICKUP: {                                           /* the rope: turned to a direction the pickup has, it takes it */
+            if (p->rep == 0) {
+                const int t = pick_which(w, actor, p, q->arg);
+                if (t < 0) { done = true; break; }
+                if (t != TOY_ROPE) { toy_pick(w, t, actor); done = true; break; }   /* the plush: no frames of its own (yet) */
+                set_anim(a, ANIM_PICKUP);
+                if (a->anim != ANIM_PICKUP) break;
+                toy_pick(w, t, actor); p->rep = 1;                 /* in her mouth now, drawn by the frames (lili_world.c rope_in_frames) */
             }
-            done = true; break;
+            done = a->anim != ANIM_PICKUP || a->anim_t >= pose_once_len(ANIM_PICKUP);
+            break;
         }
         case P_DROP: { int t = toy_held(w, actor); if (t >= 0) toy_drop(w, t); done = true; break; }
+        case P_PUTDOWN: {                                          /* the rope: the pickup backwards, then it lies where its last frame has it */
+            const int t = toy_held(w, actor);
+            if (t < 0) { done = true; break; }
+            if (t != TOY_ROPE) { toy_drop(w, t); done = true; break; }
+            if (p->rep == 0) { set_anim(a, ANIM_DROP); if (a->anim != ANIM_DROP) break; p->rep = 1; }
+            if (a->anim == ANIM_DROP && a->anim_t < pose_once_len(ANIM_DROP)) break;
+            toy_drop(w, t);
+            {   toy_t *ty = &w->things.toys[t]; float px, py; pick_spot(a, a->dir, &px, &py);
+                if (nav_clear(a->view, (int)px, (int)py, 0)) { ty->x = px; ty->y = py; }
+                ty->z = 0; ty->vz = 0;                             /* on the floor already, not falling */
+            }
+            pose_snap(a, ANIM_IDLE_STAND);                         /* the same standing frame without the rope in it: no rope twice */
+            done = true; break;
+        }
         case P_TOSS: {
             int t = toy_held(w, actor);
             if (t >= 0) {
@@ -412,7 +457,8 @@ int plan_tick(world_t *w, int actor, float dt) {
         p->pi++; p->t = 0; p->rep = 0;
         if (p->pi >= PRIMS) goto next_act;
         if (ACTS[p->d.a[p->ai]].p[p->pi].op == P_END) goto next_act;
-        if (q->op == P_GOTO || q->op == P_ANIM || q->op == P_ONCE || q->op == P_WAIT || q->op == P_FOLLOW || q->op == P_VIEW) return PLAN_RUNNING;   /* one timed primitive a tick */
+        if (q->op == P_GOTO || q->op == P_ANIM || q->op == P_ONCE || q->op == P_WAIT || q->op == P_FOLLOW || q->op == P_VIEW ||
+            q->op == P_PICKUP || q->op == P_PUTDOWN) return PLAN_RUNNING;   /* one timed primitive a tick */
     }
 next_act:
     nav_stop(b);
