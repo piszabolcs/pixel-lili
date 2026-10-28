@@ -16,7 +16,7 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 | M3.5 A01-A09 | kész, [G] vár | `docs/review/m3_5.html`, `./lilisim --anim-viewer`; a panelen 32-33 fps |
 | M3.6 A10-A27 | kész, [G] vár | `docs/review/m3_6.html`; 33 animáció a pakban (3,97 MB). **Hiányzik** (nincs PixelLab-sheet): A13 puffogás, A14 felvétel/leejtés, A21 kukucskálás; az A22 (ágy) tárgytalan, szőnyeg van |
 | M3.7 szoba, udvar, évszakok, napszakok | kész, [G] vár | `docs/review/m3_7.html` (`--snapshot`). **Hiányzik:** évszakos díszek és a különleges napok díszei (új grafika kell) |
-| M3.8 játékok, foltok, pelenka, UI ikonok | részben | **a kötél kész** a gazdi Gemini-kelléklapjáról (`docs/art/Lilik/07.jpg`, 4 állás, `tools/toy_sprites.py`), saját 6 játékszínnel, a szájában is színes; a buborékban is a képe. A plüss **a játékosdobozban** (2026-10-28, `CONFIG_LILI_PLUSH_AWAY`), amíg nincs generált képe és animációja. Még helyőrző: folt, csillogás, pelenka állapotai, ikonok |
+| M3.8 játékok, foltok, pelenka, UI ikonok | részben | **a kötél kész** a gazdi Gemini-kelléklapjáról (`docs/art/Lilik/07.jpg`, 4 állás, `tools/toy_sprites.py`), saját 6 játékszínnel, a szájában is színes; a buborékban is a képe. A plüss visszajött (2026-10-28, a gazdi Gemini-képe, `docs/art/Lilik/09.jpg`); a folt, a kaka, a keksz és a pelenka állapota kép. Még helyőrző: a csillogás, az ikonok |
 | M4.1 navigáció | kész | `--selftest-nav`: 32 út ajtó és minden pont között, A*, simítás, kormányzás, hiszterézis |
 | M4.2 Y-rendezés, takarók, bokor | kész, [G] vár | a bokor egyszer rezzen (`docs/img/anim/m4_2_bush_shake.gif`); `--selftest-render` referenciaképekkel. **Sarokülő (2026-10-27 este):** a pad nem járható, a kuckó a hátsó rész alatt van, a kivágott pad takarja (alvás, bújás: a szeme kilátszik); `--scene-shots`. A valódi kukucskáló A21 és a padon alvás (ugrás, A22) még nincs |
 | M4.3 gesztusok | kész, [G] vár | mind a 7 gesztus, `--selftest-gesture`; a panelen az érintés él, **ujjal kipróbálni** (a soros konzol írja az eseményeket) |
@@ -67,6 +67,7 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 6. Tölcséres érintés: a játék, a folt, a tálak, a pelenka, Lili, az ajtó és a sáv körül nagyobb a nyomható terület, és ha több is elérhető, a legközelebbi nyer; az M réteg mutatja a játék körüli kört.
 7. Beépítve (PixelLab, a gazdi jóváhagyta): puffogás (A13) 8 irányban, a kötél felvétele (A14) 5 irányban, a leejtés ugyanez visszafelé, kukucskálás a pad alól (A21) 2 irányban; videó `docs/img/pilot_2026-10-28/wave3_new.mp4`. A plüsst a gazdi Geminivel generálja (`docs/art/startframes/PROMPTS.md` 09).
 8. A flash utáni kifagyás (a kijelző el sem indult, a régi kép maradt, az érintés halott): az I2C-busz felszabadítása induláskor, türelmesebb táblafelismerés, újraindítás, ha a kijelző mégsem indul; a napló kiírja az újraindítás okát.
+9. Jutalomfalat: hosszú nyomás a padlón, odamegy, megeszi, fekve rágja. Kaka: evés után a pelenkára vagy rosszalkodáskor a földre, a kaka képe a kelléklapról, koppintásra eltűnik; a pelenkán sárga folt, a tócsa nedves folt. A plüss visszajött a gazdi képéből (rózsaszín malacos csörgő), saját színekkel. Videó `docs/img/pilot_2026-10-28/moves_care.mp4`.
 
 <!-- /overview -->
 

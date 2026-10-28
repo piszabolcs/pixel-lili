@@ -112,6 +112,7 @@ void world_handle_event(world_t *w, const ev_t *e) {
     if (e->type < EV_COUNT) w->events_seen[e->type]++;
     if (e->type <= EV_VOICE_ACTIVITY && e->type != EV_NONE) life_owner(w);   /* the finger, the body, the voice: the owner is there */
     if (e->type == EV_TAP && world_care_tap(w, e->a, e->b)) return;   /* a bowl, the pad, a spot: the owner's care (spec 8.10) */
+    if (e->type == EV_LONG) world_put_treat(w, e->a, e->b);           /* a treat where the finger rests (2026-10-28): the reflex fetches it */
     brain_signal(w, e);                                  /* the next question will say what happened (spec 10.3 F18) */
     reflex_event(w, e);                                  /* the reflexes first (spec 8.8): 0 ms, past the brain */
     switch (e->type) {
@@ -421,6 +422,10 @@ static void draw_toy(const world_t *w, render8_t *r, int k) {
         const int rot = holder ? toy_rot_held(holder->dir) : t->rot;   /* in the air it turns over as it flies (toys.c) */
         if (pak_frame(&set, rot, 0, &fr)) { pak_blit(r, &set, &fr, x, holder ? y + set.cell_h / 2 : y); return; }
     }
+    if (k == TOY_PLUSH && s_pak && pak_sprite_set(s_pak, (uint16_t)(ANIM_TOY_PLUSH + (t->view == VIEW_YARD ? ANIM_YARD_OFFSET : 0)), &set)) {
+        const int rot = holder ? 2 : t->rot;                 /* the owner's piglet rattle (09.jpg): upright in her mouth, any way on the floor */
+        if (pak_frame(&set, rot, 0, &fr)) { pak_blit(r, &set, &fr, x, holder ? y + set.cell_h - 8 : y); return; }   /* held by its ear: it hangs below her mouth */
+    }
     if (k == TOY_ROPE) {                                     /* a knotted rope: a light bar with warm stripes, knots at the ends */
         r8_fill(r, x - 9, y - 4, 18, 5, dark); r8_fill(r, x - 8, y - 3, 16, 3, light);
         for (int i = -6; i <= 6; i += 4) r8_fill(r, x + i, y - 3, 2, 3, warm);
@@ -432,13 +437,53 @@ static void draw_toy(const world_t *w, render8_t *r, int k) {
         r8_fill(r, x - 2, y - 6, 1, 1, dark); r8_fill(r, x + 1, y - 6, 1, 1, dark);
     }
 }
+/* the floor's own things, flat, under everything (2026-10-28, from the owner's props sheet docs/art/Lilik/07.jpg): a puddle is
+   the floor wet (the shade table darkens it, a glint on top), a poop its picture; the pad gets a yellow stain when used and a
+   poop when she pooped on it; the owner's treat lies where the finger rested */
+static bool prop_box(const world_t *w, uint16_t img, const char *name, int *x0, int *y0, int *x1, int *y1);
+static void blit_kind(render8_t *r, uint16_t anim, int kind, int x, int y) {
+    sprite_set_t set; sprite_frame_t fr;
+    if (s_pak && pak_sprite_set(s_pak, anim, &set) && pak_frame(&set, kind & 1, 0, &fr)) pak_blit(r, &set, &fr, x, y);
+}
+static uint8_t yellow_slot(const render8_t *r) {             /* the most yellow of Lili's and the toys' colours */
+    int best = -(1 << 30); uint8_t s = 144;
+    for (int i = 144; i < 196; i++) {
+        const uint16_t c = r->lut[i]; const int R = (c >> 11) & 31, G = (c >> 6) & 31, B = c & 31, v = R + G - 3 * B - abs(R - G) * 2;
+        if (v > best) { best = v; s = (uint8_t)i; }
+    }
+    return s;
+}
 static void draw_mess(const world_t *w, render8_t *r) {
+    const things_t *t = &w->things;
+    const int yo = w->view == VIEW_YARD ? ANIM_YARD_OFFSET : 0;
+    if (t->treat_view == (int8_t)w->view) blit_kind(r, (uint16_t)(ANIM_TREAT + yo), t->treat_kind, t->treat_x, t->treat_y);
     if (w->view != VIEW_ROOM) return;
     uint8_t dark, mid, light, warm; lili_slots(r, &dark, &mid, &light, &warm);
-    for (int i = 0; i < w->things.n_mess; i++) {             /* a puddle: a flat warm ellipse */
-        const int x = w->things.mess[i][0], y = w->things.mess[i][1];
-        r8_fill(r, x - 8, y - 2, 16, 4, warm); r8_fill(r, x - 11, y - 1, 22, 2, warm); r8_fill(r, x - 5, y - 2, 6, 1, light);
+    const uint8_t *wet = bg_lut(w, LUT_SHADE_IN);
+    int x0, y0, x1, y1;
+    if (t->pad && prop_box(w, IMG_PAD, "pad", &x0, &y0, &x1, &y1)) {   /* the used pad: a yellow stain, bigger when full */
+        const int cx = (x0 + x1) / 2, cy = (y0 + y1) / 2 + 2, rx = t->pad >= 2 ? 13 : 8, ry = t->pad >= 2 ? 5 : 3; const uint8_t ye = yellow_slot(r);
+        for (int dy = -ry; dy <= ry; dy++) for (int dx = -rx; dx <= rx; dx++)
+            if (dx * dx * ry * ry + dy * dy * rx * rx <= rx * rx * ry * ry && ((dx + dy) & 1) == 0) r8_fill(r, cx + dx, cy + dy, 1, 1, ye);
+        if (t->pad_poop) blit_kind(r, ANIM_MESS_POOP, 1, cx + 6, cy + 2);
     }
+    for (int i = 0; i < t->n_mess; i++) {
+        const int x = t->mess[i][0], y = t->mess[i][1];
+        if (t->mess_kind[i]) { blit_kind(r, ANIM_MESS_POOP, (x + y) & 1, x, y + 3); continue; }
+        for (int dy = -4; dy <= 4; dy++) for (int dx = -12; dx <= 12; dx++) {   /* the wet floor: darker, ragged at the edge */
+            const int px = x + dx, py = y + dy, e = dx * dx * 16 + dy * dy * 144;
+            if (e > 2304 || (e > 1700 && ((px * 7 + py * 13) & 3) == 0) || px < 0 || py < 0 || px >= LILI_LOG_W || py >= LILI_LOG_H) continue;
+            uint8_t *q = &r->px[py * LILI_LOG_W + px]; *q = wet ? wet[*q] : warm;
+        }
+        r8_fill(r, x - 5, y - 2, 3, 1, light); r8_fill(r, x + 3, y, 2, 1, light);   /* a glint */
+    }
+}
+void world_put_treat(world_t *w, int x, int y) {          /* the owner's long press: one treat at a time, on the free floor, not on her */
+    things_t *t = &w->things;
+    if (t->treat_view >= 0 || !nav_clear(w->view, x, y, 0)) return;
+    gesture_ctx_t c; world_gesture_ctx(w, &c);
+    if (c.lili.x1 > c.lili.x0 && x >= c.lili.x0 && x < c.lili.x1 && y >= c.lili.y0 && y < c.lili.y1) return;
+    t->treat_view = (int8_t)w->view; t->treat_x = (int16_t)x; t->treat_y = (int16_t)y; t->treat_kind ^= 1;
 }
 
 /* ---- the care taps (spec 8.10, M4.7): a bowl refilled, the pad changed, a spot cleaned (the last one forgives
@@ -480,11 +525,11 @@ bool world_care_tap(world_t *w, int x, int y) {
     }
     if (best < C_FOOD) {
         sparkle(w, t->mess[best][0], t->mess[best][1]);
-        t->mess[best][0] = t->mess[t->n_mess - 1][0]; t->mess[best][1] = t->mess[t->n_mess - 1][1]; t->n_mess--;
+        t->mess[best][0] = t->mess[t->n_mess - 1][0]; t->mess[best][1] = t->mess[t->n_mess - 1][1]; t->mess_kind[best] = t->mess_kind[t->n_mess - 1]; t->n_mess--;
         if (!t->n_mess) reflex_forgiven(w);                      /* R1: the last one */
         return true;
     }
-    if (best == C_FOOD) t->food = 3; else if (best == C_WATER) t->water = 3; else t->pad = 0;
+    if (best == C_FOOD) t->food = 3; else if (best == C_WATER) t->water = 3; else { t->pad = 0; t->pad_poop = 0; }
     sparkle(w, x, y);
     return true;
 }

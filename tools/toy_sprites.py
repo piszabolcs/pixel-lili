@@ -28,7 +28,17 @@ from palette_from_photos import rgb_to_oklab
 SHEET = os.path.join(ROOT, "docs", "art", "Lilik", "07.jpg")
 ROWS = (0, 300)                              # the ropes are the sheet's top row, the biscuits right of them
 ROOM_W, YARD_W, ICON_W = 46, 38, 22          # the lying-across rope's width: as in her mouth; the bubble's
-TOYS = {"toy_rope": 40, "icon_rope": 42}     # catalogue ids (anims.json "extra"); the yard's set is id + 100
+TOYS = {"toy_rope": 40, "icon_rope": 42, "treat": 45, "mess_poop": 46}   # catalogue ids (anims.json "extra"); the yard's set is id + 100
+# 2026-10-28 (the owner: the treat and the poop from the props sheet): the two biscuits right of the ropes and the two
+# poops bottom left, each kind one "direction" of its set, at the rope's own scale (the sheet drew them all for one dog)
+PROPS = {"treat": [(804, 122, 884, 182), (912, 122, 992, 182)], "mess_poop": [(72, 394, 132, 450), (180, 390, 252, 450)]}
+# 2026-10-28: Lili's favourite, a pink piglet-head baby rattle ring, from the owner's Gemini sheet (PROMPTS.md 09): its top
+# row's 4 ways, as the rope's 4 "directions" (0 on its back, 1 on its left side, 2 upright, 3 on its right side), in its own
+# 6 colours (toy_colors.json 190-195). A real one is about half her height: 30 px upright in the room, 25 in the yard
+PLUSH_SHEET = os.path.join(ROOT, "docs", "art", "Lilik", "09.jpg")
+PLUSH_BOXES = [(101, 145, 604, 659), (704, 215, 1258, 598), (1398, 104, 1822, 669), (1952, 215, 2505, 608)]
+PLUSH_H, PLUSH_H_YARD, PLUSH_SLOT = 30, 25, 190
+TOYS["toy_plush"] = 41
 DEPTH = (1.0, 0.85, 0.7, 0.85)               # the floor seen from above at a slant: a rope lying into the room looks shorter
 
 def ropes():
@@ -44,11 +54,22 @@ def ropes():
         out.append(a)
     return out
 
-def sized(rgba, cell, ctx, depth=1.0):
+def pieces_at(boxes, sheet=None):
+    """RGBA crops of the sheet in these boxes (x0, y0, x1, y1), keyed out of the magenta"""
+    rgb = np.asarray(Image.open(sheet or SHEET).convert("RGB"))
+    alpha = ~sfc.key_magenta(rgb)
+    out = []
+    for x0, y0, x1, y1 in boxes:
+        a = np.zeros((y1 - y0, x1 - x0, 4), np.uint8)
+        a[..., :3] = rgb[y0:y1, x0:x1]; a[..., 3] = np.where(alpha[y0:y1, x0:x1], 255, 0)
+        out.append(a)
+    return out
+
+def sized(rgba, cell, ctx, depth=1.0, toy_slots=None):
     full, _, pal_lab = ctx
     if depth != 1.0:
         im = Image.fromarray(rgba, "RGBA"); rgba = np.asarray(im.resize((im.width, round(im.height * depth)), Image.NEAREST))
-    allowed = np.r_[np.arange(ps.SLOT, ps.SLOT + 40), np.arange(ps.TOY_SLOT, ps.TOY_SLOT + ps.TOY_N)]
+    allowed = np.r_[np.arange(ps.SLOT, ps.SLOT + 40), toy_slots if toy_slots is not None else np.arange(ps.TOY_SLOT, ps.TOY_SLOT + ps.TOY_N)]
     idx = sc.resample(rgba, cell, pal_lab, allowed)
     idx = sc.drop_specks(idx, 4)
     idx = sc.clean_outline(idx, pal_lab, ps.SLOT + 4)                # the dark outline her frames use (index 148)
@@ -91,16 +112,31 @@ def main():
     room = cell_set([sized(r, across / ROOM_W, ctx, k) for r, k in zip(rs, DEPTH)])
     yard = cell_set([sized(r, across / YARD_W, ctx, k) for r, k in zip(rs, DEPTH)])
     icon = cell_set([sized(rs[0], across / ICON_W, ctx)])
-    print("preview:", preview([room[0], yard[0], icon[0]], full))
+    props = {}
+    for name, boxes in PROPS.items():                       # the rope's scale: across px of the sheet -> ROOM_W / YARD_W
+        ps_ = pieces_at(boxes)
+        props[name] = (cell_set([sized(p, across / ROOM_W, ctx) for p in ps_]), cell_set([sized(p, across / YARD_W, ctx) for p in ps_]))
+    pl = pieces_at(PLUSH_BOXES, PLUSH_SHEET); up = PLUSH_BOXES[2][3] - PLUSH_BOXES[2][1]   # the upright one's height on the sheet
+    pslots = np.arange(PLUSH_SLOT, PLUSH_SLOT + 6)
+    props["toy_plush"] = (cell_set([sized(p, up / PLUSH_H, ctx, toy_slots=pslots) for p in pl]),
+                          cell_set([sized(p, up / PLUSH_H_YARD, ctx, toy_slots=pslots) for p in pl]))
+    print("preview:", preview([room[0], yard[0], icon[0]] + [props[n][0][0] for n in props], full))
     if "--preview" in sys.argv: return
     write("lili", "toy_rope", TOYS["toy_rope"], *room, full)
     write("lili_yard", "toy_rope", TOYS["toy_rope"] + ps.SIZES[1][2], *yard, full)
     write("lili", "icon_rope", TOYS["icon_rope"], *icon, full)
-    print(f"toy_rope room {room[1]} yard {yard[1]}, icon_rope {icon[1]}")
+    for name, (r, y) in props.items():
+        write("lili", name, TOYS[name], *r, full)
+        write("lili_yard", name, TOYS[name] + ps.SIZES[1][2], *y, full)
+    print(f"toy_rope room {room[1]} yard {yard[1]}, icon_rope {icon[1]}, " + ", ".join(f"{n} room {props[n][0][1]} yard {props[n][1][1]}" for n in props))
     p = os.path.join(ROOT, "assets", "anims.json")
     cat = json.load(open(p, encoding="utf-8"))
     cat["toy_rope"] = {"id": TOYS["toy_rope"], "frames": 1, "fps": 1, "dirs": ["S", "SW", "W", "NW"], "loop": True, "extra": True}
     cat["icon_rope"] = {"id": TOYS["icon_rope"], "frames": 1, "fps": 1, "dirs": ["S"], "loop": True, "extra": True}
+    for name in props:                                       # the kinds as "directions": S and SW (the plush's 4 ways: S .. NW)
+        cat[name] = {"id": TOYS[name], "frames": 1, "fps": 1, "dirs": ["S", "SW", "W", "NW"] if name == "toy_plush" else ["S", "SW"],
+                     "loop": True, "extra": True}
+    cat = {k: cat[k] for k in ["_note"] + sorted((k for k in cat if k != "_note"), key=lambda k: cat[k]["id"])}
     json.dump(cat, open(p, "w", encoding="utf-8"), indent=1)
 
 if __name__ == "__main__":

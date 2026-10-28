@@ -17,11 +17,11 @@
 #include <string.h>
 
 enum { P_END = 0, P_GOTO, P_ANIM, P_ONCE, P_WAIT, P_DIR, P_PICK, P_DROP, P_TOSS, P_VIEW, P_HIDE, P_UNHIDE, P_PEEK, P_FOLLOW, P_STYLE, P_FX, P_LOOK,
-       P_PICKUP, P_PUTDOWN };
+       P_PICKUP, P_PUTDOWN, P_EATTREAT };
 /* walk targets: a map spot (its SPOT_* id), or one of these */
 enum { TG_FRONT = 40, TG_RANDOM, TG_RANDOM_FAR, TG_TOY, TG_ROPE, TG_PLUSH, TG_DOOR, TG_SUNBEAM, TG_BUSH_HIDE, TG_BUSH_EDGE,
-       TG_BOWL_FOOD, TG_BOWL_WATER, TG_FLOOR_AWAY, TG_INSIDE, TG_TAP };
-enum { FX_EAT = 1, FX_DRINK, FX_PAD, FX_MESS, FX_BARK, FX_HUFF, FX_FORGIVE };
+       TG_BOWL_FOOD, TG_BOWL_WATER, TG_FLOOR_AWAY, TG_INSIDE, TG_TAP, TG_TREAT };
+enum { FX_EAT = 1, FX_DRINK, FX_PAD, FX_MESS, FX_BARK, FX_HUFF, FX_FORGIVE, FX_TREAT };
 enum {                                        /* preconditions (spec 8.7, 10.5's context mask) */
     N_ROOM = 1 << 0, N_YARD = 1 << 1, N_TOY_VIEW = 1 << 2, N_MOUTH = 1 << 3, N_FREE_MOUTH = 1 << 4, N_FOOD = 1 << 5,
     N_WATER = 1 << 6, N_SUN = 1 << 7, N_NO_MEMORIAL = 1 << 8, N_HIDDEN = 1 << 9, N_AUTUMN = 1 << 10, N_WARM = 1 << 11,
@@ -39,6 +39,7 @@ typedef struct { uint8_t op, arg; uint16_t anim; float t; } prim_t;
 #define DROP        { P_DROP, 0, 0, 0 }
 #define PICKUP(toy) { P_PICKUP, toy, 0, 0 }             /* the pick, with the rope through the pickup's frames (A14) */
 #define PUTDOWN     { P_PUTDOWN, 0, 0, 0 }               /* the drop, with the rope through the same frames backwards */
+#define EATTREAT(t) { P_EATTREAT, 0, 0, t }              /* the treat off the floor and eaten (2026-10-28) */
 #define TOSS        { P_TOSS, 0, 0, 0 }
 #define VIEW        { P_VIEW, 0, 0, 0 }
 #define HIDE(p)     { P_HIDE, p, 0, 0 }
@@ -51,7 +52,7 @@ typedef struct { uint8_t op, arg; uint16_t anim; float t; } prim_t;
 typedef struct { uint32_t need; prim_t p[PRIMS]; } act_t;
 /* the reflexes' own sequences, after the brain's actions in the same table (spec 8.8) */
 enum { RX_FORGIVEN = ACT_COUNT, RX_CALL, RX_CALL_OTHER, RX_PET, RX_PET_END, RX_FETCH, RX_TEASE, RX_TIRED, RX_GREET, RX_GREET_GUILTY,
-       RX_SHAKE, RX_VOICE, RX_TAP_LOOK, RX_TAP_GO, RX_JOY, RX_END };
+       RX_SHAKE, RX_VOICE, RX_TAP_LOOK, RX_TAP_GO, RX_JOY, RX_TREAT, RX_END };
 
 static const act_t ACTS[RX_END] = {
     /* moving about */
@@ -126,6 +127,8 @@ static const act_t ACTS[RX_END] = {
     [RX_TIRED]           = { 0, { PUTDOWN, ON(ANIM_SIT_DOWN), AN(ANIM_PANT_SMILE, 3.0f) } },
     [RX_GREET]           = { 0, { UNHIDE, ST(STYLE_TROT), GO(TG_TOY), PICKUP(ANYTOY), GO(TG_FRONT), DR(DIR_S), ON(ANIM_LIE_DOWN), AN(ANIM_CHEW_TOY, 6.0f) } },
     [RX_GREET_GUILTY]    = { 0, { GO(SPOT_NOOK), DR(DIR_S), ON(ANIM_LIE_DOWN), HIDE(1), PEEK(4.0f), AN(ANIM_GUILTY_PEEK, 2.0f) } },
+    /* the owner's treat (a long press on the floor): off to it, eaten where it lies, then chewed lying down (2026-10-28) */
+    [RX_TREAT]           = { 0, { UNHIDE, ST(STYLE_TROT), GO(TG_TREAT), EATTREAT(1.6f), DR(DIR_S), ON(ANIM_LIE_DOWN), AN(ANIM_CHEW_TREAT, 5.0f), FX(FX_TREAT) } },
     [RX_SHAKE]           = { 0, { ON(ANIM_STARTLE), FX(FX_BARK), ON(ANIM_BARK_HEAD_FLIP), WT(1.0f) } },
     [RX_VOICE]           = { 0, { ON(ANIM_HEAD_TILT) } },
     [RX_TAP_LOOK]        = { 0, { LOOK(TG_TAP), WT(0.8f) } },
@@ -241,6 +244,14 @@ static bool target(world_t *w, int actor, int tg, int16_t *x, int16_t *y) {
         }
         *x = (int16_t)ty->x; *y = (int16_t)(ty->y + 2); return true;
     }
+    case TG_TREAT: {                                      /* the owner's treat: she stops with it in front of her mouth */
+        const things_t *th = &w->things;
+        if (th->treat_view != (int8_t)a->view) return false;
+        float px, py; pick_spot(a, pose_near_dir(ANIM_EAT_TREAT, nav_dir(th->treat_x - a->x, th->treat_y - a->y)), &px, &py);
+        const int sx = (int)(th->treat_x - (px - a->x)), sy = (int)(th->treat_y - (py - a->y));
+        if (nav_clear(a->view, sx, sy, 0)) { *x = (int16_t)sx; *y = (int16_t)sy; } else { *x = th->treat_x; *y = th->treat_y; }
+        return true;
+    }
     case TG_DOOR:       *x = door->x; *y = door->y; return door->z >= 0;
     case TG_INSIDE:     *x = door->x; *y = (int16_t)(door->y + (a->view == VIEW_ROOM ? 60 : -70)); return true;
     case TG_SUNBEAM:    return zone_center(VIEW_ROOM, "sunbeam", 0, x, y);
@@ -268,6 +279,7 @@ static view_t target_view(const world_t *w, int actor, int tg) {
     if (tg < SPOT_COUNT) return MAPS[here].points[tg].z < 0 && MAPS[there].points[tg].z >= 0 ? there : here;
     if (tg == TG_BOWL_FOOD || tg == TG_BOWL_WATER || tg == TG_SUNBEAM || tg == TG_FLOOR_AWAY) return VIEW_ROOM;
     if (tg == TG_BUSH_HIDE || tg == TG_BUSH_EDGE) return VIEW_YARD;
+    if (tg == TG_TREAT && w->things.treat_view >= 0) return (view_t)w->things.treat_view;   /* the treat in the other view: through the door */
     return here;
 }
 /* out of one door, in at the other (spec 8.4: the camera stays where it is) */
@@ -287,8 +299,12 @@ static void effect(world_t *w, int actor, int fx) {
     switch (fx) {
     case FX_EAT:   if (t->food) t->food--; break;
     case FX_DRINK: if (t->water) t->water--; break;
-    case FX_PAD:   if (t->pad < 2) t->pad++; break;
-    case FX_MESS:  if (t->n_mess < MESS_MAX) { t->mess[t->n_mess][0] = (int16_t)a->x; t->mess[t->n_mess][1] = (int16_t)a->y; t->n_mess++; }
+    case FX_PAD:   if (t->pad < 2) t->pad++; if (w->plans[actor].poop) { t->pad_poop = 1; t->pad = 2; } break;
+    case FX_TREAT: w->hunger = w->hunger > 1.5f ? w->hunger - 1.5f : 0; w->happy = w->happy < 9 ? w->happy + 1 : 10; break;
+    case FX_MESS:  if (t->n_mess < MESS_MAX) {
+                       t->mess_kind[t->n_mess] = w->plans[actor].poop;
+                       t->mess[t->n_mess][0] = (int16_t)a->x; t->mess[t->n_mess][1] = (int16_t)a->y; t->n_mess++;
+                   }
                    t->guilty = true; break;
     case FX_FORGIVE: t->guilty = false; break;
     default: break;                                           /* FX_BARK, FX_HUFF: the sound bank (M9) */
@@ -386,7 +402,12 @@ int plan_tick(world_t *w, int actor, float dt) {
             done = nav_follow(a, b, dt);
             if (toy_held(w, actor) == TOY_ROPE && (a->anim == ANIM_TROT || a->anim == ANIM_WALK)) set_anim(a, ANIM_CARRY_TROT);   /* the rope is in those frames */
             break;
-        case P_ANIM: set_anim(a, q->anim); done = p->t >= q->t; break;
+        case P_ANIM: {
+            uint16_t an = q->anim;
+            if (an == ANIM_PEE) { if (p->rep == 0) { p->poop = w->bowel >= LIFE_POOP_AT; p->rep = 1; } if (p->poop) an = ANIM_POOP; }   /* the meals gone through: a poop */
+            if (an == ANIM_CHEW_TOY && toy_held(w, actor) == TOY_PLUSH) an = ANIM_LIE_DOWN;   /* the plush: lying with it (the chewing frames hold the rope) */
+            set_anim(a, an); done = p->t >= q->t; break;
+        }
         case P_ONCE:                                               /* already in that pose: no getting up to lie down again */
             if (pose_posed(a, q->anim)) { done = true; break; }
             if ((q->anim == ANIM_HEAD_TILT || q->anim == ANIM_LOOK_AROUND) && pose_lying(a)) { done = true; break; }   /* lying: not up and down for a look (a call waited 3 s) */
@@ -412,6 +433,12 @@ int plan_tick(world_t *w, int actor, float dt) {
             break;
         }
         case P_DROP: { int t = toy_held(w, actor); if (t >= 0) toy_drop(w, t); done = true; break; }
+        case P_EATTREAT:                                           /* the treat: her eating frames take it off the floor */
+            if (p->rep == 0 && w->things.treat_view != (int8_t)a->view) { done = true; break; }   /* gone already */
+            set_anim(a, ANIM_EAT_TREAT);
+            if (a->anim != ANIM_EAT_TREAT) break;
+            if (p->rep == 0) { w->things.treat_view = -1; p->rep = 1; p->t = 0; }
+            done = p->t >= q->t; break;
         case P_PUTDOWN: {                                          /* the rope: the pickup backwards, then it lies where its last frame has it */
             const int t = toy_held(w, actor);
             if (t < 0) { done = true; break; }
@@ -458,7 +485,7 @@ int plan_tick(world_t *w, int actor, float dt) {
         if (p->pi >= PRIMS) goto next_act;
         if (ACTS[p->d.a[p->ai]].p[p->pi].op == P_END) goto next_act;
         if (q->op == P_GOTO || q->op == P_ANIM || q->op == P_ONCE || q->op == P_WAIT || q->op == P_FOLLOW || q->op == P_VIEW ||
-            q->op == P_PICKUP || q->op == P_PUTDOWN) return PLAN_RUNNING;   /* one timed primitive a tick */
+            q->op == P_PICKUP || q->op == P_PUTDOWN || q->op == P_EATTREAT) return PLAN_RUNNING;   /* one timed primitive a tick */
     }
 next_act:
     nav_stop(b);
@@ -534,6 +561,9 @@ bool reflex_event(world_t *w, const ev_t *e) {
     case EV_VOICE_ACTIVITY:                                    /* R8: the head up and tilted */
         if (asleep) return false;
         return fire(w, me, RX_VOICE, 8, BB_QUESTION);
+    case EV_LONG:                                              /* the owner's treat (lili_world.c put it down): off to it */
+        if (w->things.treat_view < 0 || deep_asleep(w, me) || guilty) return false;
+        return fire(w, me, RX_TREAT, 4, BB_HEART);
     case EV_TAP:                                               /* R9: a tap on the free floor: a look, half the time a walk there */
         if (here && !asleep && on_her(w, e->a, e->b, 20)) return fire(w, me, RX_JOY, 9, BB_HEART);   /* 20 px around her: a finger's width (2026-10-28) */
         if (asleep || guilty || !here) return false;

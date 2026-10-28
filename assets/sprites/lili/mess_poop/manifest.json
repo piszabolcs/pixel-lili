@@ -1,0 +1,34 @@
+{
+ "anim": "mess_poop",
+ "id": 46,
+ "fps": 1,
+ "loop": true,
+ "dirs": [
+  0,
+  1
+ ],
+ "frames": 1,
+ "cell_w": 16,
+ "cell_h": 13,
+ "pivot": [
+  8,
+  13
+ ],
+ "files": [
+  {
+   "dir": 0,
+   "frame": 0,
+   "file": "d0_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 0,
+   "file": "d1_f0.png",
+   "mouth": null,
+   "head": null
+  }
+ ],
+ "source": "tools/pixellab_to_sprites.py (docs/art/Lilik/07.jpg)"
+}

@@ -505,6 +505,19 @@
   "loop": true,
   "extra": true
  },
+ "toy_plush": {
+  "id": 41,
+  "frames": 1,
+  "fps": 1,
+  "dirs": [
+   "S",
+   "SW",
+   "W",
+   "NW"
+  ],
+  "loop": true,
+  "extra": true
+ },
  "icon_rope": {
   "id": 42,
   "frames": 1,
@@ -538,5 +551,27 @@
   ],
   "loop": false,
   "reverse_of": "pickup"
+ },
+ "treat": {
+  "id": 45,
+  "frames": 1,
+  "fps": 1,
+  "dirs": [
+   "S",
+   "SW"
+  ],
+  "loop": true,
+  "extra": true
+ },
+ "mess_poop": {
+  "id": 46,
+  "frames": 1,
+  "fps": 1,
+  "dirs": [
+   "S",
+   "SW"
+  ],
+  "loop": true,
+  "extra": true
  }
 }

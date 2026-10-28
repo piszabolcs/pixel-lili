@@ -84,9 +84,12 @@ enum {
     ANIM_GET_UP = 38,
     ANIM_CURL_UP = 39,
     ANIM_TOY_ROPE = 40,
+    ANIM_TOY_PLUSH = 41,
     ANIM_ICON_ROPE = 42,
     ANIM_UNCURL = 43,
     ANIM_DROP = 44,
+    ANIM_TREAT = 45,
+    ANIM_MESS_POOP = 46,
     ANIM_COUNT_LISTED
 };
 /* an animation drawn from another one's frames, backwards (stand_up = sit_down reversed); 0 = it has its own */

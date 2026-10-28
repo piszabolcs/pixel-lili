@@ -4,6 +4,7 @@
  * time zones and no libc dates here, the civil date is computed (so both platforms agree). Platform-free. */
 #ifndef LILI_LIFE_H
 #define LILI_LIFE_H
+#define LIFE_POOP_AT 6.0f            /* the bowel (world_t) at which a business is a poop (2026-10-28) */
 #include "lili_types.h"
 
 /* ---- the calendar (spec 9.3-9.5) ---- */

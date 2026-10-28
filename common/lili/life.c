@@ -65,6 +65,8 @@ int world_day(const world_t *w) {
 #define LIFE_LONELY_OWNER   -2.0f
 #define LIFE_LONELY_ALONE    0.6f
 #define LIFE_BLADDER         0.45f
+#define LIFE_BOWEL           0.08f     /* a slow drift; a meal is the most of it (2026-10-28) */
+#define LIFE_BOWEL_MEAL      3.5f
 #define LIFE_OWNER_S         60.0f     /* the owner counts as there for a minute after anything they did */
 
 static float clamp10(float v) { return v < 0 ? 0 : v > 10 ? 10 : v; }
@@ -73,7 +75,7 @@ int life_bucket(float v) { int b = (int)(v * 0.999f); return b < 0 ? 0 : b > 9 ?
 
 void life_init(world_t *w, int64_t now) {
     w->epoch0 = now - (int64_t)w->clock_s;
-    w->hunger = 2; w->energy = 8; w->happy = 7; w->bored = 2; w->lonely = 2; w->bladder = 2;
+    w->hunger = 2; w->energy = 8; w->happy = 7; w->bored = 2; w->lonely = 2; w->bladder = 2; w->bowel = 2; w->things.treat_view = -1;
     w->owner_t = 1e6f; w->day_force = -1; w->last_kind = 7; w->last_t = 0;
 }
 void life_owner(world_t *w) { w->owner_t = 0; }
@@ -92,6 +94,7 @@ void life_tick(world_t *w, float dt) {
     if (!asleep) w->bored = clamp10(w->bored + (owner ? -LIFE_BORED_ALONE : LIFE_BORED_ALONE) * h);
     w->lonely  = clamp10(w->lonely + (owner ? LIFE_LONELY_OWNER : LIFE_LONELY_ALONE) * h);
     w->bladder = clamp10(w->bladder + LIFE_BLADDER * h);
+    w->bowel   = clamp10(w->bowel + LIFE_BOWEL * h);
 }
 
 /* the brain's F22 "last activity" kinds (model/schema_lili.json: last_play .. last_none) */
@@ -99,12 +102,11 @@ enum { LAST_PLAY = 0, LAST_REST, LAST_EAT, LAST_EXPLORE, LAST_GREET, LAST_MISCHI
 static void kind(world_t *w, int k) { if (w->last_kind != k) { w->last_kind = (uint8_t)k; w->last_t = 0; } }
 
 void life_after_action(world_t *w, int actor, int act) {
-    (void)actor;
     switch (act) {
-    case ACT_EAT:            w->hunger = 0; w->bladder = clamp10(w->bladder + 2); kind(w, LAST_EAT); break;
+    case ACT_EAT:            w->hunger = 0; w->bladder = clamp10(w->bladder + 2); w->bowel = clamp10(w->bowel + LIFE_BOWEL_MEAL); kind(w, LAST_EAT); break;
     case ACT_DRINK:          w->bladder = clamp10(w->bladder + 1); kind(w, LAST_EAT); break;
-    case ACT_USE_PAD:        w->bladder = 0; kind(w, LAST_REST); break;
-    case ACT_MISCHIEF_FLOOR: w->bladder = 0; kind(w, LAST_MISCHIEF); break;
+    case ACT_USE_PAD:        w->bladder = 0; if (w->plans[actor].poop) w->bowel = 0; kind(w, LAST_REST); break;
+    case ACT_MISCHIEF_FLOOR: w->bladder = 0; if (w->plans[actor].poop) w->bowel = 0; kind(w, LAST_MISCHIEF); break;
     case ACT_PICKUP_ROPE: case ACT_PICKUP_PLUSH: case ACT_BRING_TOY: case ACT_CHEW_TOY: case ACT_PLAY_BOW: case ACT_ZOOMIES:
     case ACT_RUN_WITH_TOY: case ACT_TOSS_TOY: case ACT_CHASE_LEAF: case ACT_CHASE_BUTTERFLY: case ACT_PLAY_SNOW:
         w->bored = clamp10(w->bored - 3); w->happy = clamp10(w->happy + 0.5f); w->plays++; kind(w, LAST_PLAY); break;
@@ -166,7 +168,8 @@ int life_offline(world_t *w, int64_t dt, offline_log_t *log) {
         w->bored   = clamp10(w->bored + LIFE_BORED_OFF * h);
         w->lonely  = clamp10(w->lonely + LIFE_LONELY_ALONE * h);
         w->bladder = clamp10(w->bladder + LIFE_BLADDER * h);
-        if (w->hunger > 5 && t->food && !asleep) { t->food--; w->hunger = 0; w->bladder = clamp10(w->bladder + 2); log->meals++; }
+        w->bowel   = clamp10(w->bowel + LIFE_BOWEL * h);
+        if (w->hunger > 5 && t->food && !asleep) { t->food--; w->hunger = 0; w->bladder = clamp10(w->bladder + 2); w->bowel = clamp10(w->bowel + LIFE_BOWEL_MEAL); log->meals++; }
         if (w->bladder >= 8) {                                /* H8 / H9 (spec 9.2) */
             if (rnd01(w) < life_mischief_p(w, day)) {
                 int n = 1 + (int)(world_rand(w) % 2);
@@ -175,11 +178,15 @@ int life_offline(world_t *w, int64_t dt, offline_log_t *log) {
                     const map_point_t *pad = &MAPS[VIEW_ROOM].points[SPOT_PAD];
                     for (int tries = 0; tries < 30; tries++) {
                         x = (int16_t)(pad->x + 60 + (int)(world_rand(w) % 140)); y = (int16_t)(pad->y - 90 + (int)(world_rand(w) % 100));
-                        if (nav_clear(VIEW_ROOM, x, y, 0)) { t->mess[t->n_mess][0] = x; t->mess[t->n_mess][1] = y; t->n_mess++; break; }
+                        if (nav_clear(VIEW_ROOM, x, y, 0)) {
+                            t->mess_kind[t->n_mess] = k == 0 && w->bowel >= LIFE_POOP_AT;   /* the first spot a poop when the meals have gone through */
+                            t->mess[t->n_mess][0] = x; t->mess[t->n_mess][1] = y; t->n_mess++; break;
+                        }
                     }
                 }
                 t->guilty = true; log->pees_floor++;
-            } else { if (t->pad < 2) t->pad++; log->pees_pad++; }
+            } else { if (t->pad < 2) t->pad++; if (w->bowel >= LIFE_POOP_AT) { t->pad_poop = 1; t->pad = 2; } log->pees_pad++; }
+            if (w->bowel >= LIFE_POOP_AT) w->bowel = 0;
             w->bladder = 0;
         }
         if (!on_rug && w->lonely >= 7 && w->bored >= 6 && rnd01(w) < 0.08f) { on_rug = true; log->rug_sneaks++; }   /* H7, the rug */
@@ -192,7 +199,7 @@ int life_offline(world_t *w, int64_t dt, offline_log_t *log) {
     p->status = PLAN_IDLE; p->hide = 0; p->peek_t = 0;
     for (int i = 0; i < TOY_COUNT; i++) if (t->toys[i].held_by >= 0) toy_drop(w, i);
     if (t->n_mess) {                                          /* the room looks empty: she peeks from under the bench */
-        place(w, VIEW_ROOM, SPOT_NOOK); a->dir = DIR_S; pose_snap(a, ANIM_LIE_DOWN); a->anim_t = 10; p->hide = 1; p->peek_t = 4; t->guilty = true;
+        place(w, VIEW_ROOM, SPOT_NOOK); a->dir = DIR_S; pose_snap(a, ANIM_GUILTY_PEEK); p->hide = 1; p->peek_t = 4; t->guilty = true;
         return SCENE_GUILTY;
     }
     if (on_rug) {                                             /* asleep where she should not be: up with a start */

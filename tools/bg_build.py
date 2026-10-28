@@ -10,8 +10,8 @@
   mask_sun, mask_cast, mask_shade_out, mask_shade_in
                                where the afternoon sunbeam lands, where the door's light leaves the bench's, the
                                bowls' and the vase's cast shadows, and the overhead light's contact shadows
-  palettes                     per background: the master palette (fixed 0-15, Lili 144-183, the toys 184-189) with the 194 free
-                               slots (16-143, 190-255) from k-means in Oklab over that picture; the training set
+  palettes                     per background: the master palette (fixed 0-15, Lili 144-183, the toys 184-195) with the 188 free
+                               slots (16-143, 196-255) from k-means in Oklab over that picture; the training set
                                also holds the picture's floor/grass darkened and lightened, so a shadow or a sunbeam
                                has a real colour to step to
   luts                         per palette, index -> index: sun_strong, sun_weak, cast_day, cast_eve, shade_out,
@@ -31,7 +31,7 @@ import bg_prepare as bp
 BG = os.path.join(ROOT, "assets", "backgrounds")
 OUT = os.path.join(BG, "game")
 SHOW, GRID = 480, 400
-SLOTS = list(range(16, 144)) + list(range(190, 256))           # 194 slots a background may use (184-189: the toys' colours)
+SLOTS = list(range(16, 144)) + list(range(196, 256))           # 188 slots a background may use (184-195: the toys' colours; 190-195 the plush's, 2026-10-28)
 TABLES = {  # name: (multiply, add) on RGB, the same numbers the preview (bg_prepare) used
     "sun_strong": (1.16, (30, 20, 2)), "sun_weak": (1.056, (10.5, 7, 0.7)),
     "cast_day": (0.64, (0, 1.44, 5.04)), "cast_eve": (0.838, (0, 0.65, 2.27)),
@@ -172,7 +172,7 @@ def main():
     master = [list(c) for c in master]
     for i, c in enumerate(lili): master[144 + i] = list(c)
     for i, c in enumerate(json.load(open(os.path.join(ROOT, "assets", "palettes", "toy_colors.json"), encoding="utf-8"))["rgb"]):
-        master[184 + i] = list(c)                                 # the toys' 6 colours, fixed in every palette too
+        master[184 + i] = list(c)                                 # the toys' 12 colours (the rope's, the plush's), fixed in every palette too
     meta = {"palettes": {}, "luts": {}, "images": []}
 
     # ---- the room: picture, door views, props, masks, one palette for all of them ----

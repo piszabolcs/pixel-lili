@@ -57,6 +57,11 @@ typedef struct {
     uint8_t pad;                      /* 0 clean, 1 used, 2 full */
     uint8_t n_mess; int16_t mess[MESS_MAX][2];   /* the spots on the room's floor (H9) */
     bool    guilty;                   /* H10: she made a spot and has not been forgiven (the last spot cleaned) */
+    uint8_t mess_kind[MESS_MAX];      /* each spot: 0 a puddle, 1 a poop (2026-10-28) */
+    uint8_t pad_poop;                 /* the pad holds a poop too (then it is full) */
+    int8_t  treat_view;               /* a treat on the floor (the owner's long press): its view, -1 = none */
+    uint8_t treat_kind;               /* the props sheet's two biscuits */
+    int16_t treat_x, treat_y;
 } things_t;
 
 /* what the brain decided (spec 10.4): three actions, the gait, the face, the bubble, the urgency */
@@ -74,6 +79,7 @@ typedef struct {
     uint8_t  rounds;                  /* R5: the chase rounds so far (at most 4, then she sits down tired) */
     int8_t   toy;                     /* the toy this plan is about (R4: the one thrown), -1 = the nearest */
     float    peek_t;                  /* > 0: peeking out of her hiding place for this long */
+    uint8_t  poop;                    /* this business is a poop (decided as it starts, plan.c) */
 } plan_t;
 
 typedef struct {
@@ -93,6 +99,7 @@ typedef struct {
     int16_t  sparkle_x, sparkle_y; float sparkle_t;   /* a care tap's sparkle (spec 8.10), seconds left */
     /* the fifth layer (spec 9, life.c): the needs 0..10, the clock, the owner */
     float    hunger, energy, happy, bored, lonely, bladder;
+    float    bowel;                /* 0..10, the meals going through: at LIFE_POOP_AT a business is a poop (2026-10-28; not one of the brain's inputs) */
     int64_t  epoch0;               /* local seconds (since 1970, no zone) at clock_s = 0: the RTC / the PC's clock */
     float    owner_t;              /* seconds since the owner last did something (a finger, the voice, a shake) */
     int8_t   day_force;            /* -1 = from the date, else DAY_* (the sim's special-day check) */

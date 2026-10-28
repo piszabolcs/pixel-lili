@@ -1,0 +1,61 @@
+--- 20:33:01 port COM3 open
+20:33:01 I (248) esp_psram: Found 8MB PSRAM device
+20:33:01 I (252) esp_psram: Speed: 80MHz
+20:33:01 I (255) cpu_start: Multicore app
+20:33:01 I (269) cpu_start: Pro cpu start user code
+20:33:01 I (269) cpu_start: cpu freq: 240000000 Hz
+20:33:01 I (270) app_init: Application information:
+20:33:01 I (270) app_init: Project name:     lili_world
+20:33:01 I (274) app_init: App version:      v0.3.8-105-ga36ce5f-dirty
+20:33:01 I (279) app_init: Compile time:     Oct 28 2026 20:31:31
+20:33:01 I (284) app_init: ELF file SHA256:  bd34656f1...
+20:33:01 I (289) app_init: ESP-IDF:          v5.4.1
+20:33:01 I (292) efuse_init: Min chip rev:     v0.0
+20:33:01 I (296) efuse_init: Max chip rev:     v0.99 
+20:33:01 I (300) efuse_init: Chip rev:         v0.2
+20:33:01 I (304) heap_init: Initializing. RAM available for dynamic allocation:
+20:33:01 I (310) heap_init: At 3FCA8388 len 00041388 (260 KiB): RAM
+20:33:01 I (315) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+20:33:01 I (321) heap_init: At 600FE11C len 00001ECC (7 KiB): RTCRAM
+20:33:01 I (326) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator
+20:33:01 I (333) spi_flash: detected chip: generic
+20:33:01 I (336) spi_flash: flash io: qio
+20:33:01 I (339) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+20:33:01 I (345) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+20:33:01 I (352) main_task: Started on CPU0
+20:33:01 I (355) esp_psram: Reserving pool of 64K of internal memory for DMA/internal allocations
+20:33:01 I (363) main_task: Calling app_main()
+20:33:01 I (366) lili: Pixel Lili world | internal heap 261 KB, PSRAM 8189 KB free
+20:33:01 I (378) gpio: GPIO[0]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+20:33:01 I (381) gpio: GPIO[18]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+20:33:01 I (389) lili: reset reason 11 (1 power on, 3 software, 4 panic, 5-7 watchdog, 9 brownout, 11 USB, 12 JTAG / a flash)
+20:33:01 I (400) gpio: GPIO[14]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0 
+20:33:01 I (408) gpio: GPIO[15]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0 
+20:33:01 I (416) gpio: GPIO[15]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+20:33:01 I (425) gpio: GPIO[14]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+20:33:01 I (434) gpio: GPIO[40]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+20:33:01 I (511) sh8601: board: the SQUARE, 2.16 (CO5300 480x480 / CST92xx at 0x5a) - no expander, an ES7210 at 0x40, an RTC at 0x51
+20:33:01 I (512) gpio: GPIO[39]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+20:33:01 I (519) sh8601: LCD panel create success, version: 2.0.1
+20:33:01 W (804) sh8601: The 3Ah command has been used and will be overwritten by external initialization sequence
+20:33:01 W (804) sh8601: The 36h command has been used and will be overwritten by external initialization sequence
+20:33:01 I (831) sh8601: panel up: 480x480 square, the tank px for px (MADCTL a0)
+20:33:02 I (1714) lili: pak: 4151767 B, 154 entries, ok (883 ms)
+20:33:02 I (1758) gpio: GPIO[40]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+20:33:02 I (1819) touch: CST9220 ready
+20:33:02 I (1820) rtc: system clock set from RTC: 2026-10-28 20:32
+20:33:02 I (1821) lili: save: away 0.1 h -> guilty
+20:33:02 I (1825) lili: brain: model 2764048 B (dim 256, 6 layers, 5.2M) on Core 1
+20:33:02 I (1837) mic: ES7210 up: 16 kHz 16-bit stereo (MIC1 left, MIC2 right), gain code 10
+20:33:02 I (1838) whistle: detector: band 1000-3500 Hz, peak/mean > 16 dB, frac >= 0.80, low <= 10 dB, +-15 %, 6 frames (192 ms), gap 1, rearm 6, floor -65 dBFS
+20:33:03 I (1882) imu: QMI8658 at 0x6b whoami 0x05 (want 05): ctrl 1=40 2=08 7=01 (want 40/08/01)
+20:33:03 I (1883) rtc: system clock from the RTC: 2026-10-28 20:32:59
+20:33:03 I (1885) gpio: GPIO[16]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+20:33:03 I (1893) body: mic on, imu on, console ready (type help)
+20:33:03 I (1905) battery: AXP2101 fuel gauge up; charge current code 11 -> 11 (500 mA); VBUS input limit code 4
+20:33:03 I (1908) battery: precharge current 100 -> 100 mA
+20:33:03 I (1912) battery: end-of-charge current 100 -> 100 mA
+20:33:03 I (1921) lili: up: world 552 B, canvas 230912 B, mask 57840 B, static-layer cache 230408 B | internal heap 185 KB free
+20:33:07 I (6761) lili: brain: model -> head_tilt peek_bench hide_bench (margin 0.94, 1778 ms)
+20:33:07 I (6930) lili: 23.0 fps | per frame: tick 1483 us, render 22965 us, flush 18557 us (fill 16230, wire wait 40, send 2208) | internal heap 185 KB, min 185 KB
+20:33:13 I (11933) lili: 29.4 fps | per frame: tick 1393 us, render 14746 us, flush 17301 us (fill 15010, wire wait 40, send 2177) | internal heap 185 KB, min 185 KB

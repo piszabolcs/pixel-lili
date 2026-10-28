@@ -1,0 +1,50 @@
+{
+ "anim": "toy_plush",
+ "id": 141,
+ "fps": 1,
+ "loop": true,
+ "dirs": [
+  0,
+  1,
+  2,
+  3
+ ],
+ "frames": 1,
+ "cell_w": 26,
+ "cell_h": 25,
+ "pivot": [
+  13,
+  25
+ ],
+ "files": [
+  {
+   "dir": 0,
+   "frame": 0,
+   "file": "d0_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 0,
+   "file": "d1_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 0,
+   "file": "d2_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 3,
+   "frame": 0,
+   "file": "d3_f0.png",
+   "mouth": null,
+   "head": null
+  }
+ ],
+ "source": "tools/pixellab_to_sprites.py (docs/art/Lilik/07.jpg)"
+}

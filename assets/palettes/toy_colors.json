@@ -1,9 +1,9 @@
 {
  "slots": [
   184,
-  189
+  195
  ],
- "_note": "The toys' colours (2026-10-27): the rope's blues, reds and yellows from the owner's Gemini props sheet (docs/art/Lilik/07.jpg, k-means in Oklab, tools/toy_sprites.py). Fixed in every background's palette like Lili's 40 (tools/bg_build.py), so a toy, and the rope in her mouth (tools/pixellab_to_sprites.py), keeps its colours in the room and the yard.",
+ "_note": "The toys' colours (2026-10-27): the rope's blues, reds and yellows from the owner's Gemini props sheet (docs/art/Lilik/07.jpg, k-means in Oklab, tools/toy_sprites.py). Fixed in every background's palette like Lili's 40 (tools/bg_build.py), so a toy, and the rope in her mouth (tools/pixellab_to_sprites.py), keeps its colours in the room and the yard. 2026-10-28: 190-195 the plush's pinks (dark to light) and its ribbon tags' yellow-green, from the owner's Gemini sheet docs/art/Lilik/09.jpg (5 pinks by k-means in Oklab, the tags apart; scratchpad plush_colors.py).",
  "rgb": [
   [
    58,
@@ -34,6 +34,36 @@
    240,
    211,
    108
+  ],
+  [
+   171,
+   70,
+   110
+  ],
+  [
+   205,
+   103,
+   132
+  ],
+  [
+   235,
+   127,
+   148
+  ],
+  [
+   250,
+   159,
+   180
+  ],
+  [
+   253,
+   198,
+   206
+  ],
+  [
+   163,
+   211,
+   84
   ]
  ]
 }

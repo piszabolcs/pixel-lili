@@ -408,7 +408,8 @@ static int demo_record(const char *dir, int fps) {
 
 /* --moves-record DIR (2026-10-28, the owner: "choppy, not matched"): one take of the moves between poses, the turns and
    a throw, 30 fps .ppm frames for a video: she sits, gets up and walks to the bowls, lies down on the rug and falls
-   asleep, a whistle gets her up to the front, the rope is flicked and she fetches it */
+   asleep, a whistle gets her up to the front, the rope is flicked and she fetches it; then a huff, the bench peek, a treat
+   and a poop on the pad (2026-10-28) */
 static void ev(ev_type_t type, int a, int b, int c);
 static int moves_record(const char *dir) {
     canvas_init(); world_init(&s_world, 42); nav_init(&s_nav);
@@ -418,11 +419,14 @@ static int moves_record(const char *dir) {
     static const struct { int act, ev; float hold; } TAKE[] = {
         { ACT_SIT, 0, 1.0f }, { ACT_GO_BOWLS, 0, 0.5f }, { ACT_SLEEP_RUG, 0, 0 }, { -1, EV_WHISTLE, 0.5f }, { -1, EV_FLICK, 1.0f },
         { ACT_HUFF, 0, 0.8f }, { ACT_HIDE_BENCH, 0, 0 }, { ACT_PEEK_BENCH, 0, 0.5f },   /* 2026-10-28: A13, A21 (the fetch has A14's pickup and drop) */
+        { -1, EV_LONG, 1.0f }, { ACT_USE_PAD, 0, 1.5f },                                 /* 2026-10-28: a treat, then (after the meals) a poop on the pad */
     };
     for (int k = 0; k < (int)(sizeof TAKE / sizeof TAKE[0]); k++) {
         if (TAKE[k].act >= 0) plan_one(&s_world, 0, TAKE[k].act, ST_WALK);
         else if (TAKE[k].ev == EV_FLICK) { toy_t *ty = &s_world.things.toys[TOY_ROPE]; ty->x = 300; ty->y = 330; ev(EV_FLICK, 1500, -500, TOY_ROPE); }
+        else if (TAKE[k].ev == EV_LONG) ev(EV_LONG, 300, 300, 0);
         else ev((ev_type_t)TAKE[k].ev, 0, 0, 0);
+        if (TAKE[k].act == ACT_USE_PAD) s_world.bowel = 8;
         float t = 0, after = 0; const float limit = TAKE[k].act == ACT_SLEEP_RUG ? 9.0f : 30.0f;
         for (;;) {
             const int st = plan_tick(&s_world, 0, dt); world_tick(&s_world, dt); frame(); t += dt;
@@ -481,6 +485,17 @@ static int scene_shots(const char *dir) {
     l->dir = DIR_S; l->anim = ANIM_CARRY_TROT; l->anim_t = 0.3f; toys_tick(&s_world, 0); SHOT("carry_trot");
     toy_drop(&s_world, TOY_ROPE);
     l->x = 330; l->y = 236; l->anim = ANIM_IDLE_STAND; l->dir = DIR_E; SHOT("by_the_bench");
+    /* 2026-10-28: the floor's things from the props sheets: a treat, a puddle and a poop, the used pad with a poop, the plush */
+    {   things_t *th = &s_world.things; toy_t *pl = &s_world.things.toys[TOY_PLUSH];
+        l->x = c->x; l->y = c->y + 40; l->dir = DIR_S; l->anim = ANIM_IDLE_STAND;
+        th->treat_view = VIEW_ROOM; th->treat_x = (int16_t)(c->x + 50); th->treat_y = (int16_t)(c->y + 60); th->treat_kind = 0;
+        th->n_mess = 2; th->mess[0][0] = 180; th->mess[0][1] = 330; th->mess_kind[0] = 0; th->mess[1][0] = 230; th->mess[1][1] = 360; th->mess_kind[1] = 1;
+        th->pad = 2; th->pad_poop = 1;
+        pl->view = VIEW_ROOM; pl->x = c->x - 70; pl->y = c->y + 20; pl->z = 0; pl->held_by = -1;
+        for (int k = 0; k < 4; k++) { pl->rot = (uint8_t)k; if (k == 0 || k == 2) SHOT(k ? "plush_upright_care" : "plush_care"); }
+        toy_pick(&s_world, TOY_PLUSH, 0); toys_tick(&s_world, 0); SHOT("plush_held");
+        toy_drop(&s_world, TOY_PLUSH); th->treat_view = -1; th->n_mess = 0; th->pad = 0; th->pad_poop = 0;
+    }
     s_world.view = l->view = VIEW_YARD; rope->view = VIEW_YARD; l->x = 240; l->y = 300; rope->x = 180; rope->y = 330; l->dir = DIR_S; SHOT("yard_rope");
     #undef SHOT
     printf("scene-shots: %d -> %s\n", n, dir);
@@ -750,7 +765,7 @@ static int selftest_plan(void) {
     float maxz = 0; for (int i = 0; i < 300; i++) { toys_tick(&s_world, 1.0f / 30.0f); if (ty->z > maxz) maxz = ty->z; CHECK(nav_clear(VIEW_ROOM, (int)ty->x, (int)ty->y, 0), "the toy stays on the room's floor"); }
     printf("toy: highest %.1f px, at rest at (%.0f, %.0f), z %.1f, v (%.2f, %.2f, %.2f)\n", maxz, ty->x, ty->y, ty->z, ty->vx, ty->vy, ty->vz);
     CHECK(maxz > 6 && ty->z == 0 && ty->vx == 0 && ty->vy == 0, "it flies up, comes down and stops");
-    CHECK(s_world.things.toys[TOY_PLUSH].view == TOY_AWAY, "the plush is in the toy box (CONFIG_LILI_PLUSH_AWAY)");
+    if (CONFIG_LILI_PLUSH_AWAY) CHECK(s_world.things.toys[TOY_PLUSH].view == TOY_AWAY, "the plush is in the toy box (CONFIG_LILI_PLUSH_AWAY)");
     printf("selftest-plan: ok\n");
     return 0;
 }
@@ -796,7 +811,9 @@ static int selftest_reflex(void) {
         if (round < 4) run_plan(30);
     }
     /* R6: the owner back: a toy to chew in front; guilty: under the bench, peeking */
-    world_init(&s_world, 37); CHECK(reflex_greet(&s_world) && run_plan(45) == PLAN_DONE && l->anim == ANIM_CHEW_TOY, "R6: she greets with a toy, chewing it in front");
+    world_init(&s_world, 37); CHECK(reflex_greet(&s_world) && run_plan(45) == PLAN_DONE &&
+                                    (l->anim == ANIM_CHEW_TOY || (l->anim == ANIM_LIE_DOWN && toy_held(&s_world, 0) == TOY_PLUSH)),
+                                    "R6: she greets with a toy, chewing it in front (the plush: lying with it, 2026-10-28)");
     world_init(&s_world, 38); s_world.things.guilty = true; reflex_greet(&s_world);
     CHECK(run_plan(30) == PLAN_DONE && p->hide == 1, "R6: guilty, she greets from under the bench");
     /* R7: a shake wakes her: startled, one bark; R8: a voice: a head tilt, but not in her sleep */
@@ -831,6 +848,21 @@ static int selftest_reflex(void) {
     ev(EV_TAP, s_world.things.mess[0][0], s_world.things.mess[0][1], 0);
     CHECK(s_world.things.n_mess == 0 && p->prio == 1, "R1: the last spot cleaned starts the release");
     CHECK(run_plan(30) == PLAN_DONE && !s_world.things.guilty && p->hide == 0 && fabsf(l->x - front->x) < 2, "R1: forgiven, she runs out to the front");
+    /* the treat (the owner, 2026-10-28): a long press puts one down, she trots to it, eats it and chews it lying down */
+    world_init(&s_world, 41); s_world.hunger = 5; ev(EV_LONG, 300, 300, 0);
+    CHECK(s_world.things.treat_view == VIEW_ROOM && s_world.things.treat_x == 300 && p->status == PLAN_RUNNING && p->prio == 4, "a long press on the floor: a treat there, and she is off to it");
+    ev(EV_LONG, 200, 380, 0); CHECK(s_world.things.treat_x == 300, "one treat at a time");
+    CHECK(run_plan(30) == PLAN_DONE && s_world.things.treat_view < 0 && s_world.hunger < 4, "the treat eaten (less hungry), chewed, done");
+    CHECK(fabsf(l->x - 300) < 40 && fabsf(l->y - 300) < 40, "she ate it where it lay");
+    /* the poop (2026-10-28): after the meals a business is a poop, on the pad and (in mischief) on the floor; a tap cleans it */
+    world_init(&s_world, 42); s_world.bowel = 8; s_world.bladder = 9;
+    plan_one(&s_world, 0, ACT_USE_PAD, ST_WALK); run_plan(30);
+    CHECK(s_world.things.pad == 2 && s_world.things.pad_poop && s_world.bowel == 0 && s_world.bladder == 0, "on the pad: a poop, the pad full, the bowel empty");
+    if (pak_image(&s_pak, IMG_PAD, &im)) { ev(EV_TAP, im.x + im.w / 2, im.y + im.h / 2, 0); CHECK(s_world.things.pad == 0 && !s_world.things.pad_poop, "a tap changes the pad, poop and all"); }
+    s_world.bowel = 8; plan_one(&s_world, 0, ACT_MISCHIEF_FLOOR, ST_WALK); run_plan(30);
+    CHECK(s_world.things.n_mess == 1 && s_world.things.mess_kind[0] == 1, "on the floor: a poop spot");
+    s_world.bowel = 1; s_world.bladder = 9; plan_one(&s_world, 0, ACT_MISCHIEF_FLOOR, ST_WALK); run_plan(30);
+    CHECK(s_world.things.n_mess == 2 && s_world.things.mess_kind[1] == 0, "with the meals not gone through: a puddle");
     printf("selftest-reflex: ok\n");
     return 0;
 }

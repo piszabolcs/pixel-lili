@@ -42,5 +42,6 @@ bool     world_actor_frame(const actor_t *a, uint16_t offset, sprite_set_t *set,
    the door's tap area */
 #include "gesture.h"
 void     world_gesture_ctx(const world_t *w, gesture_ctx_t *c);
+void     world_put_treat(world_t *w, int x, int y);            /* the owner's long press: a treat on the floor there (2026-10-28) */
 
 #endif
