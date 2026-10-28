@@ -62,8 +62,7 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 1. Darabos, össze nem illő animációk: új réteg (`common/lili/pose.c`): pózváltáskor köztes mozdulat (leül, feláll, lefekszik, felkel), 45 fokos fordulás, a hiányzó irányú animáció előtt odafordul, a járás a sebességével megy, a szakadó hurkok oda-vissza játszódnak, az ijedt ugrás földet ér. Videó: `docs/img/fix_2026-10-28/moves.mp4` (`./lilisim --moves-record DIR`).
 2. A plüss kivéve (játékosdoboz), az agyat nem kellett újratanítani.
 3. A dobott kötél: nem pörög, nem száll el, nem pattog.
-
-**Nyitott (a gazdi dönt), PixelLab, kreditet használ:** amit kód nem javít, az a képekben van. A mért illesztések (két szomszédos kocka között jellemzően 0,3 a különböző pixelek aránya): leülés vége és az ülés délen 0,86, délnyugaton 0,81, északi irányokban 0,5; lefekvés vége és az alvás, a simogatás, a rágás 0,83-0,95; állás és séta 0,3-0,5, délkeleten 0,8; a déli séta közben a füle és a feje mérete átvált. A kapu fájl szerint a PixMiniMax utolsó kockája (`last_frame`) megadható: a mozdulat a két kép között készül. Javaslat: (1) leülés újra délen, délnyugaton, északon, északkeleten, északnyugaton: első kocka az állás, utolsó az ülés; (2) új "összegömbölyödés" (fekvésből alvásba) délen; (3) simogatás élvezése a fekvés utolsó kockájából; (4) a járások (séta, ügetés, futás, osonás, settenkedés, kötélhordás) hurokként: első és utolsó kocka az állás, "a jobb füle lelóg, ugyanakkora marad". Kb. 56 generálás, előbb egy próbacsomag (6) és jóváhagyás.
+4. PixelLab utolsó kockával (a gazdi jóváhagyta, 56 generálás): a leülés öt irányban állásból ülésbe, új összegömbölyödés (fekvésből alvásba, visszafelé a kibomlás), simogatás a fekvés végéből, a járások (séta, ügetés, futás, osonás, settenkedés, kötélhordás) hurokként zárva, a fül nem vált, a méret nem ugrik. Videók: `docs/img/pilot_2026-10-28/` (`pilot_old_vs_new.mp4`, `wave1_old_vs_new.mp4`, `wave2_old_vs_new.mp4`).
 
 <!-- /overview -->
 

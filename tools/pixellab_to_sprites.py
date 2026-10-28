@@ -44,9 +44,9 @@ ANIMS = {
     "sit_down":       (3,  12, False, dict(all8("sit_down"), **{d: f"sitdown2_{d}" for d in ("S", "SW", "NW", "N", "NE")})),   # 2026-10-28: last-frame remakes (stand -> sit exactly); W, E, SE met already
     "walk":           (4,  10, True,  all8("walkloop")),       # 2026-10-28: loops closed on the stand pose (PixMiniMax last frame = first)
     "trot":           (5,  14, True,  all8("trotloop")),       # 2026-10-28: loops closed on the stand pose
-    "run":            (6,  18, True,  all8("run")),
-    "tiptoe":         (7,  8,  True,  all8("sneak")),          # A07: PixelLab's "sneaking slowly, crouched low"
-    "scurry":         (8,  16, True,  all8("scurry")),
+    "run":            (6,  18, True,  all8("runloop")),        # 2026-10-28: loops closed on the old master's mid stride
+    "tiptoe":         (7,  8,  True,  all8("tiptoeloop")),     # 2026-10-28: loops closed on the stand pose (A07 was "sneak")
+    "scurry":         (8,  16, True,  all8("scurryloop")),     # 2026-10-28: loops closed on the stand pose
     "pant_smile":     (9,  8,  True,  all8("pant_smile")),
     # M3.6 (2026-10-27): spec 7.4 A10-A27, every direction the review set has (docs/review: the owner's first round,
     # 2026-10-26, without its hidden sheets; the rest falls back to the nearest direction). Missing: A13 huff,

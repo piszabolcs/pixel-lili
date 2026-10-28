@@ -1114,6 +1114,198 @@
    "action": "trots in place to the lower right with the rope toy in her mouth, one cycle, same size",
    "frames": 8,
    "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "tiptoeloop_S",
+   "start": "stand_S",
+   "last": "stand_S",
+   "action": "sneaks in place towards us on tiptoe, slow careful steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "tiptoeloop_SW",
+   "start": "stand_SW",
+   "last": "stand_SW",
+   "action": "sneaks in place to the lower left on tiptoe, slow careful steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "tiptoeloop_W",
+   "start": "stand_W",
+   "last": "stand_W",
+   "action": "sneaks in place to the left on tiptoe, slow careful steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "tiptoeloop_NW",
+   "start": "stand_NW",
+   "last": "stand_NW",
+   "action": "sneaks in place to the upper left on tiptoe, slow careful steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "tiptoeloop_N",
+   "start": "stand_N",
+   "last": "stand_N",
+   "action": "sneaks in place away from us on tiptoe, slow careful steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "tiptoeloop_NE",
+   "start": "stand_NE",
+   "last": "stand_NE",
+   "action": "sneaks in place to the upper right on tiptoe, slow careful steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "tiptoeloop_E",
+   "start": "stand_E",
+   "last": "stand_E",
+   "action": "sneaks in place to the right on tiptoe, slow careful steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "tiptoeloop_SE",
+   "start": "stand_SE",
+   "last": "stand_SE",
+   "action": "sneaks in place to the lower right on tiptoe, slow careful steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "scurryloop_S",
+   "start": "stand_S",
+   "last": "stand_S",
+   "action": "scurries in place towards us with quick small steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "scurryloop_SW",
+   "start": "stand_SW",
+   "last": "stand_SW",
+   "action": "scurries in place to the lower left with quick small steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "scurryloop_W",
+   "start": "stand_W",
+   "last": "stand_W",
+   "action": "scurries in place to the left with quick small steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "scurryloop_NW",
+   "start": "stand_NW",
+   "last": "stand_NW",
+   "action": "scurries in place to the upper left with quick small steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "scurryloop_N",
+   "start": "stand_N",
+   "last": "stand_N",
+   "action": "scurries in place away from us with quick small steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "scurryloop_NE",
+   "start": "stand_NE",
+   "last": "stand_NE",
+   "action": "scurries in place to the upper right with quick small steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "scurryloop_E",
+   "start": "stand_E",
+   "last": "stand_E",
+   "action": "scurries in place to the right with quick small steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "scurryloop_SE",
+   "start": "stand_SE",
+   "last": "stand_SE",
+   "action": "scurries in place to the lower right with quick small steps, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "runloop_S",
+   "start": "run_S8",
+   "last": "run_S8",
+   "action": "gallops in place towards us, one full running stride, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "runloop_SW",
+   "start": "run_SW8",
+   "last": "run_SW8",
+   "action": "gallops in place to the lower left, one full running stride, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "runloop_W",
+   "start": "run_W8",
+   "last": "run_W8",
+   "action": "gallops in place to the left, one full running stride, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "runloop_NW",
+   "start": "run_NW8",
+   "last": "run_NW8",
+   "action": "gallops in place to the upper left, one full running stride, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "runloop_N",
+   "start": "run_N8",
+   "last": "run_N8",
+   "action": "gallops in place away from us, one full running stride, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "runloop_NE",
+   "start": "run_NE8",
+   "last": "run_NE8",
+   "action": "gallops in place to the upper right, one full running stride, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "runloop_E",
+   "start": "run_E8",
+   "last": "run_E8",
+   "action": "gallops in place to the right, one full running stride, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "runloop_SE",
+   "start": "run_SE8",
+   "last": "run_SE8",
+   "action": "gallops in place to the lower right, one full running stride, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
   }
  ]
 }

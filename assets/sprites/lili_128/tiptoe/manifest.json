@@ -470,5 +470,5 @@
    "head": null
   }
  ],
- "source": "tools/pixellab_to_sprites.py (sneak_S, sneak_SW, sneak_W, sneak_NW, sneak_N, sneak_NE, sneak_E, sneak_SE)"
+ "source": "tools/pixellab_to_sprites.py (tiptoeloop_S, tiptoeloop_SW, tiptoeloop_W, tiptoeloop_NW, tiptoeloop_N, tiptoeloop_NE, tiptoeloop_E, tiptoeloop_SE)"
 }

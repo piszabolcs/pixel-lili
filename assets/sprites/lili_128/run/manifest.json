@@ -470,5 +470,5 @@
    "head": null
   }
  ],
- "source": "tools/pixellab_to_sprites.py (run_S, run_SW, run_W, run_NW, run_N, run_NE, run_E, run_SE)"
+ "source": "tools/pixellab_to_sprites.py (runloop_S, runloop_SW, runloop_W, runloop_NW, runloop_N, runloop_NE, runloop_E, runloop_SE)"
 }

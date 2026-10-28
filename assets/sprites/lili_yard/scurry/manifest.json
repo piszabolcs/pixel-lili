@@ -14,11 +14,11 @@
   7
  ],
  "frames": 8,
- "cell_w": 45,
- "cell_h": 50,
+ "cell_w": 44,
+ "cell_h": 51,
  "pivot": [
-  21,
-  50
+  22,
+  51
  ],
  "files": [
   {
@@ -470,5 +470,5 @@
    "head": null
   }
  ],
- "source": "tools/pixellab_to_sprites.py (scurry_S, scurry_SW, scurry_W, scurry_NW, scurry_N, scurry_NE, scurry_E, scurry_SE)"
+ "source": "tools/pixellab_to_sprites.py (scurryloop_S, scurryloop_SW, scurryloop_W, scurryloop_NW, scurryloop_N, scurryloop_NE, scurryloop_E, scurryloop_SE)"
 }
