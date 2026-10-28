@@ -5,12 +5,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* the owner (2026-10-28): the screen is small (2.16", 12 px a millimetre) and a finger is not; the targets were a few
+   millimetres wide. Now they reach out like a phone's keys: the toy is the finger's anywhere within G_TOY_R (9 mm across)
+   unless the finger is on her (then she gets the pet), within G_TOY_CORE always; the nearest toy wins; her pet box,
+   the door, a still tap and a flick are all a little more forgiving */
 enum {
-    G_TAP_MS = 250, G_LONG_MS = 600, G_STILL_PX = 12,
-    G_PET_PAD = 16, G_PET_TURNS = 3, G_PET_WINDOW_MS = 1200, G_PET_PATH = 60, G_PET_TICK_MS = 250, G_TURN_PX = 4,
-    G_TOY_R = 22, G_FLICK_PXS = 600, G_FLICK_MS = 80,
+    G_TAP_MS = 250, G_LONG_MS = 600, G_STILL_PX = 16,
+    G_PET_PAD = 28, G_PET_TURNS = 3, G_PET_WINDOW_MS = 1200, G_PET_PATH = 60, G_PET_TICK_MS = 250, G_TURN_PX = 4,
+    G_TOY_CORE = 26, G_TOY_R = GESTURE_TOY_R, G_FLICK_PXS = 450, G_FLICK_MS = 80,
     G_APPROACH_PXS = 300, G_APPROACH_MS = 200,
-    G_EDGE_PX = 24, G_SWIPE_PX = 120,
+    G_EDGE_PX = 24, G_SWIPE_PX = 120, G_DOOR_PAD = 12,
 };
 
 void gesture_init(gesture_t *g) { memset(g, 0, sizeof *g); g->toy = -1; }
@@ -19,9 +23,13 @@ static bool in_rect(const g_rect_t *r, int x, int y, int pad) {
     return r->x1 > r->x0 && x >= r->x0 - pad && x < r->x1 + pad && y >= r->y0 - pad && y < r->y1 + pad;
 }
 static int toy_at(const gesture_ctx_t *c, int x, int y) {
-    for (int i = 0; i < c->n_toys && i < GESTURE_TOYS_MAX; i++)
-        if (abs(x - c->toy_x[i]) <= G_TOY_R && abs(y - c->toy_y[i]) <= G_TOY_R) return i;
-    return -1;
+    int best = -1, bd = G_TOY_R * G_TOY_R + 1;
+    for (int i = 0; i < c->n_toys && i < GESTURE_TOYS_MAX; i++) {
+        const int dx = x - c->toy_x[i], dy = y - c->toy_y[i], d = dx * dx + dy * dy;
+        if (d < bd) { bd = d; best = i; }
+    }
+    if (best < 0 || bd <= G_TOY_CORE * G_TOY_CORE) return best;
+    return in_rect(&c->lili, x, y, 0) ? -1 : best;
 }
 /* the finger's velocity over the last G_FLICK_MS: from the newest sample back to the oldest one still in that window */
 static void velocity(const gesture_t *g, float *vx, float *vy) {
@@ -62,7 +70,7 @@ void gesture_feed(gesture_t *g, const gesture_ctx_t *c, bool down, int x, int y,
             else if (g->dragging) ev_push3(q, EV_DROP, g->x, g->y, g->toy);
         }
         if (!g->moved && !g->long_sent && !g->swipe_sent && held < G_TAP_MS && g->toy < 0)
-            ev_push(q, in_rect(&c->door, g->x0, g->y0, 0) ? EV_SWITCH_VIEW : EV_TAP, g->x0, g->y0);
+            ev_push(q, in_rect(&c->door, g->x0, g->y0, G_DOOR_PAD) && !in_rect(&c->lili, g->x0, g->y0, 0) ? EV_SWITCH_VIEW : EV_TAP, g->x0, g->y0);
         g->down = false;
         return;
     }

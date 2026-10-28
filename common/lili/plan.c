@@ -489,7 +489,7 @@ bool reflex_event(world_t *w, const ev_t *e) {
         if (asleep) return false;
         return fire(w, me, RX_VOICE, 8, BB_QUESTION);
     case EV_TAP:                                               /* R9: a tap on the free floor: a look, half the time a walk there */
-        if (here && !asleep && on_her(w, e->a, e->b, 8)) return fire(w, me, RX_JOY, 9, BB_HEART);
+        if (here && !asleep && on_her(w, e->a, e->b, 20)) return fire(w, me, RX_JOY, 9, BB_HEART);   /* 20 px around her: a finger's width (2026-10-28) */
         if (asleep || guilty || !here) return false;
         w->finger_x = e->a; w->finger_y = e->b;
         return fire(w, me, (world_rand(w) & 1) ? RX_TAP_GO : RX_TAP_LOOK, 9, BB_NONE);

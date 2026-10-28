@@ -450,25 +450,41 @@ static bool prop_box(const world_t *w, uint16_t img, const char *name, int *x0, 
     }
     (void)w; return false;
 }
-static bool tap_in(const world_t *w, uint16_t img, const char *name, int x, int y) {
-    int x0, y0, x1, y1;
-    return prop_box(w, img, name, &x0, &y0, &x1, &y1) && x >= x0 - 4 && x < x1 + 4 && y >= y0 - 4 && y < y1 + 4;
+/* the owner (2026-10-28): fingers on the small screen missed the spots and the bowls. A tap counts for a thing that
+   wants care within CARE_REACH px of its picture, the nearest of them wins (a funnel, like a phone's keys); on the
+   picture itself always, around it only if the finger is not on her (then she gets the tap) */
+#define CARE_REACH 24
+static int box_d2(int x, int y, int x0, int y0, int x1, int y1) {   /* squared distance to a box, 0 inside */
+    const int dx = x < x0 ? x0 - x : x >= x1 ? x - x1 + 1 : 0, dy = y < y0 ? y0 - y : y >= y1 ? y - y1 + 1 : 0;
+    return dx * dx + dy * dy;
 }
 static void sparkle(world_t *w, int x, int y) { w->sparkle_x = (int16_t)x; w->sparkle_y = (int16_t)y; w->sparkle_t = 0.6f; }
 bool world_care_tap(world_t *w, int x, int y) {
     things_t *t = &w->things;
     if (w->view != VIEW_ROOM) return false;
-    for (int i = 0; i < t->n_mess; i++)
-        if (abs(x - t->mess[i][0]) <= 16 && abs(y - t->mess[i][1]) <= 10) {
-            sparkle(w, t->mess[i][0], t->mess[i][1]);
-            t->mess[i][0] = t->mess[t->n_mess - 1][0]; t->mess[i][1] = t->mess[t->n_mess - 1][1]; t->n_mess--;
-            if (!t->n_mess) reflex_forgiven(w);                  /* R1: the last one */
-            return true;
-        }
-    if (tap_in(w, IMG_BOWL_FOOD, "bowl_food", x, y) && t->food < 3) { t->food = 3; sparkle(w, x, y); return true; }
-    if (tap_in(w, IMG_BOWL_WATER, "bowl_water", x, y) && t->water < 3) { t->water = 3; sparkle(w, x, y); return true; }
-    if (tap_in(w, IMG_PAD, "pad", x, y) && t->pad) { t->pad = 0; sparkle(w, x, y); return true; }
-    return false;
+    enum { C_FOOD = MESS_MAX, C_WATER, C_PAD };
+    int best = -1, bd = CARE_REACH * CARE_REACH + 1, x0, y0, x1, y1;
+    for (int i = 0; i < t->n_mess; i++) {
+        const int d = box_d2(x, y, t->mess[i][0] - 16, t->mess[i][1] - 10, t->mess[i][0] + 17, t->mess[i][1] + 11);
+        if (d < bd) { bd = d; best = i; }
+    }
+    if (t->food < 3 && prop_box(w, IMG_BOWL_FOOD, "bowl_food", &x0, &y0, &x1, &y1)) { const int d = box_d2(x, y, x0, y0, x1, y1); if (d < bd) { bd = d; best = C_FOOD; } }
+    if (t->water < 3 && prop_box(w, IMG_BOWL_WATER, "bowl_water", &x0, &y0, &x1, &y1)) { const int d = box_d2(x, y, x0, y0, x1, y1); if (d < bd) { bd = d; best = C_WATER; } }
+    if (t->pad && prop_box(w, IMG_PAD, "pad", &x0, &y0, &x1, &y1)) { const int d = box_d2(x, y, x0, y0, x1, y1); if (d < bd) { bd = d; best = C_PAD; } }
+    if (best < 0) return false;
+    if (bd > 0) {                                               /* around a thing, not on it: unless the finger is on her */
+        gesture_ctx_t c; world_gesture_ctx(w, &c);
+        if (c.lili.x1 > c.lili.x0 && x >= c.lili.x0 && x < c.lili.x1 && y >= c.lili.y0 && y < c.lili.y1) return false;
+    }
+    if (best < C_FOOD) {
+        sparkle(w, t->mess[best][0], t->mess[best][1]);
+        t->mess[best][0] = t->mess[t->n_mess - 1][0]; t->mess[best][1] = t->mess[t->n_mess - 1][1]; t->n_mess--;
+        if (!t->n_mess) reflex_forgiven(w);                      /* R1: the last one */
+        return true;
+    }
+    if (best == C_FOOD) t->food = 3; else if (best == C_WATER) t->water = 3; else t->pad = 0;
+    sparkle(w, x, y);
+    return true;
 }
 static void draw_sparkle(const world_t *w, render8_t *r) {
     if (w->sparkle_t <= 0 || w->view != VIEW_ROOM) return;
@@ -643,6 +659,12 @@ void world_debug_draw(const world_t *w, render8_t *r) {      /* M: the walkable 
         r8_fill(r, p->x - 2, p->y - p->z, 5, 1, PAL_WHITE);
         r8_fill(r, p->x, p->y - p->z - 2, 1, 5, PAL_WHITE);
     }
+    gesture_ctx_t c; world_gesture_ctx(w, &c);                 /* the finger's reach around each loose toy (2026-10-28) */
+    for (int i = 0; i < c.n_toys; i++)
+        for (int k = 0; k < 48; k++) {
+            const int x = c.toy_x[i] + (int)(GESTURE_TOY_R * cosf(k * 0.1309f)), y = c.toy_y[i] + (int)(GESTURE_TOY_R * sinf(k * 0.1309f));
+            if (x >= 0 && y >= 0 && x < LILI_LOG_W && y < LILI_LOG_H) r->px[y * LILI_LOG_W + x] = PAL_WHITE;
+        }
 }
 
 void world_gesture_ctx(const world_t *w, gesture_ctx_t *c) {

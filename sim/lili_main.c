@@ -664,6 +664,20 @@ static int selftest_gesture(void) {
         ev_init(&q); g_run(&g, &c, &q, (const int (*)[3])P, 30);
     }
     CHECK(g_count(&q, EV_DRAG) > 5 && g_has(&q, EV_DROP, &e) && e.c == 0 && !g_has(&q, EV_FLICK, NULL), "a slow stroke from the toy drags it, and drops it at the lift");
+    /* the funnel (the owner, 2026-10-28: fat fingers on a small screen): beside the toy is on the toy, unless on her */
+    {   /* a flick from 42 px beside the toy, 25 px every 16 ms (1560 px / s) */
+        static int P[7][3]; for (int i = 0; i < 7; i++) { P[i][0] = 400 + i * 25; P[i][1] = 372 - i * 8; P[i][2] = i * 16; }
+        P[6][0] = P[5][0]; P[6][1] = P[5][1]; P[6][2] = P[5][2];
+        ev_init(&q); g_run(&g, &c, &q, (const int (*)[3])P, 7);
+    }
+    CHECK(g_has(&q, EV_FLICK, &e) && e.c == 0, "a flick from beside the toy throws it");
+    {   /* the toy 45 px from a finger that rubs her: the pet, not the toy */
+        c.toy_x[0] = 290; c.toy_y[0] = 230;
+        static int P[20][3]; for (int i = 0; i < 20; i++) { P[i][0] = 245 - (i % 2) * 25; P[i][1] = 230; P[i][2] = i * 80; }
+        ev_init(&q); g_run(&g, &c, &q, (const int (*)[3])P, 20);
+        c.toy_x[0] = 360; c.toy_y[0] = 360;
+    }
+    CHECK(g_count(&q, EV_PET_START) == 1 && !g_has(&q, EV_DRAG, NULL), "on her, a toy beside her does not take the finger");
     {   /* the approach: she bows, the finger comes nearer at ~90 px / s */
         c.bowing = true;
         static int P[40][3]; for (int i = 0; i < 40; i++) { P[i][0] = 230; P[i][1] = 440 - i * 3; P[i][2] = i * 33; }

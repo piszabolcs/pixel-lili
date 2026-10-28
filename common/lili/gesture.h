@@ -3,10 +3,11 @@
  * simulator from the mouse on the picture. gesture.c knows nothing of either, nor of the world: what it needs
  * to know about the scene (where Lili is, whether she is bowing, where the toys and the door are) comes in a
  * small context each frame. Out come the events of events.h into the queue:
- *   TAP          < 250 ms, moved < 12 px                      EV_TAP (x, y); on the door: EV_SWITCH_VIEW
- *   LONG_PRESS   > 600 ms, moved < 12 px                      EV_LONG (x, y), once, while still down
- *   RUB_PET      over Lili's hitbox + 16 px, >= 3 turns in 1.2 s, > 60 px in all   EV_PET_START / TICK / END
- *   FLICK        starts on a toy, > 600 px / s at the release (the last 80 ms)      EV_FLICK (vx, vy, toy)
+ *   TAP          < 250 ms, moved < 16 px                      EV_TAP (x, y); on the door (+ 12 px, not on her): EV_SWITCH_VIEW
+ *   LONG_PRESS   > 600 ms, moved < 16 px                      EV_LONG (x, y), once, while still down
+ *   RUB_PET      over Lili's hitbox + 28 px, >= 3 turns in 1.2 s, > 60 px in all   EV_PET_START / TICK / END
+ *   FLICK        starts on a toy (within 56 px of it, not on her; within 26 px always), > 450 px / s at the release
+ *                (the last 80 ms)                             EV_FLICK (vx, vy, toy)
  *   DRAG_TOY     starts on a toy, slower                      EV_DRAG (x, y, toy) while it moves, EV_DROP at the end
  *   APPROACH     finger down, nearing her, < 300 px / s, she is bowing              EV_APPROACH (distance)
  *   EDGE_SWIPE   from within 24 px of the top / bottom edge, > 120 px vertically    EV_SWITCH_VIEW
@@ -18,6 +19,7 @@
 #include "events.h"
 
 #define GESTURE_TOYS_MAX 2
+#define GESTURE_TOY_R    56                                /* how far from a toy the finger still takes it (the M layer draws it) */
 typedef struct { int16_t x0, y0, x1, y1; } g_rect_t;      /* inclusive-exclusive; x1 <= x0 = none */
 typedef struct {
     g_rect_t lili;                                         /* her sprite's box on the screen (no box: she is not in this view) */

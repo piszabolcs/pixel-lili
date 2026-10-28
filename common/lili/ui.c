@@ -193,7 +193,7 @@ bool ui_tap(ui_t *u, world_t *w, int x, int y) {
     }
     if (u->show > 0.5f) {
         const int by = bar_y(u);
-        if (y >= by - 6 && y < by + UI_BAR_H + 6 && x >= BAR_X && x < BAR_X + UI_BAR_W) {
+        if (y >= by - 16 && y < by + UI_BAR_H + 16 && x >= BAR_X - 8 && x < BAR_X + UI_BAR_W + 8) {   /* a finger's slack around the bar (2026-10-28) */
             u->idle = 0;
             const int bx = x - BAR_X;
             if (bx >= 270 && bx < 312) w->set_muted = !w->set_muted;              /* 44 px targets (spec 7.8) */
