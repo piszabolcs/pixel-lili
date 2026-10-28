@@ -1306,6 +1306,126 @@
    "action": "gallops in place to the lower right, one full running stride, same size",
    "frames": 8,
    "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "huff_S",
+   "start": "stand_S",
+   "last": "stand_S",
+   "action": "huffs once, a short annoyed snort, her head jerks down and back up, right ear stays folded",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "huff_SW",
+   "start": "stand_SW",
+   "last": "stand_SW",
+   "action": "huffs once, a short annoyed snort, her head jerks down and back up, right ear stays folded",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "huff_W",
+   "start": "stand_W",
+   "last": "stand_W",
+   "action": "huffs once, a short annoyed snort, her head jerks down and back up, right ear stays folded",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "huff_NW",
+   "start": "stand_NW",
+   "last": "stand_NW",
+   "action": "huffs once, a short annoyed snort, her head jerks down and back up, right ear stays folded",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "huff_N",
+   "start": "stand_N",
+   "last": "stand_N",
+   "action": "huffs once, a short annoyed snort, her head jerks down and back up, right ear stays folded",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "huff_NE",
+   "start": "stand_NE",
+   "last": "stand_NE",
+   "action": "huffs once, a short annoyed snort, her head jerks down and back up, right ear stays folded",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "huff_E",
+   "start": "stand_E",
+   "last": "stand_E",
+   "action": "huffs once, a short annoyed snort, her head jerks down and back up, right ear stays folded",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "huff_SE",
+   "start": "stand_SE",
+   "last": "stand_SE",
+   "action": "huffs once, a short annoyed snort, her head jerks down and back up, right ear stays folded",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "pickup_S",
+   "start": "pickup_S0",
+   "last": "carry_S8",
+   "action": "lowers her head, picks up the rope toy from the floor in her mouth, lifts her head, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "pickup_SW",
+   "start": "pickup_SW0",
+   "last": "carry_SW8",
+   "action": "lowers her head, picks up the rope toy from the floor in her mouth, lifts her head, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "pickup_W",
+   "start": "pickup_W0",
+   "last": "carry_W8",
+   "action": "lowers her head, picks up the rope toy from the floor in her mouth, lifts her head, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "pickup_E",
+   "start": "pickup_E0",
+   "last": "carry_E8",
+   "action": "lowers her head, picks up the rope toy from the floor in her mouth, lifts her head, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "pickup_SE",
+   "start": "pickup_SE0",
+   "last": "carry_SE8",
+   "action": "lowers her head, picks up the rope toy from the floor in her mouth, lifts her head, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "peek_S",
+   "start": "lie_S8",
+   "last": "lie_S8",
+   "action": "lies still with a guilty look, ears flat, only her eyes glance left and right, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "peek_SW",
+   "start": "lie_SW8",
+   "last": "lie_SW8",
+   "action": "lies still with a guilty look, ears flat, only her eyes glance left and right, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
   }
  ]
 }

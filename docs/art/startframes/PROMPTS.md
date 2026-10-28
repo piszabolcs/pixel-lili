@@ -150,3 +150,15 @@ Background: one flat, solid, pure magenta colour (#FF00FF) everywhere. No floor,
 
 Style: crisp pixel art with hard pixel edges and the limited palette of the references. No blur, no painterly shading, no glow.
 ```
+
+## 09. Lili kedvenc plüssje (kutya nélkül, 2026-10-28)
+
+A gazdi leírása: babajáték, felül egy rózsaszín malacfej, alatta egy puha, kerek gyűrű test (a közepén lyuk), mint a fotón a tigris csörgő, csak a Lilié rózsaszín malacos volt; volt narancssárga tigrises is. A fotón csak a forma jó, a színe nem. A plüss 4 állásban kell, mint a kötél (07): a padlón is ez a kép lesz, a szájában is, és a repülésben ezek közt fordul.
+
+Csatold: `Lili(9).png` (a stílus miatt) és a tigrises csörgő fotóját (a forma miatt). Mentsd: `docs/art/Lilik/09.png`, vagy küldd el a csetben.
+
+```
+Pixel-art game props in exactly the style of the first attached reference image, same 3/4 top-down camera, on one flat solid pure magenta (#FF00FF) background, no shadows, no text, no labels: a soft baby rattle plush toy shaped like the toy in the second attached photo, but all in soft pink: on top a cute piglet head with big round black eyes, a small darker pink snout and two floppy pink ears; below it a round soft ring body of pale pink plush with a hole in the middle; two short pastel ribbon tags on the ring. Show the same toy 4 times in one row, each copy separate with wide gaps: 1) lying flat on its back, seen from above; 2) lying on its left side; 3) standing upright; 4) lying on its right side. Sized for a tiny chihuahua to carry in her mouth.
+```
+
+Ha a tigrises kell: a fenti szövegben a "piglet head with big round black eyes, a small darker pink snout and two floppy pink ears" helyett "tiger head with big round black eyes, dark stripes and two round ears", és a "pink" helyett mindenhol "orange".
