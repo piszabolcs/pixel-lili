@@ -41,9 +41,9 @@ ANIMS = {
     # M3.5: spec 7.4 A01-A09, every direction (approved by the owner on 2026-10-26, trot_SE on 2026-10-27)
     "idle_stand":     (1,  6,  True,  all8("idle_stand")),
     "idle_sit_blink": (2,  6,  True,  all8("idle_sit_blink")),
-    "sit_down":       (3,  12, False, dict(all8("sit_down"), S="sitdown2_S", SW="sitdown2_SW")),   # 2026-10-28: last-frame remakes (stand -> sit exactly)
-    "walk":           (4,  10, True,  dict(all8("walk"), S="walkloop_S", SE="walkloop_SE")),       # 2026-10-28: loops closed on the stand pose
-    "trot":           (5,  14, True,  all8("trot")),
+    "sit_down":       (3,  12, False, dict(all8("sit_down"), **{d: f"sitdown2_{d}" for d in ("S", "SW", "NW", "N", "NE")})),   # 2026-10-28: last-frame remakes (stand -> sit exactly); W, E, SE met already
+    "walk":           (4,  10, True,  all8("walkloop")),       # 2026-10-28: loops closed on the stand pose (PixMiniMax last frame = first)
+    "trot":           (5,  14, True,  all8("trotloop")),       # 2026-10-28: loops closed on the stand pose
     "run":            (6,  18, True,  all8("run")),
     "tiptoe":         (7,  8,  True,  all8("sneak")),          # A07: PixelLab's "sneaking slowly, crouched low"
     "scurry":         (8,  16, True,  all8("scurry")),
@@ -55,7 +55,7 @@ ANIMS = {
     "play_bow":       (11, 10, True,  dict(all8("play_bow"), SW="play_bow_SW_v3")),   # v3 (the owner's prompt): all four paws planted
     "bark_head_flip": (12, 10, False, {"S": "bark_S_v2", "SW": "bark_SW", "W": "bark_W", "E": "bark_E", "SE": "bark_SE"}),   # no back views (the owner, 2026-10-26)
     "chew_toy":       (15, 10, True,  {"S": "chew_rope_S", "SE": "chew_rope_SE"}),
-    "pet_enjoy":      (16, 6,  True,  dict({d: f"pet_enjoy_{d}" for d in ("S", "SW", "SE")}, S="petloop_S")),   # 2026-10-28: from the lie-down's last frame
+    "pet_enjoy":      (16, 6,  True,  {d: f"petloop_{d}" for d in ("S", "SW", "SE")}),   # 2026-10-28: from the lie-down's last frame, a closed loop
     "eat_drink":      (17, 8,  True,  {"W": "eat_W"}),
     "sleep_curl":     (18, 3,  True,  {"S": "sleep_curl_S"}),           # replaces the rejected SW (2026-10-26)
     "sun_sit":        (19, 4,  True,  {d: f"sun_sit_{d}" for d in ("S", "SW")}),
@@ -72,7 +72,7 @@ ANIMS = {
     "poop":           (32, 6,  True,  {d: f"poop_{d}" for d in ("SW", "SE")}),
     "tug_rope":       (33, 10, True,  {d: f"tug_rope_{d}" for d in ("S", "SW", "SE")}),
     "eat_treat":      (34, 8,  True,  {d: f"eat_treat_{d}" for d in ("S", "SW", "SE")}),
-    "carry_trot":     (35, 14, True,  {d: f"carry_trot_{d}" for d in ("S", "SW", "W", "NW", "NE", "E", "SE")}),
+    "carry_trot":     (35, 14, True,  {d: f"carryloop_{d}" for d in ("S", "SW", "W", "NW", "NE", "E", "SE")}),   # 2026-10-28: loops closed on the game's own first frame
     "lie_down_rope":  (36, 8,  False, {"S": "lie_down_rope_S"}),
     "chew_treat":     (37, 10, True,  {d: f"chew_treat_{d}" for d in ("S", "SE")}),
     # 2026-10-28: lying (the lie-down's last frame) -> curled up asleep (sleep_curl's first), PixMiniMax with a last frame

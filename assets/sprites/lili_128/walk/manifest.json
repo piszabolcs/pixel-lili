@@ -470,5 +470,5 @@
    "head": null
   }
  ],
- "source": "tools/pixellab_to_sprites.py (walkloop_S, walk_SW, walk_W, walk_NW, walk_N, walk_NE, walk_E, walkloop_SE)"
+ "source": "tools/pixellab_to_sprites.py (walkloop_S, walkloop_SW, walkloop_W, walkloop_NW, walkloop_N, walkloop_NE, walkloop_E, walkloop_SE)"
 }

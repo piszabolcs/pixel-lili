@@ -15,10 +15,10 @@
  ],
  "frames": 8,
  "cell_w": 44,
- "cell_h": 52,
+ "cell_h": 50,
  "pivot": [
   22,
-  52
+  50
  ],
  "files": [
   {
@@ -470,5 +470,5 @@
    "head": null
   }
  ],
- "source": "tools/pixellab_to_sprites.py (trot_S, trot_SW, trot_W, trot_NW, trot_N, trot_NE, trot_E, trot_SE)"
+ "source": "tools/pixellab_to_sprites.py (trotloop_S, trotloop_SW, trotloop_W, trotloop_NW, trotloop_N, trotloop_NE, trotloop_E, trotloop_SE)"
 }

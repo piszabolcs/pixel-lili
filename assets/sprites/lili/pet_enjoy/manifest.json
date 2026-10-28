@@ -9,11 +9,11 @@
   7
  ],
  "frames": 8,
- "cell_w": 62,
- "cell_h": 50,
+ "cell_w": 61,
+ "cell_h": 46,
  "pivot": [
-  31,
-  50
+  30,
+  46
  ],
  "files": [
   {
@@ -185,5 +185,5 @@
    "head": null
   }
  ],
- "source": "tools/pixellab_to_sprites.py (petloop_S, pet_enjoy_SW, pet_enjoy_SE)"
+ "source": "tools/pixellab_to_sprites.py (petloop_S, petloop_SW, petloop_SE)"
 }

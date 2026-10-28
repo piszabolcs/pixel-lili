@@ -413,5 +413,5 @@
    "head": null
   }
  ],
- "source": "tools/pixellab_to_sprites.py (carry_trot_S, carry_trot_SW, carry_trot_W, carry_trot_NW, carry_trot_NE, carry_trot_E, carry_trot_SE)"
+ "source": "tools/pixellab_to_sprites.py (carryloop_S, carryloop_SW, carryloop_W, carryloop_NW, carryloop_NE, carryloop_E, carryloop_SE)"
 }

@@ -906,6 +906,214 @@
    "action": "lying still, eyes closing happily while petted, tail wagging slowly, same size",
    "frames": 8,
    "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "sitdown2_N",
+   "start": "stand_N",
+   "last": "sit_N",
+   "action": "sits down calmly onto her haunches and stays sitting, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "sitdown2_NE",
+   "start": "stand_NE",
+   "last": "sit_NE",
+   "action": "sits down calmly onto her haunches and stays sitting, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "sitdown2_NW",
+   "start": "stand_NW",
+   "last": "sit_NW",
+   "action": "sits down calmly onto her haunches and stays sitting, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "petloop_SW",
+   "start": "lie_SW8",
+   "last": "lie_SW8",
+   "action": "lying still, eyes closing happily while petted, tail wagging slowly, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "petloop_SE",
+   "start": "lie_SE8",
+   "last": "lie_SE8",
+   "action": "lying still, eyes closing happily while petted, tail wagging slowly, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "walkloop_SW",
+   "start": "stand_SW",
+   "last": "stand_SW",
+   "action": "walks in place to the lower left, one calm step cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "walkloop_W",
+   "start": "stand_W",
+   "last": "stand_W",
+   "action": "walks in place to the left, one calm step cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "walkloop_NW",
+   "start": "stand_NW",
+   "last": "stand_NW",
+   "action": "walks in place to the upper left, one calm step cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "walkloop_N",
+   "start": "stand_N",
+   "last": "stand_N",
+   "action": "walks in place away from us, one calm step cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "walkloop_NE",
+   "start": "stand_NE",
+   "last": "stand_NE",
+   "action": "walks in place to the upper right, one calm step cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "walkloop_E",
+   "start": "stand_E",
+   "last": "stand_E",
+   "action": "walks in place to the right, one calm step cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "trotloop_S",
+   "start": "stand_S",
+   "last": "stand_S",
+   "action": "trots in place towards us, one quick cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "trotloop_SW",
+   "start": "stand_SW",
+   "last": "stand_SW",
+   "action": "trots in place to the lower left, one quick cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "trotloop_W",
+   "start": "stand_W",
+   "last": "stand_W",
+   "action": "trots in place to the left, one quick cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "trotloop_NW",
+   "start": "stand_NW",
+   "last": "stand_NW",
+   "action": "trots in place to the upper left, one quick cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "trotloop_N",
+   "start": "stand_N",
+   "last": "stand_N",
+   "action": "trots in place away from us, one quick cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "trotloop_NE",
+   "start": "stand_NE",
+   "last": "stand_NE",
+   "action": "trots in place to the upper right, one quick cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "trotloop_E",
+   "start": "stand_E",
+   "last": "stand_E",
+   "action": "trots in place to the right, one quick cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "trotloop_SE",
+   "start": "stand_SE",
+   "last": "stand_SE",
+   "action": "trots in place to the lower right, one quick cycle, her right ear stays folded, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryloop_S",
+   "start": "carry_S8",
+   "last": "carry_S8",
+   "action": "trots in place towards us with the rope toy in her mouth, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryloop_SW",
+   "start": "carry_SW8",
+   "last": "carry_SW8",
+   "action": "trots in place to the lower left with the rope toy in her mouth, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryloop_W",
+   "start": "carry_W8",
+   "last": "carry_W8",
+   "action": "trots in place to the left with the rope toy in her mouth, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryloop_NW",
+   "start": "carry_NW8",
+   "last": "carry_NW8",
+   "action": "trots in place to the upper left with the rope toy in her mouth, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryloop_NE",
+   "start": "carry_NE8",
+   "last": "carry_NE8",
+   "action": "trots in place to the upper right with the rope toy in her mouth, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryloop_E",
+   "start": "carry_E8",
+   "last": "carry_E8",
+   "action": "trots in place to the right with the rope toy in her mouth, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryloop_SE",
+   "start": "carry_SE8",
+   "last": "carry_SE8",
+   "action": "trots in place to the lower right with the rope toy in her mouth, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
   }
  ]
 }
