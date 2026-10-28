@@ -15,6 +15,8 @@
 #include "esp_timer.h"
 #include "esp_random.h"
 #include "esp_heap_caps.h"
+#include "esp_system.h"
+#include "esp_attr.h"
 #include "nvs_flash.h"
 #include "esp_partition.h"
 #include "board_pins.h"
@@ -195,7 +197,16 @@ void app_main(void) {
     keys_init();
     s_r8 = psram(sizeof *s_r8); s_mask = psram(sizeof *s_mask); s_bg = psram(sizeof *s_bg); s_nav = psram(sizeof *s_nav);
     if (!s_r8 || !s_mask || !s_bg || !s_nav) { ESP_LOGE(TAG, "no PSRAM for the canvas"); return; }
-    if (!display_port_init()) ESP_LOGE(TAG, "no display: the board was not told");
+    /* 2026-10-28: once after a flash the board was not told, the panel kept its old picture and the touch was dead while
+       she lived on blind (the owner: "it froze"). The reset reason goes in the log; no display: a clean restart, three at most */
+    static RTC_NOINIT_ATTR uint32_t s_display_retries;
+    const esp_reset_reason_t why = esp_reset_reason();
+    if (why == ESP_RST_POWERON || why == ESP_RST_BROWNOUT || s_display_retries > 3) s_display_retries = 0;
+    ESP_LOGI(TAG, "reset reason %d (1 power on, 3 software, 4 panic, 5-7 watchdog, 9 brownout, 11 USB, 12 JTAG / a flash)", (int)why);
+    if (!display_port_init()) {
+        ESP_LOGE(TAG, "no display: the board was not told (try %u)", (unsigned)s_display_retries + 1);
+        if (s_display_retries++ < 3) { vTaskDelay(pdMS_TO_TICKS(500)); esp_restart(); }
+    } else s_display_retries = 0;
     display_port_set_madctl(LILI_MADCTL);      /* the hardware turns the picture: no cost per frame (the glass mask is the same in all four corners) */
     int64_t tp = esp_timer_get_time();
     uint32_t pak_len = 0;

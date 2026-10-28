@@ -32,6 +32,7 @@
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
 #include "driver/gpio.h"
+#include "esp_rom_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include <string.h>
@@ -289,7 +290,24 @@ static bool probe(uint8_t addr) {                /* three tries: a board is not 
     for (int i = 0; i < 3; i++) if (i2c_master_probe(s_i2c, addr, 50) == ESP_OK) return true;
     return false;
 }
+/* a chip caught mid-byte by a reset that did not reach it (a flash's, the console's: the ESP32 restarts, the board's
+   chips stay powered) holds SDA low until it gets the rest of its clocks: then nothing answers on the bus and the board
+   cannot be told. Nine SCL pulses and a STOP free it (2026-10-28: after a flash the 2.16 kept its old picture, touch
+   dead, the game running blind) */
+static void i2c_unstick(void) {
+    gpio_config_t c = { .pin_bit_mask = (1ULL << PIN_I2C_SDA) | (1ULL << PIN_I2C_SCL), .mode = GPIO_MODE_INPUT_OUTPUT_OD,
+                        .pull_up_en = GPIO_PULLUP_ENABLE };
+    gpio_config(&c);
+    gpio_set_level(PIN_I2C_SDA, 1); gpio_set_level(PIN_I2C_SCL, 1); esp_rom_delay_us(10);
+    for (int i = 0; i < 9 && !gpio_get_level(PIN_I2C_SDA); i++) {
+        gpio_set_level(PIN_I2C_SCL, 0); esp_rom_delay_us(10); gpio_set_level(PIN_I2C_SCL, 1); esp_rom_delay_us(10);
+    }
+    gpio_set_level(PIN_I2C_SDA, 0); esp_rom_delay_us(10); gpio_set_level(PIN_I2C_SCL, 1); esp_rom_delay_us(10);
+    gpio_set_level(PIN_I2C_SDA, 1); esp_rom_delay_us(10);        /* the STOP */
+    gpio_reset_pin(PIN_I2C_SDA); gpio_reset_pin(PIN_I2C_SCL);
+}
 bool display_port_init(void) {
+    i2c_unstick();
     i2c_master_bus_config_t bus = { .i2c_port = I2C_NUM_0, .sda_io_num = PIN_I2C_SDA, .scl_io_num = PIN_I2C_SCL,
         .clk_source = I2C_CLK_SRC_DEFAULT, .glitch_ignore_cnt = 7, .flags.enable_internal_pullup = true };
     ESP_ERROR_CHECK(i2c_new_master_bus(&bus, &s_i2c));
@@ -307,9 +325,14 @@ bool display_port_init(void) {
                                                         (GPIO 40 - the watch's I2S data line, an output anyway: harmless there) and a
                                                         CST92xx asked for at 0x5A; the watch's FT3168 sits at 0x38 */
         gpio_reset_pin(S_PIN_TP_RST); gpio_set_direction(S_PIN_TP_RST, GPIO_MODE_OUTPUT);
-        gpio_set_level(S_PIN_TP_RST, 0); vTaskDelay(pdMS_TO_TICKS(10));
-        gpio_set_level(S_PIN_TP_RST, 1); vTaskDelay(pdMS_TO_TICKS(60));
-        s_square = probe(I2C_ADDR_CST9217);
+        for (int k = 0; k < 3 && !s_square; k++) {       /* a touch chip slow out of its reset gets longer each time (60, 160, 260 ms) */
+            gpio_set_level(S_PIN_TP_RST, 0); vTaskDelay(pdMS_TO_TICKS(10));
+            gpio_set_level(S_PIN_TP_RST, 1); vTaskDelay(pdMS_TO_TICKS(60 + 100 * k));
+            s_square = probe(I2C_ADDR_CST9217);
+        }
+#ifdef TANK_SQUARE
+        if (!s_square) { ESP_LOGW(TAG, "the touch chip did not answer: the square build and the watch's chips, so the square all the same"); s_square = true; }
+#endif
         if (s_square) s_watch = false;
     }
     if (!s_expander && !mic && !probe(0x34)) {

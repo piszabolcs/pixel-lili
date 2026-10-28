@@ -1,0 +1,50 @@
+--- 20:23:06 port COM3 open
+20:23:06 I (273) app_init: App version:      v0.3.8-104-gf762f41-dirty
+20:23:06 I (279) app_init: Compile time:     Oct 28 2026 20:12:51
+20:23:06 I (284) app_init: ELF file SHA256:  9d4b7ad71...
+20:23:06 I (288) app_init: ESP-IDF:          v5.4.1
+20:23:06 I (292) efuse_init: Min chip rev:     v0.0
+20:23:06 I (296) efuse_init: Max chip rev:     v0.99 
+20:23:06 I (300) efuse_init: Chip rev:         v0.2
+20:23:06 I (304) heap_init: Initializing. RAM available for dynamic allocation:
+20:23:06 I (310) heap_init: At 3FCA8388 len 00041388 (260 KiB): RAM
+20:23:06 I (315) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+20:23:06 I (320) heap_init: At 600FE11C len 00001ECC (7 KiB): RTCRAM
+20:23:06 I (326) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator
+20:23:06 I (333) spi_flash: detected chip: generic
+20:23:06 I (336) spi_flash: flash io: qio
+20:23:06 I (339) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+20:23:06 I (345) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+20:23:06 I (352) main_task: Started on CPU0
+20:23:06 I (355) esp_psram: Reserving pool of 64K of internal memory for DMA/internal allocations
+20:23:06 I (363) main_task: Calling app_main()
+20:23:06 I (366) lili: Pixel Lili world | internal heap 261 KB, PSRAM 8189 KB free
+20:23:06 I (378) gpio: GPIO[0]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+20:23:06 I (381) gpio: GPIO[18]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+20:23:06 I (390) gpio: GPIO[40]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+20:23:06 I (468) sh8601: board: the SQUARE, 2.16 (CO5300 480x480 / CST92xx at 0x5a) - no expander, an ES7210 at 0x40, an RTC at 0x51
+20:23:06 I (469) gpio: GPIO[39]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+20:23:06 I (476) sh8601: LCD panel create success, version: 2.0.1
+20:23:07 W (761) sh8601: The 3Ah command has been used and will be overwritten by external initialization sequence
+20:23:07 W (761) sh8601: The 36h command has been used and will be overwritten by external initialization sequence
+20:23:07 I (788) sh8601: panel up: 480x480 square, the tank px for px (MADCTL a0)
+20:23:07 I (1612) lili: pak: 3873999 B, 148 entries, ok (824 ms)
+20:23:07 I (1656) gpio: GPIO[40]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+20:23:08 I (1717) touch: CST9220 ready
+20:23:08 I (1718) rtc: system clock set from RTC: 2026-10-28 20:23
+20:23:08 I (1719) lili: save: away 0.1 h -> guilty
+20:23:08 I (1723) lili: brain: model 2764048 B (dim 256, 6 layers, 5.2M) on Core 1
+20:23:08 I (1735) mic: ES7210 up: 16 kHz 16-bit stereo (MIC1 left, MIC2 right), gain code 10
+20:23:08 I (1736) whistle: detector: band 1000-3500 Hz, peak/mean > 16 dB, frac >= 0.80, low <= 10 dB, +-15 %, 6 frames (192 ms), gap 1, rearm 6, floor -65 dBFS
+20:23:08 I (1780) imu: QMI8658 at 0x6b whoami 0x05 (want 05): ctrl 1=40 2=08 7=01 (want 40/08/01)
+20:23:08 I (1781) rtc: system clock from the RTC: 2026-10-28 20:23:04
+20:23:08 I (1783) gpio: GPIO[16]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+20:23:08 I (1791) body: mic on, imu on, console ready (type help)
+20:23:08 I (1803) battery: AXP2101 fuel gauge up; charge current code 6 -> 11 (500 mA); VBUS input limit code 4
+20:23:08 I (1806) battery: precharge current 25 -> 100 mA
+20:23:08 I (1810) battery: end-of-charge current 25 -> 100 mA
+20:23:08 I (1819) lili: up: world 552 B, canvas 230912 B, mask 57840 B, static-layer cache 230408 B | internal heap 185 KB free
+20:23:08 I (2413) lili: event TAP 208 319 0
+20:23:12 I (6659) lili: brain: model -> head_tilt hide_bench peek_bench (margin 0.94, 1775 ms)
+20:23:13 I (6829) lili: 23.0 fps | per frame: tick 1484 us, render 22961 us, flush 18555 us (fill 16222, wire wait 40, send 2212) | internal heap 185 KB, min 185 KB
+20:23:17 I (11832) lili: 29.4 fps | per frame: tick 1389 us, render 14936 us, flush 17311 us (fill 15012, wire wait 40, send 2184) | internal heap 185 KB, min 185 KB

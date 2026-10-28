@@ -1,0 +1,7 @@
+--- 20:20:56 port COM3 open
+20:20:56 I (36625) lili: 37.0 fps | per frame: tick 1271 us, render 24932I (413373) lili: brain: model -> head_tilt hide_bench peek_bench (margin 0.95, 1949 ms)
+>>> status
+20:20:57 I (414211) body: hunger 2.6 energy 5.3 happy 9.4 bored 0.7 lonely 0.1 bladder 0.5 guilty 1 spots 1 pad 2 food 3 | terv: fut  2/3 hide_bench  lepes 3  0 s | dim 256, 6 layers, 5.2M
+20:21:01 I (417913) lili: 35.6 fps | per frame: tick 1330 us, render 25938 us, flush 3 us (fill 0, wire wait 0, send 0) | internal heap 233 KB, min 233 KB
+20:21:06 I (422940) lili: 33.6 fps | per frame: tick 1317 us, render 27686 us, flush 4 us (fill 0, wire wait 0, send 0) | internal heap 233 KB, min 233 KB
+20:21:06 I (423202) lili: brain: model -> head_tilt hide_bench peek_bench (margin 0.95, 1945 ms)
