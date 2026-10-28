@@ -6,6 +6,8 @@
  * then (appended) u8 brightness, u8 volume, u8 muted, u8 search hint, u8 bubbles. */
 #include "save.h"
 #include "life.h"
+#include "toys.h"
+#include "pose.h"
 #include <string.h>
 
 static uint32_t crc32(const uint8_t *p, int n) {
@@ -72,13 +74,15 @@ bool save_read(world_t *w, const uint8_t *buf, int len, int64_t *saved_at, int64
     actor_t *a = &w->actors[0];
     const uint8_t v = g8(&r, 0); a->view = v < VIEW_COUNT ? (view_t)v : VIEW_ROOM;
     a->x = clamp(gf(&r, a->x), 0, LILI_LOG_W - 1); a->y = clamp(gf(&r, a->y), 0, LILI_LOG_H - 1);
-    a->dir = (dir8_t)(g8(&r, 0) & 7); a->anim = g16(&r, a->anim); a->anim_t = 0;
+    a->dir = (dir8_t)(g8(&r, 0) & 7); pose_snap(a, g16(&r, a->anim));
     for (int i = 0; i < TOY_COUNT; i++) {
         toy_t *t = &w->things.toys[i];
         const uint8_t tv = g8(&r, (uint8_t)t->view); t->view = tv < VIEW_COUNT ? (view_t)tv : VIEW_ROOM;
         t->x = clamp(gf(&r, t->x), 0, LILI_LOG_W - 1); t->y = clamp(gf(&r, t->y), 0, LILI_LOG_H - 1);
         const int8_t h = (int8_t)g8(&r, 0xFF); t->held_by = h >= 0 && h < MAX_ACTORS ? h : -1; t->z = t->vx = t->vy = t->vz = 0;
+        t->rot = (uint8_t)(((int)t->x * 7 + (int)t->y * 13) & 3); t->spin = 0;
     }
+    toys_away(w);                                             /* an older save had the plush out */
     w->pets = g32(&r, 0); w->plays = g32(&r, 0); w->last_kind = g8(&r, 7);
     w->set_bright = g8(&r, w->set_bright) % 3; w->set_volume = g8(&r, w->set_volume) % 4; w->set_muted = g8(&r, w->set_muted) != 0;
     w->set_search = g8(&r, w->set_search) != 0; w->bubbles_on = g8(&r, w->bubbles_on) != 0;

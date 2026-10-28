@@ -369,6 +369,11 @@ Készült: tanulási jegyzet (HTML) arról, hogyan lett a szabálymotor 184 130 
 Döntés: az S modell maradt (D-12), mert a spec szabálya szerint a legkisebb, amely teljesíti a 10.11 céljait, és az M-nél is jobb lett (val 0,1558 kontra 0,1564, A1 87 % kontra 83 %), a panelen pedig így 1,7 mp egy döntés a 3,5 mp-es keretben.
 Fogalmak: token, szótár (vocabulary), embedding, transzformer, figyelem (attention), RMSNorm / RoPE / SwiGLU, súlymegosztás, logit, softmax és hőmérséklet, keresztentrópia, desztilláció (tanár-diák), validációs halmaz, batch / lépés / epoch, AdamW és súlycsökkentés, tanulási ráta ütemezés, dropout, bf16 és fp32 mester súlyok, gradiensvágás, túltanulás, ellenőrzőpont, felülmintavételezés, perturbáció, teacher forcing, top-k pontosság, kvantálás (Q4, modellsúlyok), csoportonkénti skála, kényszerített dekódolás, mohó dekódolás és mintavétel, prefill és KV cache, FNV-1a hash
 
+## 2026-10-28 | Animációk illesztése, játékfizika, plüss
+Készült: `common/lili/pose.c`, egy kis állapotgép az animációk fölött: minden animációnak kezdő és záró póza van (áll, ül, fekszik), váltáskor előbb a köztes mozdulat játszódik; a fordulás 45 fokonként; a járás a sebességgel arányosan; a szakadó hurkok oda-vissza; a kötél fizikája "nehéz és puha"; a plüss a dobozban.
+Döntés: kódban javítottam, amit lehetett (az asset-ek változatlanok); amit a képek okoznak (rossz végpontú leülés, fekvés és alvás közti ugrás, a séta közben átváltó fül), arra a PixelLab utolsó-kocka módszere a javaslat, kreditért, jóváhagyással.
+Fogalmak: animációs állapotgép, oda-vissza lejátszás (ping-pong), kulcskocka-interpoláció, sebességhez kötött lejátszás, Coulomb-súrlódás, kaotikus érzékenység
+
 ## Fogalomtár
 
 **ext4 emergency_ro:** az ext4 fájlrendszer hibát észlel (pl. IO hiba egy hirtelen leállás után), és az adatvédelem miatt csak olvashatóra kapcsol; javítani csak lecsatolt állapotban, `e2fsck`-kal lehet.
@@ -638,3 +643,15 @@ Fogalmak: token, szótár (vocabulary), embedding, transzformer, figyelem (atten
 **prefill és KV cache:** a prefill a teljes promptot (26 token) egyszerre viszi át a hálón, rétegenként egyszer olvasva a súlyokat; a KV cache a figyelem korábbi pozícióinak kulcsait és értékeit tárolja (a PSRAM-ban), így a következő tokennél nem kell újraszámolni őket.
 
 **FNV-1a hash:** egyszerű 32 bites ellenőrző kód bájtsorozatra (XOR, majd szorzás egy prímmel). A modellfájl LSCH trailere a tokennevek FNV-1a hash-ét tartalmazza; ha a firmware szótára más, a modellt elutasítja, és a szabálymotor fut.
+
+**animációs állapotgép (pose):** az animációk fölötti réteg, amely tudja, milyen pózban kezdődik és végződik egy animáció, és két nem illő póz közé beszúrja a köztes mozdulatot (ülésből felállás, fekvésből felkelés). A terv addig vár (`pose_settling`), a járás nem indul el.
+
+**oda-vissza lejátszás (ping-pong):** a hurok kockái 0, 1, ... 7, 6, ... 1, 0 sorrendben; nincs ugrás az utolsóról az elsőre, mert minden lépés két szomszédos kocka között van. Álló, helyben mozgó animációkhoz jó (lihegés, pislogás), járáshoz nem (visszafelé lépne). A pak loop bájtja: 0 egyszer, 1 körbe, 2 oda-vissza körbe, 3 egyszer oda-vissza.
+
+**kulcskocka-interpoláció (első és utolsó kocka):** a generátor két megadott kép közé rajzolja a mozdulatot. Így a végpontok pontosan egyeznek a szomszédos animációkkal (állás és ülés), és egy hurok bezárul, ha az utolsó kocka az első. A PixMiniMax `last_frame` mezője ez.
+
+**sebességhez kötött lejátszás:** a járásanimáció órája a tényleges sebesség és a járásmód sebességének arányában halad (`a->rate`), így gyorsuláskor és fékezéskor sem csúszik a mancs a padlón.
+
+**Coulomb-súrlódás:** sebességtől független, állandó fékező gyorsulás (itt 300 px/s2), a sebességgel arányos (viszkózus) fékezés mellett. Enélkül a lassuló tárgy sosem áll meg igazán, csak egyre lassabban kúszik.
+
+**kaotikus érzékenység (szimulációban):** egy kis időzítési változás (a köztes mozdulatok 0,7-1 s-a) egész nap másik pályára viszi az életet, így egy rögzített kezdőértékű teszt egészen más napot lát. Ezért mértem nyolc kezdőértékkel a régi és az új kódot is, mielőtt a teszten változtattam.

@@ -5,12 +5,23 @@
 #include "asset_ids.h"
 #include <math.h>
 
-#define TOY_GRAVITY    (300.0f * LILI_K)
-#define TOY_BOUNCE     0.4f
-#define TOY_THROW_K    0.35f
-#define TOY_THROW_MAX  (220.0f * LILI_K)
-#define TOY_THROW_VZ   (60.0f * LILI_K)
-static const float FRICTION[TOY_COUNT] = { 2.8f, 3.5f };      /* per second on the floor: rope, plush */
+/* the owner (2026-10-28): the rope spun, flew far and bounced like a rubber ball. A knotted rope is soft and heavy:
+   a short arc under a real-looking gravity (spec 8.9's 300 design px / s2 was a slow float), a thud at the landing
+   (it skids on at about half its speed, at most one little hop after a hard throw), a short slide to a stop, a soft
+   wall; it turns over only in the air, one picture per TOY_TURN_PX flown, and lies the way it landed */
+#define TOY_GRAVITY    (700.0f * LILI_K)
+#define TOY_THROW_K    0.2f                                 /* the flick's finger speed -> the toy's */
+#define TOY_THROW_MAX  (180.0f * LILI_K)
+#define TOY_LIFT       0.7f                                 /* the arc: up at this part of the speed across, within: */
+#define TOY_VZ_MIN     (45.0f * LILI_K)
+#define TOY_VZ_MAX     (125.0f * LILI_K)
+#define TOY_BOUNCE     0.15f                                /* the hop's part of the landing speed, only above TOY_HOP_VZ */
+#define TOY_HOP_VZ     (75.0f * LILI_K)
+#define TOY_LAND_SKID  0.55f                                /* the speed across kept at a landing */
+#define TOY_DRAG       (150.0f * LILI_K)                    /* on the floor: a steady braking (px / s2) ... */
+#define TOY_WALL       0.3f
+#define TOY_TURN_PX    (22.0f * LILI_K)
+static const float FRICTION[TOY_COUNT] = { 6.0f, 6.0f };      /* ... and this per second: rope, plush */
 
 void toys_init(world_t *w) {
     static const int START[TOY_COUNT] = { SPOT_ROPE_START, SPOT_PLUSH_START };
@@ -18,7 +29,18 @@ void toys_init(world_t *w) {
         toy_t *t = &w->things.toys[i];
         const map_point_t *p = &MAPS[VIEW_ROOM].points[START[i]];
         t->view = VIEW_ROOM; t->x = p->x; t->y = p->y; t->z = 0; t->vx = t->vy = t->vz = 0; t->held_by = -1;
+        t->rot = (uint8_t)(((int)t->x * 7 + (int)t->y * 13) & 3); t->spin = 0;    /* how it lies at its spot */
     }
+    toys_away(w);
+}
+void toys_away(world_t *w) {
+    if (!CONFIG_LILI_PLUSH_AWAY) return;
+    toy_t *t = &w->things.toys[TOY_PLUSH];
+    t->view = TOY_AWAY; t->held_by = -1; t->z = t->vx = t->vy = t->vz = 0;
+}
+uint8_t toy_rot_held(dir8_t d) {                              /* across her mouth as she faces: across, falling right, upright, rising right */
+    static const uint8_t HELD[DIR_COUNT] = { 0, 3, 2, 1, 0, 3, 2, 1 };
+    return HELD[d & 7];
 }
 
 /* her mouth from the paws, by facing (the room's 0.75 set; smaller outdoors), standing; lower in a bow, sniffing or lying.
@@ -59,13 +81,16 @@ void toy_drop(world_t *w, int toy) {
     if (t->held_by < 0) return;
     const actor_t *a = &w->actors[t->held_by]; float dx, h; toy_mouth(a, &dx, &h);
     t->held_by = -1; t->view = a->view; t->x = a->x + dx; t->y = a->y + 4; t->z = h * 0.5f; t->vx = t->vy = 0; t->vz = 0;
+    t->rot = toy_rot_held(a->dir); t->spin = 0;               /* it falls the way it was in her mouth */
     if (!nav_clear(t->view, (int)t->x, (int)t->y, 0)) { t->x = a->x; t->y = a->y; }   /* not into a wall */
 }
 void toy_throw(world_t *w, int toy, float fvx, float fvy) {
     toy_t *t = &w->things.toys[toy];
+    if (t->view >= VIEW_COUNT) return;                       /* in the toy box */
     float vx = fvx * TOY_THROW_K, vy = fvy * TOY_THROW_K, v = sqrtf(vx * vx + vy * vy);
-    if (v > TOY_THROW_MAX) { vx *= TOY_THROW_MAX / v; vy *= TOY_THROW_MAX / v; }
-    t->held_by = -1; t->vx = vx; t->vy = vy; t->vz = TOY_THROW_VZ;
+    if (v > TOY_THROW_MAX) { vx *= TOY_THROW_MAX / v; vy *= TOY_THROW_MAX / v; v = TOY_THROW_MAX; }
+    const float vz = v * TOY_LIFT;
+    t->held_by = -1; t->vx = vx; t->vy = vy; t->vz = vz < TOY_VZ_MIN ? TOY_VZ_MIN : vz > TOY_VZ_MAX ? TOY_VZ_MAX : vz; t->spin = 0;
 }
 
 void toys_tick(world_t *w, float dt) {
@@ -77,15 +102,28 @@ void toys_tick(world_t *w, float dt) {
             t->view = a->view; t->x = a->x + dx; t->y = a->y + (away ? -1 : 1); t->z = h + a->z + (away ? -2 : 0);
             continue;
         }
+        if (t->view >= VIEW_COUNT) continue;                    /* in the toy box */
         if (t->z <= 0 && t->vz <= 0 && fabsf(t->vx) < 1 && fabsf(t->vy) < 1) { t->z = 0; t->vx = t->vy = t->vz = 0; continue; }
-        /* the flight: gravity, a bounce at the floor; on the floor the slide slows down */
+        /* the flight: gravity, a thud at the floor (a little hop only after a hard throw); on the floor the slide brakes */
+        const bool flying = t->z > 0 || t->vz > 0;
         t->vz -= TOY_GRAVITY * dt; t->z += t->vz * dt;
-        if (t->z <= 0) { t->z = 0; t->vz = t->vz < -20.0f ? -t->vz * TOY_BOUNCE : 0; }
-        if (t->z == 0) { const float f = expf(-FRICTION[i] * dt); t->vx *= f; t->vy *= f; }
-        /* the walls: the walkable grid's edge reflects it, axis by axis */
+        if (flying && t->z <= 0) {
+            t->z = 0; t->vx *= TOY_LAND_SKID; t->vy *= TOY_LAND_SKID;
+            t->vz = t->vz < -TOY_HOP_VZ ? -t->vz * TOY_BOUNCE : 0;
+        }
+        if (t->z <= 0) {
+            t->z = 0; if (t->vz < 0) t->vz = 0;
+            const float f = expf(-FRICTION[i] * dt), v = sqrtf(t->vx * t->vx + t->vy * t->vy), d = TOY_DRAG * dt;
+            const float k = v > d ? (v - d) / v * f : 0;
+            t->vx *= k; t->vy *= k;
+        } else {                                                /* turning over as it flies */
+            t->spin += sqrtf(t->vx * t->vx + t->vy * t->vy) * dt;
+            if (t->spin >= TOY_TURN_PX) { t->spin -= TOY_TURN_PX; t->rot = (uint8_t)((t->rot + (t->vx >= 0 ? 1 : 3)) & 3); }
+        }
+        /* the walls: the walkable grid's edge sends it back, softly, axis by axis */
         float nx = t->x + t->vx * dt, ny = t->y + t->vy * dt;
-        if (!nav_clear(t->view, (int)nx, (int)t->y, 0)) { t->vx = -t->vx * 0.6f; nx = t->x; }
-        if (!nav_clear(t->view, (int)nx, (int)ny, 0)) { t->vy = -t->vy * 0.6f; ny = t->y; }
+        if (!nav_clear(t->view, (int)nx, (int)t->y, 0)) { t->vx = -t->vx * TOY_WALL; nx = t->x; }
+        if (!nav_clear(t->view, (int)nx, (int)ny, 0)) { t->vy = -t->vy * TOY_WALL; ny = t->y; }
         t->x = nx; t->y = ny;
     }
 }

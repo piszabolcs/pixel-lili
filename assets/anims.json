@@ -14,7 +14,8 @@
    "E",
    "SE"
   ],
-  "loop": true
+  "loop": true,
+  "play": "pingpong"
  },
  "idle_sit_blink": {
   "id": 2,
@@ -30,7 +31,8 @@
    "E",
    "SE"
   ],
-  "loop": true
+  "loop": true,
+  "play": "pingpong"
  },
  "sit_down": {
   "id": 3,
@@ -142,7 +144,8 @@
    "E",
    "SE"
   ],
-  "loop": true
+  "loop": true,
+  "play": "pingpong"
  },
  "head_tilt": {
   "id": 10,
@@ -212,7 +215,8 @@
   "dirs": [
    "W"
   ],
-  "loop": true
+  "loop": true,
+  "play": "pingpong"
  },
  "sleep_curl": {
   "id": 18,
@@ -267,7 +271,8 @@
    "E",
    "SE"
   ],
-  "loop": true
+  "loop": true,
+  "play": "pingpong"
  },
  "startle": {
   "id": 25,
@@ -283,7 +288,8 @@
    "E",
    "SE"
   ],
-  "loop": false
+  "loop": false,
+  "play": "there_and_back"
  },
  "pounce": {
   "id": 26,
@@ -310,7 +316,8 @@
    "SW",
    "SE"
   ],
-  "loop": true
+  "loop": true,
+  "play": "pingpong"
  },
  "drink": {
   "id": 28,
@@ -424,6 +431,18 @@
    "SE"
   ],
   "loop": true
+ },
+ "get_up": {
+  "id": 38,
+  "frames": 8,
+  "fps": 8,
+  "dirs": [
+   "S",
+   "SW",
+   "SE"
+  ],
+  "loop": false,
+  "reverse_of": "lie_down"
  },
  "toy_rope": {
   "id": 40,

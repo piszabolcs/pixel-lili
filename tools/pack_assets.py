@@ -8,7 +8,7 @@ LPAK v1 (little endian), read by common/lili/pak.c:
   header (20 B): "LPAK", u16 version = 1, u16 n_entries, u32 toc_offset, u32 total_size, u32 crc32 (of bytes 20..total_size)
   TOC entry (12 B): u16 id, u8 type, u8 pad, u32 offset, u32 size            types: 1 SPRITE_SET, 2 PALETTE, 3 LUT, 4 MAP, 5 SOUND, 6 FONT
   PALETTE: 256 x RGB888
-  SPRITE_SET: u16 anim_id, u8 n_dirs, u8 n_frames, u8 cell_w, u8 cell_h, u8 pivot_x, u8 pivot_y, u8 fps, u8 loop, u8 dir_mask (bit d = direction d present), u8 pad;
+  SPRITE_SET: u16 anim_id, u8 n_dirs, u8 n_frames, u8 cell_w, u8 cell_h, u8 pivot_x, u8 pivot_y, u8 fps, u8 loop (0 once, 1 round, 2 there and back round, 3 there and back once), u8 dir_mask (bit d = direction d present), u8 pad;
               then n_dirs x n_frames frame records (12 B): u32 offset (from the set's start), u16 rle_len, u8 mouth_x, mouth_y, head_x, head_y, head_w, head_h;
               then the RLE data. RLE: a control byte c: c < 128 -> the next c + 1 bytes are literal; c >= 128 -> the next byte repeats c - 126 times (2..129).
   IMAGE (type 7, 2026-10-23: the backgrounds, tools/bg_build.py): u16 w, u16 h, i16 x, i16 y (where it sits on the 480 canvas),
@@ -92,7 +92,8 @@ def sprite_set(folder, man):
         frames_idx.append((fr, np.asarray(im, dtype=np.uint8)))
     dirs = man["dirs"]; nd, nf = len(dirs), man["frames"]
     cw, ch = man.get("cell_w", man.get("cell")), man.get("cell_h", man.get("cell"))       # cropped sets since 2026-10-27, square before
-    head = struct.pack("<HBBBBBBBBBB", man["id"], nd, nf, cw, ch, man["pivot"][0], man["pivot"][1], man["fps"], 1 if man["loop"] else 0,
+    loop = {"pingpong": 2, "there_and_back": 3}.get(man.get("play"), 1 if man["loop"] else 0)   # 0 once, 1 round, 2 there and back round, 3 there and back once
+    head = struct.pack("<HBBBBBBBBBB", man["id"], nd, nf, cw, ch, man["pivot"][0], man["pivot"][1], man["fps"], loop,
                        sum(1 << d for d in dirs), 0)
     recs, blob = [], bytearray()
     base = len(head) + 12 * nd * nf
@@ -124,6 +125,7 @@ def main():
                 print(f"pack: {sub}/{name}: no sprites yet, skipped"); continue
             man = json.load(open(os.path.join(folder, "manifest.json"), encoding="utf-8"))
             man["id"] = spec["id"] + off
+            if spec.get("play"): man["play"] = spec["play"]                 # there and back (tools/pixellab_to_sprites.py PLAY)
             payload, raw = sprite_set(folder, man)
             raw_total += raw
             entries.append((man["id"], T_SPRITE_SET, payload))

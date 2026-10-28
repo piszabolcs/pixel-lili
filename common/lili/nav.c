@@ -2,6 +2,7 @@
 #include "nav.h"
 #include "maps_gen.h"
 #include "asset_ids.h"
+#include "pose.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -174,7 +175,16 @@ bool nav_follow(actor_t *a, body_t *b, float dt) {
     /* the rope in her mouth: its own trot stands in for the walk and the trot (plan.c sets it); switching back and
        forth every tick restarted it, so she slid along on its first frame (the owner, 2026-10-27) */
     if (a->anim == ANIM_CARRY_TROT && (anim == ANIM_WALK || anim == ANIM_TROT)) anim = ANIM_CARRY_TROT;
-    if (a->anim != anim) { a->anim = anim; a->anim_t = 0; }
+    pose_play(a, anim);
+    if (pose_settling(a)) { b->speed = 0; return false; }     /* sitting or lying: she gets up first (pose.c) */
+    {   /* she turns 45 degrees at a time (pose.c); a big turn from standing is made on the spot before she sets off */
+        const float dx = b->path[b->i][0] - a->x, dy = b->path[b->i][1] - a->y;
+        if (dx * dx + dy * dy > 0.25f) {
+            const dir8_t to = nav_dir_hyst(a->dir, dx, dy); const int off = (to - a->dir) & 7;
+            pose_turn(a, to, dt);
+            if (off >= 2 && off <= 6 && b->speed < vmax * 0.3f) { b->speed = 0; a->rate = 0.35f; return false; }
+        }
+    }
     float step;
     {   /* the speed she aims for: full, less into a sharp turn at the next waypoint, and down to a walk into the goal */
         const float dx = b->path[b->i][0] - a->x, dy = b->path[b->i][1] - a->y, dist = sqrtf(dx * dx + dy * dy);
@@ -189,10 +199,12 @@ bool nav_follow(actor_t *a, body_t *b, float dt) {
         if (b->speed < want) { b->speed += acc * dt; if (b->speed > want) b->speed = want; }
         else { b->speed -= acc * dt; if (b->speed < want) b->speed = want; }
         step = b->speed * dt;
+        /* the gait's frames at her speed's part of the gait's speed: speeding up, slowing into a turn or the goal her
+           paws do not slide (2026-10-28); never below about a third, she is still walking */
+        const float k = b->speed / vmax; a->rate = k < 0.35f ? 0.35f : k > 1.0f ? 1.0f : k;
     }
     while (step > 0 && b->i < b->n) {                   /* along the polyline exactly: the steering never cuts a corner into a wall */
         const float dx = b->path[b->i][0] - a->x, dy = b->path[b->i][1] - a->y, dist = sqrtf(dx * dx + dy * dy);
-        if (dist > 0.5f) a->dir = nav_dir_hyst(a->dir, dx, dy);
         if (dist <= step) { a->x = b->path[b->i][0]; a->y = b->path[b->i][1]; step -= dist; b->i++; }
         else { a->x += dx / dist * step; a->y += dy / dist * step; step = 0; }
     }

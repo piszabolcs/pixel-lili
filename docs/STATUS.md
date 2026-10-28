@@ -16,13 +16,13 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 | M3.5 A01-A09 | kész, [G] vár | `docs/review/m3_5.html`, `./lilisim --anim-viewer`; a panelen 32-33 fps |
 | M3.6 A10-A27 | kész, [G] vár | `docs/review/m3_6.html`; 33 animáció a pakban (3,97 MB). **Hiányzik** (nincs PixelLab-sheet): A13 puffogás, A14 felvétel/leejtés, A21 kukucskálás; az A22 (ágy) tárgytalan, szőnyeg van |
 | M3.7 szoba, udvar, évszakok, napszakok | kész, [G] vár | `docs/review/m3_7.html` (`--snapshot`). **Hiányzik:** évszakos díszek és a különleges napok díszei (új grafika kell) |
-| M3.8 játékok, foltok, pelenka, UI ikonok | részben | **a kötél kész** a gazdi Gemini-kelléklapjáról (`docs/art/Lilik/07.jpg`, 4 állás, `tools/toy_sprites.py`), saját 6 játékszínnel, a szájában is színes; a buborékban is a képe. Még helyőrző: plüss (nincs generált képe), folt, csillogás, pelenka állapotai, ikonok |
+| M3.8 játékok, foltok, pelenka, UI ikonok | részben | **a kötél kész** a gazdi Gemini-kelléklapjáról (`docs/art/Lilik/07.jpg`, 4 állás, `tools/toy_sprites.py`), saját 6 játékszínnel, a szájában is színes; a buborékban is a képe. A plüss **a játékosdobozban** (2026-10-28, `CONFIG_LILI_PLUSH_AWAY`), amíg nincs generált képe és animációja. Még helyőrző: folt, csillogás, pelenka állapotai, ikonok |
 | M4.1 navigáció | kész | `--selftest-nav`: 32 út ajtó és minden pont között, A*, simítás, kormányzás, hiszterézis |
 | M4.2 Y-rendezés, takarók, bokor | kész, [G] vár | a bokor egyszer rezzen (`docs/img/anim/m4_2_bush_shake.gif`); `--selftest-render` referenciaképekkel. **Sarokülő (2026-10-27 este):** a pad nem járható, a kuckó a hátsó rész alatt van, a kivágott pad takarja (alvás, bújás: a szeme kilátszik); `--scene-shots`. A valódi kukucskáló A21 és a padon alvás (ugrás, A22) még nincs |
 | M4.3 gesztusok | kész, [G] vár | mind a 7 gesztus, `--selftest-gesture`; a panelen az érintés él, **ujjal kipróbálni** (a soros konzol írja az eseményeket) |
 | M4.4 terv-végrehajtó | kész | mind az 53 akció (`model/schema_lili.json`), `--selftest-plan`; az inspectorban akcióválasztó |
 | M4.5 reflexek R1-R9 | kész | `--selftest-reflex`, prioritásokkal |
-| M4.6 játékfizika | kész, [G] vár | `--selftest-toys`; a dobás érzete a panelen kipróbálandó |
+| M4.6 játékfizika | kész, [G] vár | `--selftest-toys`. **2026-10-28:** a kötél nem pörög, nem száll el, nem pattog: rövid ív, egy kis huppanás legfeljebb, rövid csúszás, a levegőben fordul, úgy marad, ahogy leesett; a panelen kipróbálandó |
 | M4.7 gondozási koppintások | kész | tál, pelenka, folt, csillogás, az utolsó folt után R1 |
 | M5.1-M5.5 igények, pelenka, naptár, távollét, mentés | kész | `--selftest-progress/-calendar/-offline/-save`; a panelen RTC és NVS-mentés |
 | M5.6 energiaállapotok | kész, [G] vár | ACTIVE -> 60 mp -> DIM -> 10 perc az asztalon -> kijelző ki; zsebben (30 mp mozgás, függőleges, érintés nélkül) ki, **a felemelés utáni sötét kijelző javítva (2026-10-27 este)**; ujj, gomb, felvétel, fütty ébreszt, 15 perc után üdvözöl; PWR = kijelző ki/be (`motion.c`, `--selftest-motion`). A valódi könnyű alvás (WoM-ébresztés) még nincs; a panelen kipróbálandó |
@@ -56,7 +56,15 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 6. Panel: felemelés után sötét kijelző, gomb nem ébresztette: javítva (`body_216.c`), kézzel kipróbálandó.
 7. A kuckó áthelyezése után a modell elromlott (rohangálás), ezért újratanítva az új térképpel.
 
-**Nyitott (a gazdi dönt):** a plüssnek nincs generált képe (PixelLab vagy kivenni); a padon alvás ugrás-animációt (A22) kér, és a kutya talán túl nagy hozzá.
+**Nyitott (a gazdi dönt):** a padon alvás ugrás-animációt (A22) kér, és a kutya talán túl nagy hozzá.
+
+**A gazdi listája (2026-10-28), javítva:**
+1. Darabos, össze nem illő animációk: új réteg (`common/lili/pose.c`): pózváltáskor köztes mozdulat (leül, feláll, lefekszik, felkel), 45 fokos fordulás, a hiányzó irányú animáció előtt odafordul, a járás a sebességével megy, a szakadó hurkok oda-vissza játszódnak, az ijedt ugrás földet ér. Videó: `docs/img/fix_2026-10-28/moves.mp4` (`./lilisim --moves-record DIR`).
+2. A plüss kivéve (játékosdoboz), az agyat nem kellett újratanítani.
+3. A dobott kötél: nem pörög, nem száll el, nem pattog.
+
+**Nyitott (a gazdi dönt), PixelLab, kreditet használ:** amit kód nem javít, az a képekben van. A mért illesztések (két szomszédos kocka között jellemzően 0,3 a különböző pixelek aránya): leülés vége és az ülés délen 0,86, délnyugaton 0,81, északi irányokban 0,5; lefekvés vége és az alvás, a simogatás, a rágás 0,83-0,95; állás és séta 0,3-0,5, délkeleten 0,8; a déli séta közben a füle és a feje mérete átvált. A kapu fájl szerint a PixMiniMax utolsó kockája (`last_frame`) megadható: a mozdulat a két kép között készül. Javaslat: (1) leülés újra délen, délnyugaton, északon, északkeleten, északnyugaton: első kocka az állás, utolsó az ülés; (2) új "összegömbölyödés" (fekvésből alvásba) délen; (3) simogatás élvezése a fekvés utolsó kockájából; (4) a járások (séta, ügetés, futás, osonás, settenkedés, kötélhordás) hurokként: első és utolsó kocka az állás, "a jobb füle lelóg, ugyanakkora marad". Kb. 56 generálás, előbb egy próbacsomag (6) és jóváhagyás.
+
 <!-- /overview -->
 
 ## Kész

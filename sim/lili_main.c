@@ -387,6 +387,7 @@ static int selftest(void) {
 #include "gesture.h"
 #include "plan.h"
 #include "toys.h"
+#include "pose.h"
 static nav_scratch_t s_nav;                           /* the path search's work area (nav.h) */
 /* --demo-record DIR [fps]: one round of the tour, headless, as DIR/f00000.ppm ... (tools: ffmpeg -> mp4) */
 static int demo_record(const char *dir, int fps) {
@@ -402,6 +403,37 @@ static int demo_record(const char *dir, int fps) {
     }
     if (lg) fclose(lg);
     printf("demo: %d frames at %d fps (%.1f s) -> %s\n", n, fps, n / (float)fps, dir);
+    return 0;
+}
+
+/* --moves-record DIR (2026-10-28, the owner: "choppy, not matched"): one take of the moves between poses, the turns and
+   a throw, 30 fps .ppm frames for a video: she sits, gets up and walks to the bowls, lies down on the rug and falls
+   asleep, a whistle gets her up to the front, the rope is flicked and she fetches it */
+static void ev(ev_type_t type, int a, int b, int c);
+static int moves_record(const char *dir) {
+    canvas_init(); world_init(&s_world, 42); nav_init(&s_nav);
+    s_world.season_force = 1; s_world.daypart_force = 1;
+    const float dt = 1.0f / 30.0f; char path[512]; int n = 0;
+    snprintf(path, sizeof path, "%s/log.txt", dir); FILE *lg = fopen(path, "w");   /* frame, x, y, anim, dir, frame shown: to find a moment */
+    static const struct { int act, ev; float hold; } TAKE[] = {
+        { ACT_SIT, 0, 1.0f }, { ACT_GO_BOWLS, 0, 0.5f }, { ACT_SLEEP_RUG, 0, 0 }, { -1, EV_WHISTLE, 0.5f }, { -1, EV_FLICK, 1.0f },
+    };
+    for (int k = 0; k < (int)(sizeof TAKE / sizeof TAKE[0]); k++) {
+        if (TAKE[k].act >= 0) plan_one(&s_world, 0, TAKE[k].act, ST_WALK);
+        else if (TAKE[k].ev == EV_FLICK) { toy_t *ty = &s_world.things.toys[TOY_ROPE]; ty->x = 300; ty->y = 330; ev(EV_FLICK, 1500, -500, TOY_ROPE); }
+        else ev((ev_type_t)TAKE[k].ev, 0, 0, 0);
+        float t = 0, after = 0; const float limit = TAKE[k].act == ACT_SLEEP_RUG ? 9.0f : 30.0f;
+        for (;;) {
+            const int st = plan_tick(&s_world, 0, dt); world_tick(&s_world, dt); frame(); t += dt;
+            const actor_t *l = &s_world.actors[0]; sprite_set_t set; sprite_frame_t fr; int shown = -1;
+            if (world_actor_frame(l, 0, &set, &fr)) shown = pose_frame(&set, l->anim_t, ANIM_REVERSE_OF(l->anim) != 0);
+            if (lg) fprintf(lg, "%d %.0f %.0f %u %d %d\n", n, l->x, l->y, l->anim, l->dir, shown);
+            snprintf(path, sizeof path, "%s/f%05d.ppm", dir, n++); write_ppm(path, s_fb);
+            if (st != PLAN_RUNNING || t > limit) { after += dt; if (after >= TAKE[k].hold) break; }
+        }
+    }
+    if (lg) fclose(lg);
+    printf("moves: %d frames at 30 fps (%.1f s) -> %s\n", n, n / 30.0f, dir);
     return 0;
 }
 
@@ -669,6 +701,7 @@ static int selftest_plan(void) {
     for (int act = 0; act < ACT_COUNT; act++) {
         if (act == ACT_NONE) continue;
         plan_setup(act);
+        if (act == ACT_PICKUP_PLUSH && CONFIG_LILI_PLUSH_AWAY) { CHECK(!plan_possible(&s_world, 0, act), "pickup_plush: not while the plush is in the toy box"); continue; }
         if (!plan_possible(&s_world, 0, act)) { printf("FAIL: %s is not possible in its own setup\n", ACTION_NAME(act)); return 1; }
         plan_one(&s_world, 0, act, ST_TROT);
         const actor_t *l = &s_world.actors[0]; float t = 0; int st = PLAN_RUNNING;
@@ -696,12 +729,13 @@ static int selftest_plan(void) {
     int st = PLAN_RUNNING; for (int i = 0; i < 300 && st == PLAN_RUNNING; i++) { st = plan_tick(&s_world, 0, 0.03f); world_tick(&s_world, 0.03f); }
     CHECK(st == PLAN_DONE && (s_world.plans[0].skipped & 1) && (s_world.plans[0].skipped & 4), "the impossible ones are skipped, the possible one runs");
     /* the toys (spec 8.9): a throw flies, bounces, slides and stops on the floor of its own view */
-    world_init(&s_world, 6); toy_t *ty = &s_world.things.toys[TOY_PLUSH];
-    ty->x = 240; ty->y = 300; toy_throw(&s_world, TOY_PLUSH, 3000, -400);
-    CHECK(ty->vz > 0 && ty->vx > 0 && ty->vx <= 220.0f * LILI_K + 1, "a flick's speed is scaled and capped");
+    world_init(&s_world, 6); toy_t *ty = &s_world.things.toys[TOY_ROPE];
+    ty->x = 240; ty->y = 300; toy_throw(&s_world, TOY_ROPE, 3000, -400);
+    CHECK(ty->vz > 0 && ty->vx > 0 && ty->vx <= 180.0f * LILI_K + 1, "a flick's speed is scaled and capped");
     float maxz = 0; for (int i = 0; i < 300; i++) { toys_tick(&s_world, 1.0f / 30.0f); if (ty->z > maxz) maxz = ty->z; CHECK(nav_clear(VIEW_ROOM, (int)ty->x, (int)ty->y, 0), "the toy stays on the room's floor"); }
     printf("toy: highest %.1f px, at rest at (%.0f, %.0f), z %.1f, v (%.2f, %.2f, %.2f)\n", maxz, ty->x, ty->y, ty->z, ty->vx, ty->vy, ty->vz);
     CHECK(maxz > 6 && ty->z == 0 && ty->vx == 0 && ty->vy == 0, "it flies up, comes down and stops");
+    CHECK(s_world.things.toys[TOY_PLUSH].view == TOY_AWAY, "the plush is in the toy box (CONFIG_LILI_PLUSH_AWAY)");
     printf("selftest-plan: ok\n");
     return 0;
 }
@@ -732,11 +766,11 @@ static int selftest_reflex(void) {
     CHECK(p->prio == 3 && run_plan(1.0f) == PLAN_RUNNING && l->anim == ANIM_PET_ENJOY, "R3: petted, she enjoys it");
     ev(EV_PET_END, 0, 0, 0); { int st = run_plan(5); CHECK(st == PLAN_DONE, "R3: and stops 2 s after the hand"); }
     /* R4: a flicked toy: she runs after it and brings it to the front */
-    world_init(&s_world, 35); { toy_t *ty = &s_world.things.toys[TOY_PLUSH]; ty->x = 300; ty->y = 300; }
-    ev(EV_FLICK, 2000, 600, TOY_PLUSH);
+    world_init(&s_world, 35); { toy_t *ty = &s_world.things.toys[TOY_ROPE]; ty->x = 300; ty->y = 300; }
+    ev(EV_FLICK, 2000, 600, TOY_ROPE);
     CHECK(p->prio == 4, "R4: a flick starts the fetch");
     CHECK(run_plan(40) == PLAN_DONE && toy_held(&s_world, 0) < 0, "R4: the fetch ends with the toy dropped");
-    { const toy_t *ty = &s_world.things.toys[TOY_PLUSH]; printf("R4: toy at (%.0f, %.0f) view %d held %d, Lili (%.0f, %.0f), front (%d, %d)\n", ty->x, ty->y, ty->view, ty->held_by, l->x, l->y, front->x, front->y); CHECK(fabsf(ty->x - front->x) < 40 && fabsf(ty->y - front->y) < 40, "R4: the toy is at the front"); }
+    { const toy_t *ty = &s_world.things.toys[TOY_ROPE]; printf("R4: toy at (%.0f, %.0f) view %d held %d, Lili (%.0f, %.0f), front (%d, %d)\n", ty->x, ty->y, ty->view, ty->held_by, l->x, l->y, front->x, front->y); CHECK(fabsf(ty->x - front->x) < 40 && fabsf(ty->y - front->y) < 40, "R4: the toy is at the front"); }
     /* R5: bowing by a toy, the finger near: she grabs it and dashes off; after 4 rounds she is tired */
     world_init(&s_world, 36); toy_pick(&s_world, TOY_ROPE, 0);
     for (int round = 0; round < 5; round++) {
@@ -756,7 +790,7 @@ static int selftest_reflex(void) {
     world_init(&s_world, 40); sleep_now(); ev(EV_VOICE_ACTIVITY, 0, 0, 0);
     CHECK(p->status != PLAN_RUNNING, "R8: a voice does not wake her");
     s_world.actors[0].anim = ANIM_IDLE_STAND; ev(EV_VOICE_ACTIVITY, 0, 0, 0);
-    CHECK(p->prio == 8 && run_plan(5) == PLAN_DONE && l->anim == ANIM_IDLE_STAND, "R8: awake, she tilts her head");
+    CHECK(p->prio == 8 && run_plan(5) == PLAN_DONE && l->anim == ANIM_IDLE_SIT_BLINK, "R8: awake, she sits down to tilt her head (it is a sitting animation) and sits on");
     /* R9: a tap on the free floor: a look (half the time a walk); a tap on her: a wag */
     world_init(&s_world, 41); ev(EV_TAP, 120, 420, 0);
     CHECK(p->prio == 9 && run_plan(20) == PLAN_DONE, "R9: a tap on the floor gets a look");
@@ -789,27 +823,33 @@ static int selftest_reflex(void) {
 /* --selftest-toys (spec 8.9, M4.6): a throw flies and bounces, the walls send it back, it never leaves its view
    on its own, in her mouth it follows her head and goes with her through the door */
 static int selftest_toys(void) {
-    nav_init(&s_nav); world_init(&s_world, 51); toy_t *ty = &s_world.things.toys[TOY_PLUSH];
-    ty->x = 240; ty->y = 300; toy_throw(&s_world, TOY_PLUSH, 900, 0);
-    int landings = 0; float lastz = 0;
+    nav_init(&s_nav); world_init(&s_world, 51); toy_t *ty = &s_world.things.toys[TOY_ROPE];
+    /* the owner (2026-10-28): it spun, flew far and bounced like a rubber ball. A rope thuds: a short arc, at most one
+       little hop after a hard throw, a short slide; it turns over in the air only and lies the way it landed */
+    ty->x = 200; ty->y = 300; toy_throw(&s_world, TOY_ROPE, 2400, 0);
+    int landings = 0, turns = 0, rest_turns = 0; float lastz = 0, land_x = -1, flight_x = ty->x; uint8_t rot = ty->rot; bool rested = false;
     for (int i = 0; i < 300; i++) {
         toys_tick(&s_world, 1.0f / 30.0f);
-        if (lastz > 0 && ty->z == 0) landings++;
+        if (lastz > 0 && ty->z == 0) { landings++; if (land_x < 0) land_x = ty->x; }
+        if (ty->rot != rot) { if (ty->z > 0) turns++; else rest_turns++; rot = ty->rot; }
+        if (!rested && ty->vx == 0 && ty->vz == 0 && ty->z == 0) { rested = true; printf("toy: thrown from x 200, landed at %.0f, at rest at %.0f after %.2f s, %d landings, %d turns in the air\n", land_x, ty->x, i / 30.0f, landings, turns); }
         lastz = ty->z;
         CHECK(ty->view == VIEW_ROOM && nav_clear(VIEW_ROOM, (int)ty->x, (int)ty->y, 0), "a thrown toy stays on its view's floor");
     }
-    CHECK(landings >= 2, "it bounces (lands more than once)");
-    ty->x = 400; ty->y = 390; ty->z = 0; toy_throw(&s_world, TOY_PLUSH, 6000, 0);     /* hard at the right wall (below the bench, which is not floor since 2026-10-27) */
+    CHECK(landings >= 1 && landings <= 2, "it lands with at most one little hop");
+    CHECK(rest_turns == 0 && turns <= 4, "it turns over only in the air, a few times");
+    CHECK(land_x - flight_x > 20 && ty->x - land_x < 30 && ty->x - flight_x < 200, "a short arc and a short slide, no flying away");
+    ty->x = 400; ty->y = 390; ty->z = 0; toy_throw(&s_world, TOY_ROPE, 6000, 0);     /* hard at the right wall (below the bench, which is not floor since 2026-10-27) */
     bool back = false; for (int i = 0; i < 200; i++) { toys_tick(&s_world, 1.0f / 30.0f); if (ty->vx < 0) back = true; }
     CHECK(back && nav_clear(VIEW_ROOM, (int)ty->x, (int)ty->y, 0), "the wall sends it back");
     actor_t *l = &s_world.actors[0]; l->dir = DIR_E;
-    toy_pick(&s_world, TOY_PLUSH, 0); toys_tick(&s_world, 0.03f);
+    toy_pick(&s_world, TOY_ROPE, 0); toys_tick(&s_world, 0.03f);
     float dx, h; toy_mouth(l, &dx, &h);
     CHECK(ty->held_by == 0 && fabsf(ty->x - (l->x + dx)) < 0.5f && ty->z > 20, "in her mouth it is at her head");
     plan_one(&s_world, 0, ACT_ENTER_YARD, ST_WALK); run_plan(40); toys_tick(&s_world, 0.03f);
     CHECK(l->view == VIEW_YARD && ty->view == VIEW_YARD, "it goes out with her, in her mouth");
-    toy_drop(&s_world, TOY_PLUSH);
-    CHECK(ty->held_by < 0 && ty->view == VIEW_YARD && nav_clear(VIEW_YARD, (int)ty->x, (int)ty->y, 0), "dropped, it lies on the yard's floor");
+    toy_drop(&s_world, TOY_ROPE);
+    CHECK(ty->held_by < 0 && ty->view == VIEW_YARD && nav_clear(VIEW_YARD, (int)ty->x, (int)ty->y, 0) && ty->rot == toy_rot_held(l->dir), "dropped, it lies on the yard's floor the way it was in her mouth");
     printf("selftest-toys: ok\n");
     return 0;
 }
@@ -1040,9 +1080,10 @@ static int selftest_probes(void) {
 /* --selftest-life (M6.4): a day of her own life, nobody touching: the brain keeps asking, the plans run, she
    never freezes or leaves the floor, and her days are varied */
 static int selftest_life(void) {
-    nav_init(&s_nav); world_init(&s_world, 91); s_world.season_force = -1; s_world.daypart_force = -1;
+    const char *sd = getenv("LILI_LIFE_SEED");                       /* another day than seed 91, to compare */
+    nav_init(&s_nav); world_init(&s_world, sd ? (uint32_t)atoi(sd) : 91); s_world.season_force = -1; s_world.daypart_force = -1;
     life_init(&s_world, life_local(2026, 10, 7, 8, 0, 0));
-    static int used[64]; int asks = 0, still = 0, windows = 0, last_rule = -2; float lx = s_world.actors[0].x, ly = s_world.actors[0].y, path = 0; bool slept = false;
+    static int used[64]; int asks = 0, still = 0, windows = 0, guilty_windows = 0, last_rule = -2; float lx = s_world.actors[0].x, ly = s_world.actors[0].y, path = 0; bool slept = false, guilt = false;
     const float dt = 1.0f / 15.0f; const int steps = (int)(24 * 3600 / dt);
     for (int i = 0; i < steps; i++) {
         brain_tick(&s_world, dt); plan_tick(&s_world, 0, dt); world_tick(&s_world, dt);
@@ -1050,8 +1091,10 @@ static int selftest_life(void) {
         if (s_world.ask_t == 0 && s_world.rule >= 0 && s_world.rule != last_rule) { used[s_world.rule]++; asks++; last_rule = s_world.rule; }
         if (s_world.ask_t == 0 && s_world.rule >= 0) last_rule = s_world.rule;
         if (!map_walkable(&MAPS[l->view], (int)l->x, (int)l->y)) { printf("FAIL: off the floor at %.0f s (%.0f, %.0f) in the %s\n", s_world.clock_s, l->x, l->y, MAPS[l->view].name); return 1; }
-        path += fabsf(l->x - lx) + fabsf(l->y - ly); lx = l->x; ly = l->y; slept |= l->anim == ANIM_SLEEP_CURL;
-        if (i % (int)(600 / dt) == 0) { if (!slept) { windows++; if (path < 5) still++; } path = 0; slept = false; }   /* 10-minute windows awake */
+        path += fabsf(l->x - lx) + fabsf(l->y - ly); lx = l->x; ly = l->y; slept |= l->anim == ANIM_SLEEP_CURL; guilt |= s_world.things.guilty;
+        /* 10-minute windows awake; a guilty dog hides under the bench until she is forgiven (spec H10: with nobody home that
+           can be all day, by design), those windows are counted apart (2026-10-28: seeds 92 94 96 98 did it before too) */
+        if (i % (int)(600 / dt) == 0) { if (guilt && !slept) guilty_windows++; else if (!slept) { windows++; if (path < 5) still++; } path = 0; slept = false; guilt = false; }
     }
     int kinds = 0; for (int r = 0; r < BRAIN_N_RULES; r++) kinds += used[r] > 0;
     printf("life: a day: %d decisions, %d different templates, spots %d, pad %d, food %d, hunger %.1f energy %.1f bored %.1f\n",
@@ -1059,7 +1102,7 @@ static int selftest_life(void) {
     for (int r = 0; r < BRAIN_N_RULES; r++) if (used[r] >= asks / 12) printf("  %-16s %d\n", BRAIN_RULES[r].id, used[r]);
     CHECK(asks > 500, "she decides again and again all day");
     CHECK(kinds >= 12, "her day is varied (at least 12 kinds of answer)");
-    printf("life: %d of %d awake 10-minute windows without a step\n", still, windows);
+    printf("life: %d of %d awake 10-minute windows without a step (and %d guilty ones, hiding)\n", still, windows, guilty_windows);
     CHECK(still * 10 <= windows, "she is not frozen awake in one place for long (a step in 9 of 10 awake windows)");
     printf("selftest-life: ok\n");
     return 0;
@@ -1600,6 +1643,7 @@ int main(int argc, char **argv) {
     if (argc > 2 && !strcmp(argv[1], "--demo-record")) return demo_record(argv[2], argc > 3 ? atoi(argv[3]) : 12);
     if (argc > 2 && !strcmp(argv[1], "--anim-viewer-shot")) return viewer_shot(argv[2], argc > 3 ? atoi(argv[3]) : 2);
     if (argc > 2 && !strcmp(argv[1], "--snapshot")) return snapshot(argv[2]);
+    if (argc > 2 && !strcmp(argv[1], "--moves-record")) return moves_record(argv[2]);
     if (argc > 2 && !strcmp(argv[1], "--scene-shots")) return scene_shots(argv[2]);
     if (argc > 2 && !strcmp(argv[1], "--screenshot")) {
         s_debug = argc > 3 && !strcmp(argv[3], "--debug");

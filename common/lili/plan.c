@@ -10,6 +10,7 @@
 #include "lili_world.h"
 #include "gesture.h"
 #include "life.h"
+#include "pose.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -72,7 +73,7 @@ static const act_t ACTS[RX_END] = {
     [ACT_PICKUP_PLUSH]   = { N_PLUSH | N_FREE_MOUTH,{ GO(TG_PLUSH), AN(ANIM_SNIFF, 0.6f), PICK(TOY_PLUSH) } },
     [ACT_BRING_TOY]      = { N_MOUTH,               { ST(STYLE_TROT), GO(TG_FRONT), DROP, DR(DIR_S), AN(ANIM_PLAY_BOW, 2.0f) } },
     [ACT_DROP_TOY_FRONT] = { N_MOUTH,               { GO(TG_FRONT), DROP, DR(DIR_S), AN(ANIM_IDLE_SIT_BLINK, 1.5f) } },
-    [ACT_CHEW_TOY]       = { N_TOY_ANY,             { GO(TG_TOY), PICK(ANYTOY), ON(ANIM_LIE_DOWN), AN(ANIM_CHEW_TOY, 5.0f) } },
+    [ACT_CHEW_TOY]       = { N_TOY_ANY,             { GO(TG_TOY), PICK(ANYTOY), DR(DIR_S), ON(ANIM_LIE_DOWN), AN(ANIM_CHEW_TOY, 5.0f) } },
     [ACT_PLAY_BOW]       = { 0,                     { AN(ANIM_PLAY_BOW, 3.0f) } },
     [ACT_ZOOMIES]        = { 0,                     { ST(STYLE_SPRINT), GO(TG_RANDOM_FAR), GO(TG_RANDOM_FAR), GO(TG_RANDOM_FAR), AN(ANIM_PANT_SMILE, 2.0f) } },
     [ACT_RUN_WITH_TOY]   = { N_MOUTH,               { ST(STYLE_TROT), GO(TG_RANDOM_FAR), GO(TG_RANDOM_FAR), AN(ANIM_PLAY_BOW, 1.5f) } },
@@ -253,13 +254,8 @@ static void through_door(world_t *w, int actor) {
     int t = toy_held(w, actor); if (t >= 0) w->things.toys[t].view = to;
 }
 
-static float once_len(uint16_t anim) {                        /* a one-shot animation's length in seconds */
-    sprite_set_t s; const pak_t *p = world_pak();
-    const uint16_t src = ANIM_REVERSE_OF(anim) ? ANIM_REVERSE_OF(anim) : anim;
-    if (p && pak_sprite_set(p, src, &s) && s.fps) return (float)s.n_frames / s.fps;
-    return 1.0f;
-}
-static void set_anim(actor_t *a, uint16_t anim) { if (a->anim != anim) { a->anim = anim; a->anim_t = 0; } }
+static float once_len(uint16_t anim) { return pose_once_len(anim); }   /* a one-shot animation's length in seconds */
+static void set_anim(actor_t *a, uint16_t anim) { pose_play(a, anim); }   /* a change of pose plays its move first (pose.c) */
 
 static void effect(world_t *w, int actor, int fx) {
     things_t *t = &w->things; const actor_t *a = &w->actors[actor];
@@ -314,9 +310,14 @@ static int finish(world_t *w, int actor, plan_t *p) {
     nav_stop(&w->bodies[actor]);
     const int ran = 3 - __builtin_popcount(p->skipped) - (p->d.a[0] == ACT_NONE) - (p->d.a[1] == ACT_NONE) - (p->d.a[2] == ACT_NONE);
     p->status = ran > 0 ? PLAN_DONE : PLAN_FAILED;
-    /* idle until the next decision (spec 8.7: never frozen): resting poses hold, the rest stands and wags */
-    if (a->anim != ANIM_SLEEP_CURL && a->anim != ANIM_IDLE_SIT_BLINK && a->anim != ANIM_CHEW_TOY && a->anim != ANIM_SUN_SIT && a->anim != ANIM_LIE_DOWN)
-        set_anim(a, ANIM_IDLE_STAND);
+    /* idle until the next decision (spec 8.7: never frozen): resting poses hold, the rest stands and wags. Sitting she
+       sits on blinking, lying she lies on (2026-10-28: getting up between two sitting actions only to sit again was
+       the jumps the owner saw); off the pad she stands up */
+    const uint16_t an = a->anim;
+    if (an == ANIM_SLEEP_CURL || an == ANIM_IDLE_SIT_BLINK || an == ANIM_CHEW_TOY || an == ANIM_SUN_SIT || an == ANIM_LIE_DOWN || an == ANIM_PANT_SMILE) {}
+    else if (pose_posed(a, ANIM_LIE_DOWN)) set_anim(a, ANIM_LIE_DOWN);                   /* its last frame: lying still */
+    else if (pose_resting(a) && an != ANIM_PEE && an != ANIM_POOP) set_anim(a, ANIM_IDLE_SIT_BLINK);
+    else set_anim(a, ANIM_IDLE_STAND);
     return p->status;
 }
 
@@ -325,6 +326,7 @@ int plan_tick(world_t *w, int actor, float dt) {
     if (p->peek_t > 0) { p->peek_t -= dt; if (p->peek_t < 0) p->peek_t = 0; }
     if (p->status != PLAN_RUNNING) return p->status;
     actor_t *a = &w->actors[actor]; body_t *b = &w->bodies[actor];
+    if (pose_settling(a)) return PLAN_RUNNING;                     /* she is standing up, sitting or lying down: the plan waits */
     if (p->step_t == 0 && p->pi == 0 && p->t == 0 && !next_action(w, actor, p, p->ai)) return finish(w, actor, p);
     p->t += dt; p->step_t += dt;
     if (p->step_t > PLAN_STEP_LIMIT_S) goto next_act;              /* the action's time limit */
@@ -359,11 +361,16 @@ int plan_tick(world_t *w, int actor, float dt) {
             break;
         case P_ANIM: set_anim(a, q->anim); done = p->t >= q->t; break;
         case P_ONCE:                                               /* already in that pose: no getting up to lie down again */
-            if ((q->anim == ANIM_LIE_DOWN && (a->anim == ANIM_SLEEP_CURL || a->anim == ANIM_CHEW_TOY)) || (q->anim == ANIM_SIT_DOWN && a->anim == ANIM_IDLE_SIT_BLINK)) { done = true; break; }
-            set_anim(a, q->anim); done = p->t >= once_len(q->anim); break;
+            if (pose_posed(a, q->anim)) { done = true; break; }
+            if ((q->anim == ANIM_HEAD_TILT || q->anim == ANIM_LOOK_AROUND) && pose_lying(a)) { done = true; break; }   /* lying: not up and down for a look (a call waited 3 s) */
+            {   /* the rope in her mouth: the lie-down that holds it, which ends where the chewing starts (2026-10-28) */
+                const uint16_t an = q->anim == ANIM_LIE_DOWN && toy_held(w, actor) == TOY_ROPE ? ANIM_LIE_DOWN_ROPE : q->anim;
+                set_anim(a, an); done = p->t >= once_len(an);
+            }
+            break;
         case P_WAIT: done = p->t >= q->t; break;
-        case P_DIR:  a->dir = (dir8_t)q->arg; done = true; break;
-        case P_LOOK: { int16_t lx, ly; if (target(w, actor, q->arg, &lx, &ly) && (lx != (int)a->x || ly != (int)a->y)) a->dir = nav_dir(lx - a->x, ly - a->y); done = true; break; }
+        case P_DIR:  done = pose_turn(a, (dir8_t)q->arg, dt); break;         /* 45 degrees at a time */
+        case P_LOOK: { int16_t lx, ly; done = !(target(w, actor, q->arg, &lx, &ly) && (lx != (int)a->x || ly != (int)a->y)) || pose_turn(a, nav_dir(lx - a->x, ly - a->y), dt); break; }
         case P_PICK: {
             int t = q->arg == ANYTOY ? (toy_held(w, actor) >= 0 ? -1 : p->toy >= 0 ? p->toy : toy_near(w, actor, 48)) : q->arg;
             if (t >= 0 && toy_held(w, actor) < 0) {
@@ -394,7 +401,7 @@ int plan_tick(world_t *w, int actor, float dt) {
                 p->gx = w->finger_x; p->gy = w->finger_y; p->rep = 1; nav_plan(a->view, a->x, a->y, p->gx, p->gy, b);
             }
             nav_follow(a, b, dt);
-            if (!b->n && a->anim != ANIM_IDLE_SIT_BLINK && !w->finger_down) set_anim(a, ANIM_IDLE_STAND);
+            if (!b->n && !pose_resting(a) && !w->finger_down) set_anim(a, ANIM_IDLE_STAND);
             done = p->t >= q->t;
             break;
         case P_STYLE: b->style = q->arg; done = true; break;

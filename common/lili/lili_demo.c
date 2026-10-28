@@ -1,6 +1,7 @@
 /* lili_demo.c - see lili_demo.h. Coordinates are logical px (480). The walks go through nav.c (the platform
  * calls nav_init first). */
 #include "lili_demo.h"
+#include "pose.h"
 #include "asset_ids.h"
 #include "nav.h"
 
@@ -78,7 +79,7 @@ void demo_tick(world_t *w, float dt) {
         if (s->x >= 0) { l->x = s->x; l->y = s->y; }
         done = true;
     } else if (s->kind == D_DO) {
-        if (s_demo_t == 0) { l->anim = s->anim; l->dir = (dir8_t)s->dir; l->anim_t = 0; }
+        if (s_demo_t == 0) { pose_snap(l, s->anim); l->dir = (dir8_t)s->dir; }
         s_demo_t += dt; done = s_demo_t >= s->t;
     } else {                                                                 /* the path search and the steering: nav.c (M4.1) */
         if (s_demo_t == 0) { b->style = s->kind == D_TROT ? STYLE_TROT : STYLE_WALK; nav_plan(w->view, l->x, l->y, s->x, s->y, b); s_demo_t = 1e-6f; }

@@ -32,6 +32,7 @@
 
 /* ---- switches (spec 4.6) ---- */
 #define CONFIG_LILI_THOUGHT_BUBBLES 1
+#define CONFIG_LILI_PLUSH_AWAY      1                     /* the owner (2026-10-28): no generated picture and no animations for the plush yet: it stays in the toy box */
 #define CONFIG_LILI_SEARCH_HINT     0                     /* D-06: off, find her yourself */
 #define CONFIG_LILI_MIC             1
 #define CONFIG_LILI_NAME_WAKEWORD   0                     /* D-07: experimental, off */

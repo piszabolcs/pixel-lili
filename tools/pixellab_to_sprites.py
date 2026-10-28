@@ -77,7 +77,14 @@ ANIMS = {
     "chew_treat":     (37, 10, True,  {d: f"chew_treat_{d}" for d in ("S", "SE")}),
 }
 # played from another set backwards: no frames of their own in the pak (common/asset_ids.h ANIM_REVERSE_OF)
-REVERSED = {"stand_up": (29, "sit_down")}     # A03's second half: sitting down backwards is standing up
+REVERSED = {"stand_up": (29, "sit_down"),    # A03's second half: sitting down backwards is standing up
+            "get_up": (38, "lie_down")}      # 2026-10-28: lying down backwards is getting up (common/lili/pose.c)
+# how a set plays where it is not once or round and round (pack_assets.py: the pak's loop byte 2 / 3). 2026-10-28, the owner:
+# "choppy, not matched": PixMiniMax makes a motion from its first frame, not a cycle, so these loops jumped back from their
+# last frame to their first (the jump was the cycle's biggest step in at least one direction); there and back has no such
+# jump. The startle ends in the air: there and back once, she lands.
+PLAY = {"idle_stand": "pingpong", "idle_sit_blink": "pingpong", "pant_smile": "pingpong", "sniff": "pingpong",
+        "ask_pet": "pingpong", "eat_drink": "pingpong", "startle": "there_and_back"}
 # the game's sizes: (folder, scale, catalogue id offset); the yard's sets are anim id + 100 (pack_assets.py YARD_OFFSET)
 SIZES = (("lili", 0.75, 0), ("lili_yard", 0.625, 100))
 
@@ -228,8 +235,10 @@ def main():
         n = len(next(iter(seqs.values())))
         cat[anim] = {"id": aid, "frames": n, "fps": fps, "dirs": list(src), "loop": loop}
         print(f"{anim:15s} id {aid:2d}: {n} frames x {len(seqs)} dirs; " + ", ".join(line))
+    for anim, play in PLAY.items():
+        if anim in cat: cat[anim]["play"] = play
     for anim, (aid, base) in REVERSED.items():
-        cat[anim] = dict(cat[base], id=aid, reverse_of=base)
+        cat[anim] = {k: v for k, v in dict(cat[base], id=aid, reverse_of=base).items() if k != "play"}
     cat = {k: cat[k] for k in ["_note"] + sorted((k for k in cat if k != "_note"), key=lambda k: cat[k]["id"])}
     json.dump(cat, open(os.path.join(ROOT, "assets", "anims.json"), "w", encoding="utf-8"), indent=1)
     print("-> assets/sprites/lili_128/* (masters), lili/* (room), lili_yard/* (yard), assets/anims.json")

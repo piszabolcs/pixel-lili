@@ -3,6 +3,7 @@
 #include "lili_world.h"
 #include "maps_gen.h"
 #include "toys.h"
+#include "pose.h"
 #include "plan.h"
 #include "life.h"
 #include "brain.h"
@@ -82,7 +83,7 @@ void world_tick(world_t *w, float dt) {
     for (int i = 0; i < MAX_ACTORS; i++) {
         actor_t *a = &w->actors[i];
         if (!a->present) continue;
-        a->anim_t += dt;
+        pose_tick(a, dt);
         const bool hide = in_hide_zone(a);
         const plan_t *pl = &w->plans[i];
         const bool gone = hide || pl->hide == 3;      /* in a bush, or out of the door; under the bench its seat covers her */
@@ -197,14 +198,12 @@ static void draw_prop(render8_t *r, const map_prop_t *p) {
 
 /* the frame an actor shows now: its animation's set (offset: ANIM_YARD_OFFSET for the yard's size), or the set
    it plays backwards (stand_up is sit_down reversed: ANIM_REVERSE_OF, tools/pixellab_to_sprites.py REVERSED).
-   A one-shot set holds its last frame; reversed, that is the first frame of the set it plays. */
+   A one-shot set holds its last frame; reversed, that is the first frame of the set it plays. Some play there and
+   back (pose_frame: the pak's loop byte). */
 bool world_actor_frame(const actor_t *a, uint16_t offset, sprite_set_t *set, sprite_frame_t *fr) {
     const uint16_t rev = ANIM_REVERSE_OF(a->anim);
     if (!s_pak || !a->anim || !pak_sprite_set(s_pak, (uint16_t)((rev ? rev : a->anim) + offset), set)) return false;
-    int frame = (int)(a->anim_t * set->fps);
-    if (!set->loop && frame >= set->n_frames) frame = set->n_frames - 1;
-    if (rev) frame = set->n_frames - 1 - frame % set->n_frames;
-    return pak_frame(set, a->dir, frame, fr);
+    return pak_frame(set, a->dir, pose_frame(set, a->anim_t, rev != 0), fr);
 }
 
 static void draw_actor(render8_t *r, const actor_t *a) {    /* the sprite from the pak, or a capsule dog; its paws at (x, y) */
@@ -417,8 +416,7 @@ static void draw_toy(const world_t *w, render8_t *r, int k) {
        over in the air, at rest the way it landed */
     sprite_set_t set; sprite_frame_t fr;
     if (k == TOY_ROPE && s_pak && pak_sprite_set(s_pak, (uint16_t)(ANIM_TOY_ROPE + (t->view == VIEW_YARD ? ANIM_YARD_OFFSET : 0)), &set)) {
-        static const uint8_t HELD[DIR_COUNT] = { 0, 3, 2, 1, 0, 3, 2, 1 };   /* across, falling right, upright, rising right */
-        const int rot = holder ? HELD[holder->dir] : t->z > 0.5f ? (int)(w->clock_s * 12.0f) & 3 : ((int)t->x * 7 + (int)t->y * 13) & 3;
+        const int rot = holder ? toy_rot_held(holder->dir) : t->rot;   /* in the air it turns over as it flies (toys.c) */
         if (pak_frame(&set, rot, 0, &fr)) { pak_blit(r, &set, &fr, x, holder ? y + set.cell_h / 2 : y); return; }
     }
     if (k == TOY_ROPE) {                                     /* a knotted rope: a light bar with warm stripes, knots at the ends */
@@ -499,6 +497,7 @@ static const uint16_t BUBBLE_ICON[BB_COUNT][9] = {
 };
 static void draw_bubble(const world_t *w, render8_t *r, int x, int top) {
     if (!w->bubbles_on || w->bubble_t <= 0 || w->bubble == BB_NONE || w->bubble >= BB_COUNT) return;
+    if (w->bubble == BB_PLUSH && w->things.toys[TOY_PLUSH].view >= VIEW_COUNT) return;   /* the plush is in the toy box */
     uint8_t dark, mid, light, warm; lili_slots(r, &dark, &mid, &light, &warm);
     sprite_set_t set; sprite_frame_t fr;
     const bool rope = w->bubble == BB_ROPE && s_pak && pak_sprite_set(s_pak, ANIM_ICON_ROPE, &set) && pak_frame(&set, 0, 0, &fr);

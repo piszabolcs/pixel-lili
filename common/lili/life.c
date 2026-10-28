@@ -1,5 +1,6 @@
 /* life.c - see life.h. The rates are spec 9.1's, per hour, by name in config.h's spirit (here: LIFE_*). */
 #include "life.h"
+#include "pose.h"
 #include "plan.h"
 #include "toys.h"
 #include "nav.h"
@@ -191,21 +192,21 @@ int life_offline(world_t *w, int64_t dt, offline_log_t *log) {
     p->status = PLAN_IDLE; p->hide = 0; p->peek_t = 0;
     for (int i = 0; i < TOY_COUNT; i++) if (t->toys[i].held_by >= 0) toy_drop(w, i);
     if (t->n_mess) {                                          /* the room looks empty: she peeks from under the bench */
-        place(w, VIEW_ROOM, SPOT_NOOK); a->dir = DIR_S; a->anim = ANIM_LIE_DOWN; a->anim_t = 10; p->hide = 1; p->peek_t = 4; t->guilty = true;
+        place(w, VIEW_ROOM, SPOT_NOOK); a->dir = DIR_S; pose_snap(a, ANIM_LIE_DOWN); a->anim_t = 10; p->hide = 1; p->peek_t = 4; t->guilty = true;
         return SCENE_GUILTY;
     }
     if (on_rug) {                                             /* asleep where she should not be: up with a start */
-        place(w, VIEW_ROOM, SPOT_RUG); a->anim = ANIM_SLEEP_CURL; a->anim_t = 0;
+        place(w, VIEW_ROOM, SPOT_RUG); pose_snap(a, ANIM_SLEEP_CURL);
         plan_one(w, 0, ACT_LEAVE_RUG, ST_SCURRY);
         return SCENE_CAUGHT;
     }
     if (dp <= 2 && !(season == 3 && dp == 3) && w->energy > 5 && rnd01(w) < 0.4f) {   /* out in the yard, sniffing or in a bush */
-        if (world_rand(w) & 1) { place(w, VIEW_YARD, SPOT_GRASS); a->anim = ANIM_SNIFF; }
+        if (world_rand(w) & 1) { place(w, VIEW_YARD, SPOT_GRASS); pose_snap(a, ANIM_SNIFF); }
         else { place(w, VIEW_YARD, world_rand(w) & 1 ? SPOT_BUSH_2 : SPOT_BUSH_3); plan_one(w, 0, ACT_HIDE_BUSH, ST_WALK); }
         return SCENE_OUTSIDE;
     }
-    if (dp == 3) { place(w, VIEW_ROOM, SPOT_NOOK); a->anim = ANIM_SLEEP_CURL; a->anim_t = 0; a->dir = DIR_S; return SCENE_ASLEEP; }
-    place(w, VIEW_ROOM, SPOT_CENTER); a->anim = ANIM_IDLE_STAND;
+    if (dp == 3) { place(w, VIEW_ROOM, SPOT_NOOK); pose_snap(a, ANIM_SLEEP_CURL); a->dir = DIR_S; return SCENE_ASLEEP; }
+    place(w, VIEW_ROOM, SPOT_CENTER); pose_snap(a, ANIM_IDLE_STAND);
     reflex_greet(w);
     return SCENE_GREET;
 }

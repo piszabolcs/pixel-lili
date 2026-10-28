@@ -20,6 +20,10 @@ typedef struct {
     dir8_t  dir;
     uint16_t anim;             /* ANIM_* (common/asset_ids.h); 0 = none (the capsule placeholder) */
     float   anim_t;            /* seconds into the animation; the frame = anim_t * fps */
+    uint16_t want;             /* pose.c: the animation after the move between poses that plays now, 0 = none */
+    float   rate;              /* pose.c: how fast anim_t runs (a gait follows her speed), 0 = 1 */
+    float   turn_t;            /* pose.c: time towards her next 45 degree step when she turns */
+    uint8_t facing;            /* pose.c: 1 = she turns to the next animation's nearest direction before it starts */
     float   vis;               /* 1 seen .. 0 gone: she fades out deep in a bush (a map "hide_" zone) and back (2026-10-23) */
 } actor_t;
 
@@ -38,10 +42,13 @@ typedef struct {
 
 /* the things in the world (spec 8.9, 8.10, 9.2): the two toys, the bowls, the pad, the spots on the floor */
 enum { TOY_ROPE = 0, TOY_PLUSH, TOY_COUNT };
+#define TOY_AWAY ((view_t)VIEW_COUNT) /* a toy's view when it is in the toy box: in neither view (CONFIG_LILI_PLUSH_AWAY) */
 typedef struct {
     view_t  view;
     float   x, y, z, vx, vy, vz;      /* logical px, px / s; z height above the floor */
     int8_t  held_by;                  /* the actor carrying it in her mouth, -1 = loose */
+    uint8_t rot;                      /* the way it lies (the rope's 4 pictures); it turns over in the air only */
+    float   spin;                     /* px flown since its last turn */
 } toy_t;
 #define MESS_MAX 4
 typedef struct {
