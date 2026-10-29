@@ -1506,6 +1506,86 @@
    "action": "lies down holding the treat in her mouth, the treat between her front paws, same size",
    "frames": 8,
    "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryplush_S",
+   "start": "carryplush_S",
+   "last": "carryplush_S",
+   "action": "trots in place carrying her pink plush pig rattle toy in her mouth, the toy dangling and swinging a little, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryplush_SW",
+   "start": "carryplush_SW",
+   "last": "carryplush_SW",
+   "action": "trots in place carrying her pink plush pig rattle toy in her mouth, the toy dangling and swinging a little, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryplush_W",
+   "start": "carryplush_W",
+   "last": "carryplush_W",
+   "action": "trots in place carrying her pink plush pig rattle toy in her mouth, the toy dangling and swinging a little, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryplush_NW",
+   "start": "carryplush_NW",
+   "last": "carryplush_NW",
+   "action": "trots in place carrying her pink plush pig rattle toy in her mouth, the toy dangling and swinging a little, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryplush_NE",
+   "start": "carryplush_NE",
+   "last": "carryplush_NE",
+   "action": "trots in place carrying her pink plush pig rattle toy in her mouth, the toy dangling and swinging a little, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryplush_E",
+   "start": "carryplush_E",
+   "last": "carryplush_E",
+   "action": "trots in place carrying her pink plush pig rattle toy in her mouth, the toy dangling and swinging a little, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "carryplush_SE",
+   "start": "carryplush_SE",
+   "last": "carryplush_SE",
+   "action": "trots in place carrying her pink plush pig rattle toy in her mouth, the toy dangling and swinging a little, one cycle, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "pickupplush_S",
+   "start": "pickupplush_S0",
+   "last": "carryplush_S",
+   "action": "bends down, picks up the pink plush pig toy from the floor in her mouth and lifts her head with it, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "pickupplush_SW",
+   "start": "pickupplush_SW0",
+   "last": "carryplush_SW",
+   "action": "bends down, picks up the pink plush pig toy from the floor in her mouth and lifts her head with it, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "pickupplush_W",
+   "start": "pickupplush_W0",
+   "last": "carryplush_W",
+   "action": "bends down, picks up the pink plush pig toy from the floor in her mouth and lifts her head with it, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
   }
  ]
 }

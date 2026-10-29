@@ -986,6 +986,14 @@ static int selftest_toys(void) {
       ev_t e; int flick = 0; while (ev_pop(&q, &e)) if (e.type == EV_FLICK) flick = 1;
       CHECK(y->view == VIEW_YARD && c.n_toys == 1 && flick, "out through the door, the toy is the finger's in the yard: a flick throws it"); }
       CHECK(out >= 2 && out <= 8, "going out, she takes the rope along now and then"); }
+    { world_init(&s_world, 85); toy_t *pl = &s_world.things.toys[TOY_PLUSH]; s_world.view = VIEW_ROOM;   /* the plush's own frames (2026-10-29) */
+      pl->view = VIEW_ROOM; pl->x = 300; pl->y = 330; pl->z = 0; pl->held_by = -1;
+      s_seen = 0; plan_one(&s_world, 0, ACT_PICKUP_PLUSH, ST_WALK); run_plan(30);
+      CHECK(SAW(ANIM_PICKUP_PLUSH) && toy_held(&s_world, 0) == TOY_PLUSH, "the plush: she bends and picks it up with its own frames");
+      s_seen = 0; plan_one(&s_world, 0, ACT_RUN_WITH_TOY, ST_WALK); run_plan(30);
+      CHECK(SAW(ANIM_CARRY_PLUSH) && !SAW(ANIM_CARRY_TROT), "she trots with it hanging from her mouth, not with the rope's frames");
+      s_seen = 0; plan_one(&s_world, 0, ACT_DROP_TOY_FRONT, ST_WALK); run_plan(30);
+      CHECK(SAW(ANIM_DROP_PLUSH) && toy_held(&s_world, 0) < 0 && pl->view == VIEW_ROOM && nav_clear(VIEW_ROOM, (int)pl->x, (int)pl->y, 0), "and puts it down the pickup backwards"); }
     printf("selftest-toys: ok\n");
     return 0;
 }

@@ -32,6 +32,8 @@ DIRS = pn.DIRS
 CELL, PIVOT, SLOT = pn.CELL, pn.PIVOT, 144
 TOY_SLOT, TOY_N = 184, 6                   # the toys' colours (assets/palettes/toy_colors.json): the rope keeps its blues, reds, yellows
 ROPE_ANIMS = ("tug_rope", "carry_trot", "lie_down_rope", "chew_toy", "pickup")
+PLUSH_SLOT, PLUSH_N = 190, 6               # the plush's 5 pinks and its tags' green (toy_colors.json, 2026-10-28)
+PLUSH_ANIMS = ("carry_plush", "pickup_plush")
 
 def all8(src):
     return {d: f"{src}_{d}" for d in DIRS}
@@ -89,6 +91,11 @@ ANIMS = {
     "squat_poop":     (52, 8,  False, {d: f"squatpoop_{d}" for d in ("SW", "SE")}),
     "eattreat_in":    (54, 10, False, {d: f"eattreatin_{d}" for d in ("S", "SW", "SE")}),
     "liedown_treat":  (55, 8,  False, {d: f"liedowntreat_{d}" for d in ("S", "SE")}),   # eat_treat's last frame -> chew_treat's first
+    # 2026-10-29 (the owner: "I throw the plush and the way she carries it is crap"): the plush pig rattle hanging from her
+    # mouth, PixMiniMax loops from the trot's first frame with the plush drawn in; the pickup from standing over it on the
+    # floor to that frame (E and SE still to come: the nearest direction stands in)
+    "carry_plush":    (56, 14, True,  {d: f"carryplush_{d}" for d in ("S", "SW", "W", "NW", "NE", "E", "SE")}),
+    "pickup_plush":   (57, 12, False, {d: f"pickupplush_{d}" for d in ("S", "SW", "W")}),
 }
 # played from another set backwards: no frames of their own in the pak (common/asset_ids.h ANIM_REVERSE_OF)
 REVERSED = {"stand_up": (29, "sit_down"),    # A03's second half: sitting down backwards is standing up
@@ -98,7 +105,8 @@ REVERSED = {"stand_up": (29, "sit_down"),    # A03's second half: sitting down b
             "eat_out": (48, "eat_in"),       # 2026-10-29: the head out of the bowl, up from the squats
             "drink_out": (50, "drink_in"),
             "unsquat": (51, "squat"),
-            "unsquat_poop": (53, "squat_poop")}
+            "unsquat_poop": (53, "squat_poop"),
+            "drop_plush": (58, "pickup_plush")}   # 2026-10-29: putting the plush down
 # how a set plays where it is not once or round and round (pack_assets.py: the pak's loop byte 2 / 3). 2026-10-28, the owner:
 # "choppy, not matched": PixMiniMax makes a motion from its first frame, not a cycle, so these loops jumped back from their
 # last frame to their first (the jump was the cycle's biggest step in at least one direction); there and back has no such
@@ -129,8 +137,15 @@ def rope_like(rgb):
     if (h >= 335 or h <= 12) and sat >= 0.50: return True
     return 43 <= h <= 65 and sat >= 0.45 and v >= 0.70
 
-def to_index(rgba, lili_lab, toy=False):
-    """nearest of Lili's 40 colours in Oklab; with toy=True the rope's pixels may also take the toys' 6"""
+def plush_like(rgb):
+    """a pixel of the plush pig: its pinks (redder and more saturated than her salmon ears) or its tags' yellow-green"""
+    r, g, b = [c / 255 for c in rgb]
+    h, sat, v = colorsys.rgb_to_hsv(r, g, b); h *= 360
+    return (h >= 315 and sat >= 0.15 and v >= 0.55) or (65 <= h <= 110 and sat >= 0.4 and v >= 0.5)
+
+def to_index(rgba, lili_lab, toy=False, plush=False):
+    """nearest of Lili's 40 colours in Oklab; with toy=True the rope's pixels may also take the toys' 6, with plush=True
+    the plush's its 6"""
     a = rgba[..., 3] > 127
     idx = np.zeros(a.shape, np.uint8)
     px = rgba[..., :3][a].reshape(-1, 3).astype(float)
@@ -141,6 +156,11 @@ def to_index(rgba, lili_lab, toy=False):
         rope = np.array([rope_like(c) for c in px])
         if rope.any():
             near[rope] = TOY_SLOT + np.argmin(((lab[rope][:, None, :] - toy_lab[None]) ** 2).sum(2), 1)
+    if plush:
+        pl_lab = rgb_to_oklab(np.array(palette()[0][PLUSH_SLOT:PLUSH_SLOT + PLUSH_N], float))
+        pl = np.array([plush_like(c) for c in px])
+        if pl.any():
+            near[pl] = PLUSH_SLOT + np.argmin(((lab[pl][:, None, :] - pl_lab[None]) ** 2).sum(2), 1)
     idx[a] = near
     return idx
 
@@ -169,7 +189,7 @@ def shrink(idx, full_rgb, pal_lab, outline, scale):
     (crisp, no new colours), the outline redrawn"""
     rgba = np.zeros(idx.shape + (4,), np.uint8)
     rgba[..., :3] = np.array(full_rgb, np.uint8)[idx]; rgba[..., 3] = np.where(idx > 0, 255, 0)
-    small = sc.resample(rgba, 1 / scale, pal_lab, np.r_[np.arange(SLOT, SLOT + 40), np.arange(TOY_SLOT, TOY_SLOT + TOY_N)])
+    small = sc.resample(rgba, 1 / scale, pal_lab, np.r_[np.arange(SLOT, SLOT + 40), np.arange(TOY_SLOT, TOY_SLOT + TOY_N), np.arange(PLUSH_SLOT, PLUSH_SLOT + PLUSH_N)])
     return sc.clean_outline(small, pal_lab, outline)
 
 def crop(seqs, pivot):
@@ -184,7 +204,7 @@ def crop(seqs, pivot):
 def convert(name, src, ctx, jobs=None):
     """one animation, {dir: tag} -> {"master": ({dir index: [128 px frames]}, ...), "lili": (seqs, (w, h), pivot), "lili_yard": ...}"""
     full, lili_lab, pal_lab = ctx
-    seqs = {DIRS.index(d): [to_index(f, lili_lab, name in ROPE_ANIMS) for f in pn.normalize(t, jobs)[1:]] for d, t in src.items()}
+    seqs = {DIRS.index(d): [to_index(f, lili_lab, name in ROPE_ANIMS, name in PLUSH_ANIMS) for f in pn.normalize(t, jobs)[1:]] for d, t in src.items()}
     n = len(next(iter(seqs.values())))
     assert all(len(s) == n for s in seqs.values()), f"{name}: the directions differ in frame count"
     out = {"master": (seqs, (CELL, CELL), PIVOT)}

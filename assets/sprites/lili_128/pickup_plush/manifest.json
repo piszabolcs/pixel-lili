@@ -1,0 +1,189 @@
+{
+ "anim": "pickup_plush",
+ "id": 57,
+ "fps": 12,
+ "loop": false,
+ "dirs": [
+  0,
+  1,
+  2
+ ],
+ "frames": 8,
+ "cell_w": 128,
+ "cell_h": 128,
+ "pivot": [
+  64,
+  122
+ ],
+ "files": [
+  {
+   "dir": 0,
+   "frame": 0,
+   "file": "d0_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 1,
+   "file": "d0_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 2,
+   "file": "d0_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 3,
+   "file": "d0_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 4,
+   "file": "d0_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 5,
+   "file": "d0_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 6,
+   "file": "d0_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 7,
+   "file": "d0_f7.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 0,
+   "file": "d1_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 1,
+   "file": "d1_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 2,
+   "file": "d1_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 3,
+   "file": "d1_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 4,
+   "file": "d1_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 5,
+   "file": "d1_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 6,
+   "file": "d1_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 7,
+   "file": "d1_f7.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 0,
+   "file": "d2_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 1,
+   "file": "d2_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 2,
+   "file": "d2_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 3,
+   "file": "d2_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 4,
+   "file": "d2_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 5,
+   "file": "d2_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 6,
+   "file": "d2_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 7,
+   "file": "d2_f7.png",
+   "mouth": null,
+   "head": null
+  }
+ ],
+ "source": "tools/pixellab_to_sprites.py (pickupplush_S, pickupplush_SW, pickupplush_W)"
+}

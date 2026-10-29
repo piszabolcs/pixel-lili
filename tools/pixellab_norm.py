@@ -200,6 +200,14 @@ def ground_dy(f):
     ys = np.nonzero((f[..., 3] > 0).any(1))[0]
     return (PIVOT[1] - 1) - int(ys.max()) if len(ys) else 0
 
+def ground_dy_dog(f):
+    """the paws on the ground, not the plush that swings below her mouth (2026-10-29): its pinks and its tags' green left out"""
+    a = f[..., :3].astype(int); r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    pink = (r > 150) & (r > g + 40) & (b > g - 10) & (b > 90)
+    tag = (g > 160) & (g > r + 30) & (g > b + 60)
+    ys = np.nonzero(((f[..., 3] > 0) & ~pink & ~tag).any(1))[0]
+    return (PIVOT[1] - 1) - int(ys.max()) if len(ys) else ground_dy(f)
+
 HOLES = None
 def holes():
     """the tags made from stand_N (jobs.json) and the old walk_N: the remnant was copied into the first ones, and
@@ -239,6 +247,7 @@ def normalize(tag, jobs=None):
     out = [scale(f, s0 + (s1 - s0) * (i / (n - 1) if n > 1 else 0)) for i, f in enumerate(frames)]
     if name in JUMP:
         dy = ground_dy(out[0]); return [shift(f, dy) for f in out]
+    if "plush" in name: return [shift(f, ground_dy_dog(f)) for f in out]
     return [shift(f, ground_dy(f)) for f in out]
 
 def fix_startframes():

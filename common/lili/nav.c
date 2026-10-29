@@ -174,7 +174,7 @@ bool nav_follow(actor_t *a, body_t *b, float dt) {
     uint16_t anim = nav_anim((nav_style_t)b->style);
     /* the rope in her mouth: its own trot stands in for the walk and the trot (plan.c sets it); switching back and
        forth every tick restarted it, so she slid along on its first frame (the owner, 2026-10-27) */
-    if (a->anim == ANIM_CARRY_TROT && (anim == ANIM_WALK || anim == ANIM_TROT)) anim = ANIM_CARRY_TROT;
+    if ((a->anim == ANIM_CARRY_TROT || a->anim == ANIM_CARRY_PLUSH) && (anim == ANIM_WALK || anim == ANIM_TROT)) anim = a->anim;   /* the plush's too (2026-10-29) */
     pose_play(a, anim);
     if (pose_settling(a)) { b->speed = 0; return false; }     /* sitting or lying: she gets up first (pose.c) */
     {   /* she turns 45 degrees at a time (pose.c); a big turn from standing is made on the spot before she sets off */

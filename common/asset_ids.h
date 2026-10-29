@@ -106,10 +106,13 @@ enum {
     ANIM_UNSQUAT_POOP = 53,
     ANIM_EATTREAT_IN = 54,
     ANIM_LIEDOWN_TREAT = 55,
+    ANIM_CARRY_PLUSH = 56,
+    ANIM_PICKUP_PLUSH = 57,
+    ANIM_DROP_PLUSH = 58,
     ANIM_COUNT_LISTED
 };
 /* an animation drawn from another one's frames, backwards (stand_up = sit_down reversed); 0 = it has its own */
-#define ANIM_REVERSE_OF(a) ((a) == ANIM_STAND_UP ? ANIM_SIT_DOWN : (a) == ANIM_GET_UP ? ANIM_LIE_DOWN : (a) == ANIM_UNCURL ? ANIM_CURL_UP : (a) == ANIM_DROP ? ANIM_PICKUP : (a) == ANIM_EAT_OUT ? ANIM_EAT_IN : (a) == ANIM_DRINK_OUT ? ANIM_DRINK_IN : (a) == ANIM_UNSQUAT ? ANIM_SQUAT : (a) == ANIM_UNSQUAT_POOP ? ANIM_SQUAT_POOP : 0)
+#define ANIM_REVERSE_OF(a) ((a) == ANIM_STAND_UP ? ANIM_SIT_DOWN : (a) == ANIM_GET_UP ? ANIM_LIE_DOWN : (a) == ANIM_UNCURL ? ANIM_CURL_UP : (a) == ANIM_DROP ? ANIM_PICKUP : (a) == ANIM_EAT_OUT ? ANIM_EAT_IN : (a) == ANIM_DRINK_OUT ? ANIM_DRINK_IN : (a) == ANIM_UNSQUAT ? ANIM_SQUAT : (a) == ANIM_UNSQUAT_POOP ? ANIM_SQUAT_POOP : (a) == ANIM_DROP_PLUSH ? ANIM_PICKUP_PLUSH : 0)
 /* Lili's sounds: the cues of the bank (PAK_T_SOUND 1, tools/lili_sounds.py), in its order */
 enum {
     SFX_BARK,

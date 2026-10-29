@@ -86,7 +86,7 @@ void life_init(world_t *w, int64_t now) {
 void life_owner(world_t *w) { w->owner_t = 0; }
 bool life_owner_active(const world_t *w) { return w->owner_t < LIFE_OWNER_S; }
 
-static bool playing(uint16_t a) { return a == ANIM_RUN || a == ANIM_TROT || a == ANIM_PLAY_BOW || a == ANIM_POUNCE || a == ANIM_TUG_ROPE || a == ANIM_CARRY_TROT || a == ANIM_SCURRY; }
+static bool playing(uint16_t a) { return a == ANIM_RUN || a == ANIM_TROT || a == ANIM_PLAY_BOW || a == ANIM_POUNCE || a == ANIM_TUG_ROPE || a == ANIM_CARRY_TROT || a == ANIM_CARRY_PLUSH || a == ANIM_SCURRY; }
 
 void life_tick(world_t *w, float dt) {
     const float h = dt / 3600.0f;

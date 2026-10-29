@@ -665,5 +665,43 @@
    "SE"
   ],
   "loop": false
+ },
+ "carry_plush": {
+  "id": 56,
+  "frames": 8,
+  "fps": 14,
+  "dirs": [
+   "S",
+   "SW",
+   "W",
+   "NW",
+   "NE",
+   "E",
+   "SE"
+  ],
+  "loop": true
+ },
+ "pickup_plush": {
+  "id": 57,
+  "frames": 8,
+  "fps": 12,
+  "dirs": [
+   "S",
+   "SW",
+   "W"
+  ],
+  "loop": false
+ },
+ "drop_plush": {
+  "id": 58,
+  "frames": 8,
+  "fps": 12,
+  "dirs": [
+   "S",
+   "SW",
+   "W"
+  ],
+  "loop": false,
+  "reverse_of": "pickup_plush"
  }
 }

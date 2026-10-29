@@ -300,7 +300,7 @@ static int shadow_hmax(uint16_t anim) {
     case ANIM_CHEW_TOY: case ANIM_CHEW_TREAT: case ANIM_LIE_DOWN_ROPE: case ANIM_GUILTY_PEEK: return 18;   /* lying, head up */
     case ANIM_PLAY_BOW: case ANIM_EAT_DRINK: case ANIM_DRINK: case ANIM_LIE_DOWN: case ANIM_TUG_ROPE:
     case ANIM_EAT_TREAT: case ANIM_SNIFF: case ANIM_PICKUP: case ANIM_DROP: case ANIM_EAT_IN: case ANIM_EAT_OUT:
-    case ANIM_DRINK_IN: case ANIM_DRINK_OUT: case ANIM_EATTREAT_IN: case ANIM_LIEDOWN_TREAT: return 28;   /* head down, or going down */
+    case ANIM_DRINK_IN: case ANIM_DRINK_OUT: case ANIM_EATTREAT_IN: case ANIM_LIEDOWN_TREAT: case ANIM_PICKUP_PLUSH: case ANIM_DROP_PLUSH: return 28;   /* head down, or going down */
     case ANIM_IDLE_SIT_BLINK: case ANIM_PANT_SMILE: case ANIM_LOOK_AROUND: case ANIM_BARK_HEAD_FLIP: case ANIM_HEAD_TILT:
     case ANIM_SUN_SIT: case ANIM_ASK_PET: case ANIM_PET_ENJOY: case ANIM_SQUAT: case ANIM_PEE: case ANIM_POOP:
     case ANIM_UNSQUAT: case ANIM_SQUAT_POOP: case ANIM_UNSQUAT_POOP: return 42;                      /* sitting, squatting */
@@ -414,10 +414,14 @@ static void lili_slots(const render8_t *r, uint8_t *dark, uint8_t *mid, uint8_t 
 static bool rope_in_frames(uint16_t anim) {      /* the pickup and the drop (2026-10-28) draw it too, on the floor and in her mouth */
     return anim == ANIM_CARRY_TROT || anim == ANIM_CHEW_TOY || anim == ANIM_TUG_ROPE || anim == ANIM_LIE_DOWN_ROPE || anim == ANIM_PICKUP || anim == ANIM_DROP;
 }
+static bool plush_in_frames(uint16_t anim) {     /* the plush's own carry, pickup and drop (2026-10-29) */
+    return anim == ANIM_CARRY_PLUSH || anim == ANIM_PICKUP_PLUSH || anim == ANIM_DROP_PLUSH;
+}
 static void draw_toy(const world_t *w, render8_t *r, int k) {
     const toy_t *t = &w->things.toys[k];
     const actor_t *holder = t->held_by >= 0 ? &w->actors[t->held_by] : NULL;
     if (holder && k == TOY_ROPE && rope_in_frames(holder->anim)) return;
+    if (holder && k == TOY_PLUSH && plush_in_frames(holder->anim)) return;
     uint8_t dark, mid, light, warm; lili_slots(r, &dark, &mid, &light, &warm);
     const int x = (int)t->x, y = (int)(t->y - t->z);
     if (!holder && t->z > 1.0f) {                            /* in the air: its shadow on the floor under it */

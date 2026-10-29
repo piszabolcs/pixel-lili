@@ -81,7 +81,7 @@ static const act_t ACTS[RX_END] = {
                                                       AN(ANIM_IDLE_STAND, 1.0f) } },
     /* play */
     [ACT_PICKUP_ROPE]    = { N_ROPE | N_FREE_MOUTH, { GO(TG_ROPE), PICKUP(TOY_ROPE) } },
-    [ACT_PICKUP_PLUSH]   = { N_PLUSH | N_FREE_MOUTH,{ GO(TG_PLUSH), AN(ANIM_SNIFF, 0.6f), PICK(TOY_PLUSH) } },
+    [ACT_PICKUP_PLUSH]   = { N_PLUSH | N_FREE_MOUTH,{ GO(TG_PLUSH), PICKUP(TOY_PLUSH) } },   /* its own pickup frames (2026-10-29) */
     [ACT_BRING_TOY]      = { N_MOUTH,               { ST(STYLE_TROT), GO(TG_FRONT), PUTDOWN, DR(DIR_S), AN(ANIM_PLAY_BOW, 2.0f) } },
     [ACT_DROP_TOY_FRONT] = { N_MOUTH,               { GO(TG_FRONT), PUTDOWN, DR(DIR_S), AN(ANIM_IDLE_SIT_BLINK, 1.5f) } },
     [ACT_CHEW_TOY]       = { N_TOY_ANY,             { GO(TG_TOY), PICKUP(ANYTOY), DR(DIR_S), ON(ANIM_LIE_DOWN), AN(ANIM_CHEW_TOY, 5.0f) } },
@@ -250,8 +250,8 @@ static bool target(world_t *w, int actor, int tg, int16_t *x, int16_t *y) {
         if (tg == TG_TOY && toy_held(w, actor) >= 0) { *x = (int16_t)a->x; *y = (int16_t)a->y; return true; }   /* already in her mouth */
         if (t < 0 || w->things.toys[t].view != a->view) return false;
         const toy_t *ty = &w->things.toys[t];
-        if (t == TOY_ROPE) {                                  /* the rope: she stops with it in front of her mouth, where the pickup has it */
-            float px, py; pick_spot(a, pose_near_dir(ANIM_PICKUP, nav_dir(ty->x - a->x, ty->y - a->y)), &px, &py);
+        if (t == TOY_ROPE || t == TOY_PLUSH) {                /* she stops with it in front of her mouth, where its pickup has it */
+            float px, py; pick_spot(a, pose_near_dir(t == TOY_ROPE ? ANIM_PICKUP : ANIM_PICKUP_PLUSH, nav_dir(ty->x - a->x, ty->y - a->y)), &px, &py);
             const int sx = (int)(ty->x - (px - a->x)), sy = (int)(ty->y - (py - a->y));
             if (nav_clear(a->view, sx, sy, 0)) { *x = (int16_t)sx; *y = (int16_t)sy; return true; }
         }
@@ -414,6 +414,7 @@ int plan_tick(world_t *w, int actor, float dt) {
             }
             done = nav_follow(a, b, dt);
             if (toy_held(w, actor) == TOY_ROPE && (a->anim == ANIM_TROT || a->anim == ANIM_WALK)) set_anim(a, ANIM_CARRY_TROT);   /* the rope is in those frames */
+            if (toy_held(w, actor) == TOY_PLUSH && (a->anim == ANIM_TROT || a->anim == ANIM_WALK)) set_anim(a, ANIM_CARRY_PLUSH); /* the plush in these (2026-10-29) */
             break;
         case P_ANIM: {
             uint16_t an = q->anim;
@@ -433,16 +434,18 @@ int plan_tick(world_t *w, int actor, float dt) {
         case P_DIR:  done = pose_turn(a, (dir8_t)q->arg, dt); break;         /* 45 degrees at a time */
         case P_LOOK: { int16_t lx, ly; done = !(target(w, actor, q->arg, &lx, &ly) && (lx != (int)a->x || ly != (int)a->y)) || pose_turn(a, nav_dir(lx - a->x, ly - a->y), dt); break; }
         case P_PICK: { const int t = pick_which(w, actor, p, q->arg); if (t >= 0) toy_pick(w, t, actor); done = true; break; }
-        case P_PICKUP: {                                           /* the rope: turned to a direction the pickup has, it takes it */
+        case P_PICKUP: {                                           /* turned to a direction the pickup has, she takes it (the plush's own since 2026-10-29) */
             if (p->rep == 0) {
                 const int t = pick_which(w, actor, p, q->arg);
                 if (t < 0) { done = true; break; }
-                if (t != TOY_ROPE) { toy_pick(w, t, actor); done = true; break; }   /* the plush: no frames of its own (yet) */
-                set_anim(a, ANIM_PICKUP);
-                if (a->anim != ANIM_PICKUP) break;
+                p->toy = (int8_t)t;
+                const uint16_t pk = t == TOY_ROPE ? ANIM_PICKUP : ANIM_PICKUP_PLUSH;
+                set_anim(a, pk);
+                if (a->anim != pk) break;
                 toy_pick(w, t, actor); p->rep = 1;                 /* in her mouth now, drawn by the frames (lili_world.c rope_in_frames) */
             }
-            done = a->anim != ANIM_PICKUP || a->anim_t >= pose_once_len(ANIM_PICKUP);
+            {   const uint16_t pk = p->toy == TOY_PLUSH ? ANIM_PICKUP_PLUSH : ANIM_PICKUP;
+                done = a->anim != pk || a->anim_t >= pose_once_len(pk); }
             break;
         }
         case P_DROP: { int t = toy_held(w, actor); if (t >= 0) toy_drop(w, t); done = true; break; }
@@ -455,9 +458,9 @@ int plan_tick(world_t *w, int actor, float dt) {
         case P_PUTDOWN: {                                          /* the rope: the pickup backwards, then it lies where its last frame has it */
             const int t = toy_held(w, actor);
             if (t < 0) { done = true; break; }
-            if (t != TOY_ROPE) { toy_drop(w, t); done = true; break; }
-            if (p->rep == 0) { set_anim(a, ANIM_DROP); if (a->anim != ANIM_DROP) break; p->rep = 1; }
-            if (a->anim == ANIM_DROP && a->anim_t < pose_once_len(ANIM_DROP)) break;
+            const uint16_t dr = t == TOY_ROPE ? ANIM_DROP : ANIM_DROP_PLUSH;
+            if (p->rep == 0) { set_anim(a, dr); if (a->anim != dr) break; p->rep = 1; }
+            if (a->anim == dr && a->anim_t < pose_once_len(dr)) break;
             toy_drop(w, t);
             {   toy_t *ty = &w->things.toys[t]; float px, py; pick_spot(a, a->dir, &px, &py);
                 if (nav_clear(a->view, (int)px, (int)py, 0)) { ty->x = px; ty->y = py; }

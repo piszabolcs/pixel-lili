@@ -93,7 +93,7 @@ float pose_once_len(uint16_t anim) {
 static void start(actor_t *a, uint16_t anim) { a->anim = anim; a->anim_t = 0; a->rate = anim == ANIM_GET_UP || anim == ANIM_UNCURL ? 1.5f : 1.0f; }
 static bool move_over(const actor_t *a) { return a->anim_t >= pose_once_len(a->anim); }
 static bool gait(uint16_t anim) {
-    return anim == ANIM_WALK || anim == ANIM_TROT || anim == ANIM_RUN || anim == ANIM_TIPTOE || anim == ANIM_SCURRY || anim == ANIM_CARRY_TROT;
+    return anim == ANIM_WALK || anim == ANIM_TROT || anim == ANIM_RUN || anim == ANIM_TIPTOE || anim == ANIM_SCURRY || anim == ANIM_CARRY_TROT || anim == ANIM_CARRY_PLUSH;
 }
 /* the nearest direction the animation has (the pak draws a missing one from it) */
 static int near_dir(uint16_t anim, int d) {
