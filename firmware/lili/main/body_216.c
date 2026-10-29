@@ -125,8 +125,10 @@ static void console(world_t *w, char *line) {
         else ESP_LOGW(TAG, "settime: YYYY-MM-DDTHH:MM:SS");
     } else if (!strcmp(cmd, "status")) {
         char p[64]; plan_describe(w, 0, p, sizeof p);
-        ESP_LOGI(TAG, "hunger %.1f energy %.1f happy %.1f bored %.1f lonely %.1f bladder %.1f guilty %d spots %d pad %d food %d | %s | %s",
-                 w->hunger, w->energy, w->happy, w->bored, w->lonely, w->bladder, w->things.guilty, w->things.n_mess, w->things.pad, w->things.food, p, brain_llm_status());
+        whistle_state_t ws = { 0 }; if (s_mic) whistle_get(&ws);
+        ESP_LOGI(TAG, "hunger %.1f energy %.1f happy %.1f bored %.1f lonely %.1f bladder %.1f guilty %d spots %d pad %d food %d water %d | mic %.0f dB | %s | %s",
+                 w->hunger, w->energy, w->happy, w->bored, w->lonely, w->bladder, w->things.guilty, w->things.n_mess, w->things.pad, w->things.food, w->things.water,
+                 ws.rms_db_l, p, brain_llm_status());
     } else if (!strcmp(cmd, "brain") && arg) { brain_use_llm(!strcmp(arg, "model")); ESP_LOGI(TAG, "brain: %s", !strcmp(arg, "model") ? "the model (if loaded)" : "the rules"); }
     else if (!strcmp(cmd, "demo")) { if (demo_active()) demo_stop(); else demo_start(); }
     else if (!strcmp(cmd, "whistle")) { ev_t e = { EV_WHISTLE, 0, 0, 0 }; world_handle_event(w, &e); body_owner(w); }

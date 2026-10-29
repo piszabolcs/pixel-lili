@@ -555,6 +555,13 @@ bool reflex_greet(world_t *w) {                                /* R6: the owner 
    every NEED_ASK_S, awake; a running reflex is not interrupted (the brain's plans are) */
 #define NEED_ASK_S 90.0f
 #define NEED_AT    6.0f
+/* the need's plan in place of the brain's (which would replace any running plan anyway): a low reflex like R8's head tilt
+   for a voice must not keep it out (on the panel a noise every 8 s did) */
+static void need_start(world_t *w, int act, int bubble) {
+    plan_t *p = &w->plans[0];
+    decision_t d = { { (uint8_t)act, ACT_NONE, ACT_NONE }, ST_TROT, FC_NEUTRAL, (uint8_t)bubble, 7, 1.0f };
+    p->rounds = 0; plan_start(w, 0, &d); p->prio = 7; w->need_ask_t = 0;      /* above R8's voice and R9's tap, below a call, a pet, a throw */
+}
 bool reflex_needs(world_t *w) {
     const things_t *t = &w->things;
     if (plan_asleep(w, 0) && w->energy < 3.0f) return true;     /* tired and asleep: the brain's plan would wake her at once (on the panel it did) */
@@ -563,11 +570,11 @@ bool reflex_needs(world_t *w) {
     /* worn out (the owner, 2026-10-29: "the lightning is empty, what is it for?": guilty under the bench she never slept,
        energy 0): she sleeps, under the bench if she is hiding there */
     if (w->energy <= 1.5f) rx = w->plans[0].hide == 1 || t->guilty ? ACT_SLEEP_NOOK : ACT_SLEEP_RUG;
-    if (rx >= 0) { if (!fire(w, 0, rx, 9, BB_ZZZ)) return false; w->need_ask_t = 0; return true; }
+    if (rx >= 0) { need_start(w, rx, BB_ZZZ); return true; }
     if (w->hunger >= NEED_AT) rx = t->food ? ACT_EAT : t->guilty ? -1 : RX_ASK_FOOD;
     if (rx < 0 && w->thirst >= NEED_AT) rx = t->water ? ACT_DRINK : t->guilty ? -1 : RX_ASK_WATER;
-    if (rx < 0 || !fire(w, 0, rx, 9, BB_FOOD)) return false;
-    w->need_ask_t = 0;
+    if (rx < 0) return false;
+    need_start(w, rx, BB_FOOD);
     return true;
 }
 
