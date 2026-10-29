@@ -71,7 +71,7 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 10. A gondozás átmenetei (2026-10-29, PixelLab utolsó kockával, a gazdi jóváhagyta): a fej a tálba és ki (evés, ivás), guggolás pisiléshez és kakiláshoz, majd fel, lehajolás a kekszhez, lefekvés vele. Videók: `docs/img/pilot_2026-10-28/wave4_new.mp4` (előtte és utána), `care_moves.mp4` (a játékban, `./lilisim --care-record DIR`).
 11. Udvar (2026-10-29): az ajtóhoz húzott játék átkerül a másik oldalra, Lili néha kiviszi vagy behozza a játékát.
 12. Etetés (2026-10-29): napi 2-3 étkezés, evés után ivás, üres tálnál odamegy és kéreget; a tálak 4 fokozatú képe jóváhagyásra vár.
-13. Hang (2026-10-29, folyamatban): ElevenLabs, 24 hang, a gazdi választása `assets/sounds/elevenlabs/picks.tsv`, meghallgató videók `docs/img/pilot_2026-10-28/hangok_1.mp4`, `hangok_2.mp4`; a lejátszás még nincs bekötve.
+13. Hang (2026-10-29): ElevenLabs, a gazdi választása `assets/sounds/elevenlabs/picks.tsv` (meghallgató videók `docs/img/pilot_2026-10-28/hangok_1.mp4`, `hangok_2.mp4`); a panelen és a szimulátorban szól (`common/lili/sfx.c`, `firmware/lili/main/audio_216.c`). A második kör 6 hangja (horkolós légzés, puffogás, granula, víz, szövetjáték, 3. ugatás) a gazdi választására vár, addig néma.
 
 <!-- /overview -->
 
