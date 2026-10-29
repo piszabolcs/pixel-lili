@@ -12,7 +12,9 @@
     "bark_b_1 2.26s",
     "bark_b_2 2.70s",
     "bark_b_3 2.45s",
-    "bark_b_4 2.29s"
+    "bark_b_4 2.29s",
+    "bark_c_1 2.63s",
+    "bark_c_2 2.09s"
    ],
    "gain_db": 0,
    "cooldown_ms": 400
@@ -27,7 +29,9 @@
   },
   {
    "cue": "snort",
-   "takes": [],
+   "takes": [
+    "snort_b_1 1.44s"
+   ],
    "gain_db": -3,
    "cooldown_ms": 1500
   },
@@ -41,7 +45,9 @@
   },
   {
    "cue": "huff",
-   "takes": [],
+   "takes": [
+    "huff_b_3 0.68s"
+   ],
    "gain_db": -2,
    "cooldown_ms": 600
   },
@@ -137,13 +143,17 @@
   },
   {
    "cue": "kibble_pour",
-   "takes": [],
+   "takes": [
+    "kibble_pour_b_1 0.84s"
+   ],
    "gain_db": -6,
    "cooldown_ms": 500
   },
   {
    "cue": "water_pour",
-   "takes": [],
+   "takes": [
+    "water_pour_b_1 1.00s"
+   ],
    "gain_db": -6,
    "cooldown_ms": 500
   },
@@ -173,7 +183,9 @@
   },
   {
    "cue": "toy_land",
-   "takes": [],
+   "takes": [
+    "toy_land_b_1 0.06s"
+   ],
    "gain_db": -8,
    "cooldown_ms": 200
   },

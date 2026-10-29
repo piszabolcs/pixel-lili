@@ -23,3 +23,9 @@ pad_change_a	4
 treat_drop_a	4
 toy_land_a	-	"túlságosan kopog, mintha fadarab esne le, miközben két szövet játéka van" (toy_land_b generated)
 pet_door_a	4
+bark_c	1 2	"1. és 2. is jó" (2026-10-29, hangok_2.mp4)
+snort_b	1
+huff_b	3
+kibble_pour_b	1
+water_pour_b	1
+toy_land_b	1
