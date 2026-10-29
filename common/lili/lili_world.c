@@ -43,6 +43,7 @@ void world_init(world_t *w, uint32_t seed) {
     lili->vis = 1.0f;
     toys_init(w);
     w->things.food = w->things.water = 3;                /* the bowls start full, the pad clean */
+    w->need_ask_t = 1000.0f;                              /* hungry at power-on: to the bowl at once, not after 90 s (2026-10-29) */
     life_init(w, life_local(LILI_DEFAULT_DATE, (int)LILI_START_HOUR, 0, 0));   /* the platform sets the real clock after */
 }
 
