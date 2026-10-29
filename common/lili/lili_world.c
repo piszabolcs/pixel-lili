@@ -553,12 +553,19 @@ bool world_care_tap(world_t *w, int x, int y) {
     sparkle(w, x, y);
     return true;
 }
-/* an empty bowl twinkles every few seconds: a tap fills it (2026-10-29, the owner: "I do not know how to feed her") */
+/* an empty bowl twinkles every few seconds: a tap fills it (2026-10-29, the owner: "I do not know how to feed her"); so
+   does a spot on the floor, the reason she hides guilty under the bench ("why does she always run under the bench?") */
 static void bowl_hint(world_t *w, float dt) {
     static float t; t += dt;
+    {   /* petted or playing: a smile over her head (the owner, 2026-10-29: "a sign while petting and playing, a little smiley") */
+        const uint16_t an = w->actors[0].anim;
+        if ((an == ANIM_PET_ENJOY || an == ANIM_TUG_ROPE || an == ANIM_CHEW_TOY || an == ANIM_PLAY_BOW || an == ANIM_CARRY_TROT ||
+             an == ANIM_CARRY_PLUSH || an == ANIM_POUNCE) && (w->bubble_t <= 0 || w->bubble == BB_SMILE)) { w->bubble = BB_SMILE; w->bubble_t = 0.5f; }
+    }
     if (w->view != VIEW_ROOM || t < 3.0f || w->sparkle_t > 0) return;
     int x0, y0, x1, y1;
-    if (!w->things.food && prop_box(w, IMG_BOWL_FOOD, "bowl_food", &x0, &y0, &x1, &y1)) sparkle(w, (x0 + x1) / 2, (y0 + y1) / 2);
+    if (w->things.n_mess) sparkle(w, w->things.mess[0][0], w->things.mess[0][1] - 4);
+    else if (!w->things.food && prop_box(w, IMG_BOWL_FOOD, "bowl_food", &x0, &y0, &x1, &y1)) sparkle(w, (x0 + x1) / 2, (y0 + y1) / 2);
     else if (!w->things.water && prop_box(w, IMG_BOWL_WATER, "bowl_water", &x0, &y0, &x1, &y1)) sparkle(w, (x0 + x1) / 2, (y0 + y1) / 2);
     else return;
     t = 0;
@@ -577,7 +584,8 @@ static void draw_sparkle(const world_t *w, render8_t *r) {
 /* ---- the thought bubble (spec 10.4, M10.4): a small square bubble over her head with an icon, in Lili's palette slots
    (the owner, 2026-10-27: no trail of dots into her head); 9 x 9 icons as bit rows (bit 8 = the leftmost pixel), the rope
    its own picture (tools/toy_sprites.py icon_rope) ---- */
-static const uint16_t BUBBLE_ICON[BB_COUNT][9] = {
+static const uint16_t BUBBLE_ICON[BB_SMILE + 1][9] = {
+    [BB_SMILE]    = { 0x07C, 0x082, 0x101, 0x129, 0x101, 0x145, 0x139, 0x082, 0x07C },   /* the owner: "a little smiley" */
     [BB_HEART]    = { 0x000, 0x0C6, 0x1EF, 0x1FF, 0x1FF, 0x0FE, 0x07C, 0x038, 0x010 },
     [BB_NOTE]     = { 0x01E, 0x01E, 0x012, 0x012, 0x012, 0x072, 0x0F6, 0x0E0, 0x000 },
     [BB_QUESTION] = { 0x07C, 0x0C6, 0x006, 0x00C, 0x018, 0x030, 0x000, 0x030, 0x030 },
@@ -589,7 +597,7 @@ static const uint16_t BUBBLE_ICON[BB_COUNT][9] = {
     [BB_PLUSH]    = { 0x082, 0x1C7, 0x0FE, 0x0D6, 0x0FE, 0x07C, 0x0FE, 0x0FE, 0x07C },
 };
 static void draw_bubble(const world_t *w, render8_t *r, int x, int top) {
-    if (!w->bubbles_on || w->bubble_t <= 0 || w->bubble == BB_NONE || w->bubble >= BB_COUNT) return;
+    if (!w->bubbles_on || w->bubble_t <= 0 || w->bubble == BB_NONE || w->bubble > BB_SMILE) return;
     if (w->bubble == BB_PLUSH && w->things.toys[TOY_PLUSH].view >= VIEW_COUNT) return;   /* the plush is in the toy box */
     uint8_t dark, mid, light, warm; lili_slots(r, &dark, &mid, &light, &warm);
     sprite_set_t set; sprite_frame_t fr;
@@ -602,7 +610,7 @@ static void draw_bubble(const world_t *w, render8_t *r, int x, int top) {
     r8_fill(r, bx + 1, by, bw - 2, bh, dark); r8_fill(r, bx, by + 1, bw, bh - 2, dark);   /* the outline, its corners cut */
     r8_fill(r, bx + 1, by + 1, bw - 2, bh - 2, light);
     if (rope) { pak_blit(r, &set, &fr, bx + 3 + set.pivot_x, by + 3 + set.pivot_y); return; }
-    const uint8_t ink = w->bubble == BB_HEART || w->bubble == BB_FOOD ? warm : dark;
+    const uint8_t ink = w->bubble == BB_HEART || w->bubble == BB_FOOD || w->bubble == BB_SMILE ? warm : dark;
     for (int row = 0; row < 9; row++) for (int c = 0; c < 9; c++)
         if (BUBBLE_ICON[w->bubble][row] >> (8 - c) & 1) r8_fill(r, bx + 3 + c, by + 3 + row, 1, 1, ink);
 }
@@ -767,7 +775,7 @@ void world_gesture_ctx(const world_t *w, gesture_ctx_t *c) {
     for (int t = 0; t < TOY_COUNT; t++) {                            /* the loose toys here, where they are drawn */
         const toy_t *ty = &w->things.toys[t];
         if (ty->view != w->view || c->n_toys >= GESTURE_TOYS_MAX) continue;           /* in her mouth too (2026-10-29) */
-        c->toy_x[c->n_toys] = (int16_t)ty->x; c->toy_y[c->n_toys] = (int16_t)(ty->y - ty->z - 4); c->n_toys++;
+        c->toy_x[c->n_toys] = (int16_t)ty->x; c->toy_y[c->n_toys] = (int16_t)(ty->y - ty->z - 4); c->toy_id[c->n_toys] = (int8_t)t; c->n_toys++;
     }
     /* the door: the room's door picture, the yard's house door at the bottom (spot_door_yard, a finger wide around it) */
     const map_t *m = world_map(w, w->view);

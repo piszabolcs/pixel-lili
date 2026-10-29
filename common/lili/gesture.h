@@ -25,6 +25,7 @@ typedef struct {
     g_rect_t lili;                                         /* her sprite's box on the screen (no box: she is not in this view) */
     bool     bowing;                                       /* she is in a play bow (APPROACH only counts then) */
     int      n_toys; int16_t toy_x[GESTURE_TOYS_MAX], toy_y[GESTURE_TOYS_MAX];   /* the toys in this view, on the screen */
+    int8_t   toy_id[GESTURE_TOYS_MAX];                                         /* which toy each is (TOY_*): the yard may hold only the plush */
     g_rect_t door;                                         /* a tap here switches the view (2026-10-21) */
 } gesture_ctx_t;
 

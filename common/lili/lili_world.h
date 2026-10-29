@@ -33,6 +33,7 @@ void     world_render_cached(const world_t *w, render8_t *r, bgcache_t *c);   /*
 void     world_debug_draw(const world_t *w, render8_t *r);  /* the walkable grid and the points */
 const map_t *world_map(const world_t *w, view_t v);
 int      world_season(const world_t *w);               /* 0 spring .. 3 winter: forced, else LILI_SEASON_DEFAULT (the RTC's date from M5) */
+#define  BB_SMILE BB_COUNT                              /* the body's own bubble past the brain's: a smile while petted or playing (2026-10-29) */
 int      world_daypart(const world_t *w);              /* 0 morning, 1 afternoon, 2 evening, 3 night: forced, else from the clock */
 bool     world_painted(void);                          /* the pak holds the owner's painted backgrounds (else the placeholder shapes) */
 /* the sprite frame an actor shows now (offset: ANIM_YARD_OFFSET for the yard's size); a reversed animation

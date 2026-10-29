@@ -28,8 +28,11 @@ static int toy_at(const gesture_ctx_t *c, int x, int y) {
         const int dx = x - c->toy_x[i], dy = y - c->toy_y[i], d = dx * dx + dy * dy;
         if (d < bd) { bd = d; best = i; }
     }
-    if (best < 0 || bd <= G_TOY_CORE * G_TOY_CORE) return best;
-    return in_rect(&c->lili, x, y, 0) ? -1 : best;
+    /* the toy's own id, not its place in the list (2026-10-29, the owner: "in the yard nothing can be done with the toy":
+       with the plush alone out there it was entry 0, and the finger moved the rope in the room) */
+    if (best < 0) return -1;
+    if (bd <= G_TOY_CORE * G_TOY_CORE) return c->toy_id[best];
+    return in_rect(&c->lili, x, y, 0) ? -1 : c->toy_id[best];
 }
 /* the finger's velocity over the last G_FLICK_MS: from the newest sample back to the oldest one still in that window */
 static void velocity(const gesture_t *g, float *vx, float *vy) {

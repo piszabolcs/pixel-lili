@@ -127,7 +127,7 @@ static const act_t ACTS[RX_END] = {
     [RX_FORGIVEN]        = { 0, { UNHIDE, FX(FX_FORGIVE), ST(STYLE_TROT), GO(TG_FRONT), DR(DIR_S), AN(ANIM_PANT_SMILE, 2.5f) } },
     [RX_CALL]            = { 0, { UNHIDE, ON(ANIM_HEAD_TILT), ST(STYLE_TROT), GO(TG_FRONT), DR(DIR_S), AN(ANIM_IDLE_SIT_BLINK, 1.5f) } },
     [RX_CALL_OTHER]      = { 0, { UNHIDE, ST(STYLE_TROT), GO(TG_DOOR), VIEW, GO(TG_FRONT), DR(DIR_S), AN(ANIM_IDLE_SIT_BLINK, 1.5f) } },
-    [RX_PET]             = { 0, { AN(ANIM_PET_ENJOY, 60.0f) } },
+    [RX_PET]             = { 0, { AN(ANIM_PET_ENJOY, 60.0f) } },                         /* a smile over her head meanwhile (lili_world.c) */
     [RX_PET_END]         = { 0, { AN(ANIM_PET_ENJOY, 2.0f) } },
     [RX_FETCH]           = { 0, { LOOK(TG_TOY), AN(ANIM_STARTLE, 0.08f), ST(STYLE_SPRINT), GO(TG_TOY), ON(ANIM_POUNCE), PICKUP(ANYTOY),
                                   ST(STYLE_TROT), GO(TG_FRONT), PUTDOWN, DR(DIR_S), AN(ANIM_PLAY_BOW, 1.5f) } },
@@ -559,6 +559,10 @@ bool reflex_needs(world_t *w) {
     const things_t *t = &w->things;
     if (w->need_ask_t < NEED_ASK_S || plan_asleep(w, 0)) return false;
     int rx = -1;
+    /* worn out (the owner, 2026-10-29: "the lightning is empty, what is it for?": guilty under the bench she never slept,
+       energy 0): she sleeps, under the bench if she is hiding there */
+    if (w->energy <= 1.5f) rx = w->plans[0].hide == 1 || t->guilty ? ACT_SLEEP_NOOK : ACT_SLEEP_RUG;
+    if (rx >= 0) { if (!fire(w, 0, rx, 9, BB_ZZZ)) return false; w->need_ask_t = 0; return true; }
     if (w->hunger >= NEED_AT) rx = t->food ? ACT_EAT : t->guilty ? -1 : RX_ASK_FOOD;
     if (rx < 0 && w->thirst >= NEED_AT) rx = t->water ? ACT_DRINK : t->guilty ? -1 : RX_ASK_WATER;
     if (rx < 0 || !fire(w, 0, rx, 9, BB_FOOD)) return false;

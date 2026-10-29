@@ -915,6 +915,12 @@ static int selftest_reflex(void) {
     s_world.things.mess[0][0] = 300; s_world.things.mess[0][1] = 300; p->hide = 1; s_world.need_ask_t = 100;
     { decision_t d = { { ACT_PEEK_BENCH, ACT_NONE, ACT_NONE }, ST_WALK, FC_NEUTRAL, BB_NONE, 5, 1.0f }; brain_apply(&s_world, &d, 1.0f, 0); }
     CHECK(p->d.a[0] == ACT_EAT && run_plan(40) == PLAN_DONE && s_world.things.food == 2 && s_world.hunger < 1, "hungry, guilty and hiding: she still goes and eats from the full bowl");
+    /* the owner (2026-10-29): "the lightning is empty, why the drop over her head, why always under the bench?" */
+    world_init(&s_world, 49); s_world.energy = 0.5f; s_world.things.guilty = true; p->hide = 1; s_world.need_ask_t = 100;
+    { decision_t d = { { ACT_PEEK_BENCH, ACT_NONE, ACT_NONE }, ST_WALK, FC_NEUTRAL, BB_SWEAT, 5, 1.0f }; brain_apply(&s_world, &d, 1.0f, 0); }
+    CHECK(p->d.a[0] == ACT_SLEEP_NOOK && s_world.bubble == BB_ZZZ, "worn out and hiding: she goes to sleep under the bench");
+    world_init(&s_world, 50); s_world.bubbles_on = true; pose_snap(l, ANIM_PET_ENJOY); world_tick(&s_world, 0.05f);
+    CHECK(s_world.bubble == BB_SMILE && s_world.bubble_t > 0, "petted: a smile over her head");
     printf("selftest-reflex: ok\n");
     return 0;
 }
@@ -985,6 +991,17 @@ static int selftest_toys(void) {
       for (int k = 0; k <= 6; k++) gesture_feed(&g, &c, k < 6, fx + k * 18, fy - k * 10, 1000u + (uint32_t)k * 16, &q);
       ev_t e; int flick = 0; while (ev_pop(&q, &e)) if (e.type == EV_FLICK) flick = 1;
       CHECK(y->view == VIEW_YARD && c.n_toys == 1 && flick, "out through the door, the toy is the finger's in the yard: a flick throws it"); }
+    { world_init(&s_world, 86); toy_t *pl = &s_world.things.toys[TOY_PLUSH], *rp = &s_world.things.toys[TOY_ROPE];   /* the plush alone out there (2026-10-29) */
+      const map_point_t *g = &MAPS[VIEW_YARD].points[SPOT_GRASS];
+      pl->view = VIEW_YARD; pl->x = g->x; pl->y = g->y; pl->z = 0; pl->held_by = -1; s_world.view = VIEW_YARD;
+      const float rx = rp->x, ry = rp->y, px0 = pl->x, py0 = pl->y;
+      gesture_ctx_t c; world_gesture_ctx(&s_world, &c); gesture_t g2; gesture_init(&g2); ev_queue_t q; ev_init(&q);
+      const int fx = (int)pl->x, fy = (int)(pl->y - 4);
+      for (int k = 0; k <= 6; k++) gesture_feed(&g2, &c, k < 6, fx + k * 18, fy - k * 10, 1000u + (uint32_t)k * 16, &q);
+      ev_t e; while (ev_pop(&q, &e)) world_handle_event(&s_world, &e);
+      for (int i = 0; i < 60; i++) toys_tick(&s_world, 1.0f / 30.0f);
+      CHECK(fabsf(pl->x - px0) + fabsf(pl->y - py0) > 40 && rp->x == rx && rp->y == ry && rp->view == VIEW_ROOM,
+            "the plush alone in the yard: the finger throws the plush, not the rope in the room"); }
       CHECK(out >= 2 && out <= 8, "going out, she takes the rope along now and then"); }
     { world_init(&s_world, 85); toy_t *pl = &s_world.things.toys[TOY_PLUSH]; s_world.view = VIEW_ROOM;   /* the plush's own frames (2026-10-29) */
       pl->view = VIEW_ROOM; pl->x = 300; pl->y = 330; pl->z = 0; pl->held_by = -1;
