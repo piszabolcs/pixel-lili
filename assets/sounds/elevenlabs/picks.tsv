@@ -7,7 +7,7 @@ sniff_a	1
 huff_a	-	"ezek csak pff hangok; mélyről jövő, mintha csukott szájjal ugatna: mmmbpfff" (huff_b generated)
 pant_a	1
 snore_a	2 3
-whine_a	3
+whine_a	-	"a hang, amikor kér valamit, ez a horkoló hang borzalmas, vedd ki" (2026-10-29, after hearing it on the panel: ask_pet, guilty_peek)
 yelp_a	2
 growl_a	1 2 3 4
 yawn_a	1

@@ -64,9 +64,7 @@
   },
   {
    "cue": "whine",
-   "takes": [
-    "whine_a_3 1.21s"
-   ],
+   "takes": [],
    "gain_db": -4,
    "cooldown_ms": 2500
   },
