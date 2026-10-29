@@ -1636,7 +1636,7 @@ static int selftest_sound(void) {
     pose_snap(l, ANIM_BARK_HEAD_FLIP); for (int i = 0; i < 4; i++) world_tick(&s_world, 0.1f);
     CHECK(sfx_count(SFX_BARK) == 2, "the bark animation barks as her head goes up");
     pose_snap(l, ANIM_PET_ENJOY); for (int i = 0; i < 70; i++) world_tick(&s_world, 0.1f);
-    CHECK(sfx_count(SFX_WHIMPER) >= 1, "petted, she whimpers (the snorting breath takes turns with it once picked)");
+    CHECK(sfx_count(SFX_WHIMPER) == 0 && sfx_count(SFX_SNORT) == 0, "petted, she is quiet (the owner, 2026-10-29: neither sound)");
     sfx_stop_all();                                           /* nothing rendered here: the voices are still full */
     world_put_treat(&s_world, l->x > 240 ? 150 : 330, 380);                                /* on the free floor, away from her */
     CHECK(sfx_count(SFX_TREAT_DROP) == 1, "a treat put down taps on the floor");
