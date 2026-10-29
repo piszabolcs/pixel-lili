@@ -103,7 +103,7 @@ static const rule_t RULES[] = {
     { ANIM_BARK_HEAD_FLIP, SFX_BARK, -1, 0.2f, 0 },           /* the head up (spec A12: the 3rd frame) */
     { ANIM_HUFF, SFX_HUFF, -1, 0.1f, 0 },                     /* A13: the 2nd frame */
     { ANIM_SNIFF, SFX_SNIFF, -1, 0.0f, 2.6f },
-    { ANIM_PET_ENJOY, SFX_WHIMPER, SFX_SNORT, 0.4f, 3.0f },
+    { ANIM_PET_ENJOY, SFX_WHIMPER, -1, 0.4f, 3.0f },          /* the snorting breath out (the owner, 2026-10-29: "scary") */
     { ANIM_PANT_SMILE, SFX_PANT, -1, 0.0f, 1.8f },
     { ANIM_SLEEP_CURL, SFX_SNORE, -1, 1.5f, 4.5f },
     { ANIM_ASK_PET, SFX_WHINE, -1, 0.3f, 4.0f },
