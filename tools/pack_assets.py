@@ -29,7 +29,8 @@ LUTS = ["sun_strong", "sun_weak", "cast_day", "cast_eve", "shade_out", "shade_in
 IMAGES = {"room": 1, "yard_spring": 2, "yard_summer": 3, "yard_autumn": 4, "yard_winter": 5,
           "door_spring": 6, "door_summer": 7, "door_autumn": 8, "door_winter": 9,
           "pad": 10, "vase": 11, "bowl_food": 12, "bowl_water": 13, "bench": 14,
-          "mask_sun": 20, "mask_cast": 21, "mask_shade_out": 22, "mask_shade_in": 23, "mask_cast_far": 24}
+          "mask_sun": 20, "mask_cast": 21, "mask_shade_out": 22, "mask_shade_in": 23, "mask_cast_far": 24,
+          "bowl_food_2": 25, "bowl_food_1": 26, "bowl_food_0": 27, "bowl_water_3": 28, "bowl_water_2": 29, "bowl_water_1": 30, "bowl_water_0": 31}
 COVERS_PER_SEASON = 8                                   # the yard's covers: id IMG_COVER_BASE + season * 8 + k (tools/bg_build.py COVERS)
 for _s, _season in enumerate(["spring", "summer", "autumn", "winter"]):
     for _k in range(COVERS_PER_SEASON):
@@ -55,6 +56,13 @@ def backgrounds():
         assert unrle(data, a.size) == bytes(a.flatten()), "RLE round trip"
         head = struct.pack("<HHhhhBB", w, h, im["x"], im["y"], im.get("sort_y", -1), 1 if im.get("mask") else 0, 0)
         out.append((IMAGES[im["name"]], T_IMAGE, head + data)); raw += a.size
+    for im in [i for i in meta["images"] if i["name"] in ("bowl_food", "bowl_water")]:   # the bowls by what is left (tools/bowl_levels.py, 2026-10-29)
+        for k in (3, 2, 1, 0):
+            f = os.path.join(d, f"{im['name']}_{k}.png")
+            if f"{im['name']}_{k}" not in IMAGES or not os.path.exists(f): continue
+            a = np.asarray(Image.open(f)); h, w = a.shape
+            head = struct.pack("<HHhhhBB", w, h, im["x"], im["y"], im.get("sort_y", -1), 0, 0)
+            out.append((IMAGES[f"{im['name']}_{k}"], T_IMAGE, head + rle(a.flatten()))); raw += a.size
     return out, raw
 
 def rle(row_major):

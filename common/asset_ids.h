@@ -41,6 +41,13 @@ enum {
     IMG_MASK_SHADE_OUT = 22,
     IMG_MASK_SHADE_IN = 23,
     IMG_MASK_CAST_FAR = 24,
+    IMG_BOWL_FOOD_2 = 25,
+    IMG_BOWL_FOOD_1 = 26,
+    IMG_BOWL_FOOD_0 = 27,
+    IMG_BOWL_WATER_3 = 28,
+    IMG_BOWL_WATER_2 = 29,
+    IMG_BOWL_WATER_1 = 30,
+    IMG_BOWL_WATER_0 = 31,
 };
 #define IMG_COVER(season, k) ((uint16_t)(40 + (season) * 8 + (k)))   /* the yard's covers, k < 8 */
 #define IMG_COVERS_PER_SEASON 8

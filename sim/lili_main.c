@@ -910,6 +910,11 @@ static int selftest_reflex(void) {
     world_init(&s_world, 47); s_world.hunger = 8; s_world.things.food = 3; s_world.things.water = 3;
     plan_one(&s_world, 0, ACT_EAT, ST_WALK); run_plan(40);
     CHECK(s_world.things.food == 2 && s_world.things.water == 2 && s_world.thirst == 0, "a meal, then a drink: both bowls a serving down");
+    /* the owner (2026-10-29): "feeding still does not work": on the panel she hid under the bench at hunger 9.9 beside a full bowl */
+    world_init(&s_world, 48); s_world.hunger = 9.9f; s_world.things.food = 3; s_world.things.guilty = true; s_world.things.n_mess = 1;
+    s_world.things.mess[0][0] = 300; s_world.things.mess[0][1] = 300; p->hide = 1; s_world.need_ask_t = 100;
+    { decision_t d = { { ACT_PEEK_BENCH, ACT_NONE, ACT_NONE }, ST_WALK, FC_NEUTRAL, BB_NONE, 5, 1.0f }; brain_apply(&s_world, &d, 1.0f, 0); }
+    CHECK(p->d.a[0] == ACT_EAT && run_plan(40) == PLAN_DONE && s_world.things.food == 2 && s_world.hunger < 1, "hungry, guilty and hiding: she still goes and eats from the full bowl");
     printf("selftest-reflex: ok\n");
     return 0;
 }
@@ -957,6 +962,9 @@ static int selftest_toys(void) {
         ev(EV_DRAG, d->x + 4, d->y + 2, TOY_ROPE); ev(EV_DROP, d->x + 4, d->y + 2, TOY_ROPE); }
     for (int i = 0; i < 60; i++) toys_tick(&s_world, 1.0f / 30.0f);
     CHECK(ty->view == VIEW_YARD && nav_clear(VIEW_YARD, (int)ty->x, (int)ty->y, 0), "and the other way: out to the yard");
+    { actor_t *l2 = &s_world.actors[0]; l2->view = VIEW_YARD; s_world.view = VIEW_YARD; toy_pick(&s_world, TOY_ROPE, 0); toys_tick(&s_world, 0.03f);
+      ev(EV_FLICK, 1500, -600, TOY_ROPE);
+      CHECK(ty->held_by < 0 && (ty->vx != 0 || ty->vy != 0), "a toy in her mouth: the finger takes it and throws it (2026-10-29)"); }
     { int out = 0;                                            /* she takes a loose toy along now and then */
       for (int seed = 70; seed < 80; seed++) {
           world_init(&s_world, (uint32_t)seed); s_world.things.toys[TOY_PLUSH].view = TOY_AWAY;
@@ -964,6 +972,19 @@ static int selftest_toys(void) {
           out += s_world.actors[0].view == VIEW_YARD && s_world.things.toys[TOY_ROPE].view == VIEW_YARD;
       }
       printf("toys: the rope went out with her %d times in 10\n", out);
+    { world_init(&s_world, 82); toy_t *y = &s_world.things.toys[TOY_ROPE]; const map_point_t *g = &MAPS[VIEW_YARD].points[SPOT_GRASS];   /* the owner (2026-10-29): "in the yard the toy cannot be thrown" */
+      y->view = VIEW_YARD; y->x = g->x; y->y = g->y; y->z = 0; s_world.view = VIEW_YARD;
+      const float x0 = y->x, y0 = y->y; ev(EV_FLICK, 1500, -600, TOY_ROPE);
+      for (int i = 0; i < 90; i++) toys_tick(&s_world, 1.0f / 30.0f);
+      CHECK(y->view == VIEW_YARD && fabsf(y->x - x0) + fabsf(y->y - y0) > 60, "in the yard a throw flies too"); }
+    { world_init(&s_world, 83); toy_t *y = &s_world.things.toys[TOY_ROPE]; const map_point_t *d = &MAPS[VIEW_ROOM].points[SPOT_DOOR];   /* out through the door, then flicked by the finger */
+      s_world.view = VIEW_ROOM; ev(EV_DRAG, d->x, d->y, TOY_ROPE); ev(EV_DROP, d->x, d->y, TOY_ROPE);
+      for (int i = 0; i < 60; i++) toys_tick(&s_world, 1.0f / 30.0f);
+      s_world.view = VIEW_YARD; gesture_ctx_t c; world_gesture_ctx(&s_world, &c); gesture_t g; gesture_init(&g); ev_queue_t q; ev_init(&q);
+      const int fx = (int)y->x, fy = (int)(y->y - 4);
+      for (int k = 0; k <= 6; k++) gesture_feed(&g, &c, k < 6, fx + k * 18, fy - k * 10, 1000u + (uint32_t)k * 16, &q);
+      ev_t e; int flick = 0; while (ev_pop(&q, &e)) if (e.type == EV_FLICK) flick = 1;
+      CHECK(y->view == VIEW_YARD && c.n_toys == 1 && flick, "out through the door, the toy is the finger's in the yard: a flick throws it"); }
       CHECK(out >= 2 && out <= 8, "going out, she takes the rope along now and then"); }
     printf("selftest-toys: ok\n");
     return 0;

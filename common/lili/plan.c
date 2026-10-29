@@ -75,9 +75,9 @@ static const act_t ACTS[RX_END] = {
     /* through the door (spec 8.4: she goes out, the camera stays) */
     /* the owner (2026-10-29): "the yard is empty, let her take the toys out too": now and then she takes a toy along
        (a loose one in this view, or the one in her mouth) and often leaves it on the other side */
-    [ACT_ENTER_YARD]     = { N_ROOM,                { MAYBE(50, 2), GO(TG_TOY), PICKUP(ANYTOY), GO(TG_DOOR), VIEW, GO(TG_INSIDE), MAYBE(60, 1), PUTDOWN,
+    [ACT_ENTER_YARD]     = { N_ROOM,                { MAYBE(50, 2), GO(TG_TOY), PICKUP(ANYTOY), GO(TG_DOOR), VIEW, GO(TG_INSIDE), MAYBE(85, 1), PUTDOWN,
                                                       ON(ANIM_LOOK_AROUND) } },
-    [ACT_ENTER_ROOM]     = { N_YARD,                { MAYBE(40, 2), GO(TG_TOY), PICKUP(ANYTOY), GO(TG_DOOR), VIEW, GO(TG_INSIDE), MAYBE(60, 1), PUTDOWN,
+    [ACT_ENTER_ROOM]     = { N_YARD,                { MAYBE(40, 2), GO(TG_TOY), PICKUP(ANYTOY), GO(TG_DOOR), VIEW, GO(TG_INSIDE), MAYBE(85, 1), PUTDOWN,
                                                       AN(ANIM_IDLE_STAND, 1.0f) } },
     /* play */
     [ACT_PICKUP_ROPE]    = { N_ROPE | N_FREE_MOUTH, { GO(TG_ROPE), PICKUP(TOY_ROPE) } },
@@ -546,14 +546,18 @@ bool reflex_greet(world_t *w) {                                /* R6: the owner 
     return fire(w, 0, w->things.guilty ? RX_GREET_GUILTY : RX_GREET, 6, w->things.guilty ? BB_SWEAT : BB_HEART);
 }
 
-/* hungry with an empty food bowl, or thirsty with an empty water bowl: she goes and asks, at most every
-   NEED_ASK_S, awake, not guilty; a running reflex is not interrupted (the brain's plans are) */
+/* hungry or thirsty (2026-10-29, the owner: "feeding still does not work"): with food in the bowl she goes and
+   eats, with water she drinks, whatever the brain had in mind, guilty and hiding or not (on the panel she sat under
+   the bench at hunger 9.9 beside a full bowl); with an empty bowl she goes to it and asks, not when guilty. At most
+   every NEED_ASK_S, awake; a running reflex is not interrupted (the brain's plans are) */
 #define NEED_ASK_S 90.0f
 #define NEED_AT    6.0f
 bool reflex_needs(world_t *w) {
     const things_t *t = &w->things;
-    if (w->need_ask_t < NEED_ASK_S || plan_asleep(w, 0) || t->guilty) return false;
-    const int rx = w->hunger >= NEED_AT && !t->food ? RX_ASK_FOOD : w->thirst >= NEED_AT && !t->water ? RX_ASK_WATER : -1;
+    if (w->need_ask_t < NEED_ASK_S || plan_asleep(w, 0)) return false;
+    int rx = -1;
+    if (w->hunger >= NEED_AT) rx = t->food ? ACT_EAT : t->guilty ? -1 : RX_ASK_FOOD;
+    if (rx < 0 && w->thirst >= NEED_AT) rx = t->water ? ACT_DRINK : t->guilty ? -1 : RX_ASK_WATER;
     if (rx < 0 || !fire(w, 0, rx, 9, BB_FOOD)) return false;
     w->need_ask_t = 0;
     return true;

@@ -72,6 +72,7 @@ static int cover_at(const world_t *w, int x, int y) {
     return best;
 }
 
+static void bowl_hint(world_t *w, float dt);
 void world_tick(world_t *w, float dt) {
     w->clock_s += dt;
     if (w->shake_cover >= 0) w->shake_t += dt;
@@ -81,6 +82,7 @@ void world_tick(world_t *w, float dt) {
     if (w->actors[0].view != w->went_view) { w->went_view = (uint8_t)w->actors[0].view; w->went_t = 0; sfx_play(SFX_PET_DOOR, -4); }   /* through the door */
     toys_tick(w, dt);
     sfx_tick(w, dt);                                     /* her sounds at their moments (2026-10-29) */
+    bowl_hint(w, dt);
     life_tick(w, dt);
     for (int i = 0; i < MAX_ACTORS; i++) {
         actor_t *a = &w->actors[i];
@@ -123,8 +125,11 @@ void world_handle_event(world_t *w, const ev_t *e) {
     case EV_SET_SEASON:  w->season_force = (int8_t)(e->a < 0 || e->a > 3 ? -1 : e->a); break;
     case EV_SET_DAYPART: w->daypart_force = (int8_t)(e->a < 0 || e->a > 3 ? -1 : e->a); break;
     /* the toys under the finger (spec 5.3 DRAG_TOY, 8.9): a flick throws it, a drag carries it, a drop lets it fall */
-    case EV_FLICK:       if (e->c >= 0 && e->c < TOY_COUNT && w->things.toys[e->c].held_by < 0) toy_throw(w, e->c, e->a, e->b); break;
-    case EV_DRAG:        if (e->c >= 0 && e->c < TOY_COUNT && w->things.toys[e->c].held_by < 0) {
+    /* 2026-10-29 (the owner: "in the yard the toy cannot be thrown": she had carried it out and kept it): a toy in her
+       mouth is the finger's too, she lets go of it */
+    case EV_FLICK:       if (e->c >= 0 && e->c < TOY_COUNT) { toy_drop(w, e->c); toy_throw(w, e->c, e->a, e->b); } break;
+    case EV_DRAG:        if (e->c >= 0 && e->c < TOY_COUNT) {
+                             toy_drop(w, e->c);
                              toy_t *t = &w->things.toys[e->c];
                              if (nav_clear(w->view, e->a, e->b, 0)) { t->x = e->a; t->y = e->b; }
                              t->z = 6; t->vx = t->vy = t->vz = 0;                     /* lifted a little while it is held */
@@ -543,6 +548,16 @@ bool world_care_tap(world_t *w, int x, int y) {
     sparkle(w, x, y);
     return true;
 }
+/* an empty bowl twinkles every few seconds: a tap fills it (2026-10-29, the owner: "I do not know how to feed her") */
+static void bowl_hint(world_t *w, float dt) {
+    static float t; t += dt;
+    if (w->view != VIEW_ROOM || t < 3.0f || w->sparkle_t > 0) return;
+    int x0, y0, x1, y1;
+    if (!w->things.food && prop_box(w, IMG_BOWL_FOOD, "bowl_food", &x0, &y0, &x1, &y1)) sparkle(w, (x0 + x1) / 2, (y0 + y1) / 2);
+    else if (!w->things.water && prop_box(w, IMG_BOWL_WATER, "bowl_water", &x0, &y0, &x1, &y1)) sparkle(w, (x0 + x1) / 2, (y0 + y1) / 2);
+    else return;
+    t = 0;
+}
 static void draw_sparkle(const world_t *w, render8_t *r) {
     if (w->sparkle_t <= 0 || w->view != VIEW_ROOM) return;
     uint8_t dark, mid, light, warm; lili_slots(r, &dark, &mid, &light, &warm);
@@ -625,8 +640,14 @@ static void painted_fg(const world_t *w, render8_t *r) {
         /* the bowls stand apart (tools/bg_build.py PROP_MOVE) so she has room beside each; the bench's back part
            covers her in her nook under it (spec H10, H11) */
         static const uint16_t P[4] = { IMG_VASE, IMG_BOWL_FOOD, IMG_BOWL_WATER, IMG_BENCH };
-        for (int i = 0; i < 4; i++)
-            if (!prop_in_use(w, P[i]) && pak_image(s_pak, P[i], &props[np])) { key[n] = props[np].sort_y; who[n++] = (int8_t)np; np++; }
+        /* the bowls by what is left in them (2026-10-29, the owner: "I do not get when to feed her"; tools/bowl_levels.py) */
+        static const uint16_t FOOD[4] = { IMG_BOWL_FOOD_0, IMG_BOWL_FOOD_1, IMG_BOWL_FOOD_2, IMG_BOWL_FOOD },
+                              WATER[4] = { IMG_BOWL_WATER_0, IMG_BOWL_WATER_1, IMG_BOWL_WATER_2, IMG_BOWL_WATER_3 };
+        for (int i = 0; i < 4; i++) {
+            if (prop_in_use(w, P[i])) continue;
+            const uint16_t lv = P[i] == IMG_BOWL_FOOD ? FOOD[w->things.food > 3 ? 3 : w->things.food] : P[i] == IMG_BOWL_WATER ? WATER[w->things.water > 3 ? 3 : w->things.water] : P[i];
+            if (pak_image(s_pak, lv, &props[np]) || pak_image(s_pak, P[i], &props[np])) { key[n] = props[np].sort_y; who[n++] = (int8_t)np; np++; }
+        }
     }
     for (int a = 0; a < MAX_ACTORS && n < MAXD; a++)
         if (w->actors[a].present && w->actors[a].view == w->view) { key[n] = (int16_t)w->actors[a].y; who[n++] = (int8_t)(-1 - a); }
@@ -740,7 +761,7 @@ void world_gesture_ctx(const world_t *w, gesture_ctx_t *c) {
     }
     for (int t = 0; t < TOY_COUNT; t++) {                            /* the loose toys here, where they are drawn */
         const toy_t *ty = &w->things.toys[t];
-        if (ty->view != w->view || ty->held_by >= 0 || c->n_toys >= GESTURE_TOYS_MAX) continue;
+        if (ty->view != w->view || c->n_toys >= GESTURE_TOYS_MAX) continue;           /* in her mouth too (2026-10-29) */
         c->toy_x[c->n_toys] = (int16_t)ty->x; c->toy_y[c->n_toys] = (int16_t)(ty->y - ty->z - 4); c->n_toys++;
     }
     /* the door: the room's door picture, the yard's house door at the bottom (spot_door_yard, a finger wide around it) */
