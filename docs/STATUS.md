@@ -68,6 +68,7 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 7. Beépítve (PixelLab, a gazdi jóváhagyta): puffogás (A13) 8 irányban, a kötél felvétele (A14) 5 irányban, a leejtés ugyanez visszafelé, kukucskálás a pad alól (A21) 2 irányban; videó `docs/img/pilot_2026-10-28/wave3_new.mp4`. A plüsst a gazdi Geminivel generálja (`docs/art/startframes/PROMPTS.md` 09).
 8. A flash utáni kifagyás (a kijelző el sem indult, a régi kép maradt, az érintés halott): az I2C-busz felszabadítása induláskor, türelmesebb táblafelismerés, újraindítás, ha a kijelző mégsem indul; a napló kiírja az újraindítás okát.
 9. Jutalomfalat: hosszú nyomás a padlón, odamegy, megeszi, fekve rágja. Kaka: evés után a pelenkára vagy rosszalkodáskor a földre, a kaka képe a kelléklapról, koppintásra eltűnik; a pelenkán sárga folt, a tócsa nedves folt. A plüss visszajött a gazdi képéből (rózsaszín malacos csörgő), saját színekkel. Videó `docs/img/pilot_2026-10-28/moves_care.mp4`.
+10. A gondozás átmenetei (2026-10-29, PixelLab utolsó kockával, a gazdi jóváhagyta): a fej a tálba és ki (evés, ivás), guggolás pisiléshez és kakiláshoz, majd fel, lehajolás a kekszhez, lefekvés vele. Videók: `docs/img/pilot_2026-10-28/wave4_new.mp4` (előtte és utána), `care_moves.mp4` (a játékban, `./lilisim --care-record DIR`).
 
 <!-- /overview -->
 

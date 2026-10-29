@@ -64,7 +64,7 @@ ANIMS = {
     "sleep_curl":     (18, 3,  True,  {"S": "sleep_curl_S"}),           # replaces the rejected SW (2026-10-26)
     "sun_sit":        (19, 4,  True,  {d: f"sun_sit_{d}" for d in ("S", "SW")}),
     "guilty_peek":    (21, 6,  True,  {d: f"peek_{d}" for d in ("S", "SW")}),     # 2026-10-28: lying under the bench, the eyes glance (a closed loop)
-    "squat":          (20, 8,  False, {"SE": "squat_pee_SE"}),          # A20's way down; pee and poop (31, 32) hold the squat
+    "squat":          (20, 8,  False, {"SE": "squat_pee_SE", "SW": "squat_SW"}),   # A20's way down; pee and poop (31, 32) hold the squat; SW 2026-10-29
     "look_around":    (23, 8,  False, {d: f"look_around_{d}" for d in ("S", "SW", "SE")}),
     "sniff":          (24, 8,  True,  all8("sniff")),
     "startle":        (25, 14, False, all8("startle")),
@@ -82,12 +82,23 @@ ANIMS = {
     "chew_treat":     (37, 10, True,  {d: f"chew_treat_{d}" for d in ("S", "SE")}),
     # 2026-10-28: lying (the lie-down's last frame) -> curled up asleep (sleep_curl's first), PixMiniMax with a last frame
     "curl_up":        (39, 8,  False, {"S": "curlup_S"}),
+    # 2026-10-29 (approved by the owner, docs/img/pilot_2026-10-28/wave4_new.mp4): the care animations' ways in, PixMiniMax
+    # with a last frame: standing (the bowl or the treat drawn in) -> the first frame of the eating, drinking, pooping, treat sets
+    "eat_in":         (47, 10, False, {"W": "eatin_W"}),
+    "drink_in":       (49, 10, False, {"W": "drinkin_W"}),
+    "squat_poop":     (52, 8,  False, {d: f"squatpoop_{d}" for d in ("SW", "SE")}),
+    "eattreat_in":    (54, 10, False, {d: f"eattreatin_{d}" for d in ("S", "SW", "SE")}),
+    "liedown_treat":  (55, 8,  False, {d: f"liedowntreat_{d}" for d in ("S", "SE")}),   # eat_treat's last frame -> chew_treat's first
 }
 # played from another set backwards: no frames of their own in the pak (common/asset_ids.h ANIM_REVERSE_OF)
 REVERSED = {"stand_up": (29, "sit_down"),    # A03's second half: sitting down backwards is standing up
             "get_up": (38, "lie_down"),      # 2026-10-28: lying down backwards is getting up (common/lili/pose.c)
             "uncurl": (43, "curl_up"),       # 2026-10-28: curling up backwards is waking out of the ball
-            "drop": (44, "pickup")}          # 2026-10-28: picking the rope up backwards is putting it down
+            "drop": (44, "pickup"),          # 2026-10-28: picking the rope up backwards is putting it down
+            "eat_out": (48, "eat_in"),       # 2026-10-29: the head out of the bowl, up from the squats
+            "drink_out": (50, "drink_in"),
+            "unsquat": (51, "squat"),
+            "unsquat_poop": (53, "squat_poop")}
 # how a set plays where it is not once or round and round (pack_assets.py: the pak's loop byte 2 / 3). 2026-10-28, the owner:
 # "choppy, not matched": PixMiniMax makes a motion from its first frame, not a cycle, so these loops jumped back from their
 # last frame to their first (the jump was the cycle's biggest step in at least one direction); there and back has no such

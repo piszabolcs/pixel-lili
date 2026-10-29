@@ -271,7 +271,8 @@
   "frames": 8,
   "fps": 8,
   "dirs": [
-   "SE"
+   "SE",
+   "SW"
   ],
   "loop": false
  },
@@ -573,5 +574,96 @@
   ],
   "loop": true,
   "extra": true
+ },
+ "eat_in": {
+  "id": 47,
+  "frames": 8,
+  "fps": 10,
+  "dirs": [
+   "W"
+  ],
+  "loop": false
+ },
+ "eat_out": {
+  "id": 48,
+  "frames": 8,
+  "fps": 10,
+  "dirs": [
+   "W"
+  ],
+  "loop": false,
+  "reverse_of": "eat_in"
+ },
+ "drink_in": {
+  "id": 49,
+  "frames": 8,
+  "fps": 10,
+  "dirs": [
+   "W"
+  ],
+  "loop": false
+ },
+ "drink_out": {
+  "id": 50,
+  "frames": 8,
+  "fps": 10,
+  "dirs": [
+   "W"
+  ],
+  "loop": false,
+  "reverse_of": "drink_in"
+ },
+ "unsquat": {
+  "id": 51,
+  "frames": 8,
+  "fps": 8,
+  "dirs": [
+   "SE",
+   "SW"
+  ],
+  "loop": false,
+  "reverse_of": "squat"
+ },
+ "squat_poop": {
+  "id": 52,
+  "frames": 8,
+  "fps": 8,
+  "dirs": [
+   "SW",
+   "SE"
+  ],
+  "loop": false
+ },
+ "unsquat_poop": {
+  "id": 53,
+  "frames": 8,
+  "fps": 8,
+  "dirs": [
+   "SW",
+   "SE"
+  ],
+  "loop": false,
+  "reverse_of": "squat_poop"
+ },
+ "eattreat_in": {
+  "id": 54,
+  "frames": 8,
+  "fps": 10,
+  "dirs": [
+   "S",
+   "SW",
+   "SE"
+  ],
+  "loop": false
+ },
+ "liedown_treat": {
+  "id": 55,
+  "frames": 8,
+  "fps": 8,
+  "dirs": [
+   "S",
+   "SE"
+  ],
+  "loop": false
  }
 }

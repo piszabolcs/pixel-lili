@@ -3,7 +3,8 @@
  *   1. a change of pose was one frame: sitting or lying, she was walking the next moment. Now each animation
  *      starts and ends in a pose (standing, sitting, lying), and a change plays its move first: sit_down,
  *      stand_up (sit_down backwards), lie_down, get_up (lie_down backwards), curl_up into the sleeping ball and
- *      uncurl (curl_up backwards). The plan and the walk wait for it.
+ *      uncurl (curl_up backwards); since 2026-10-29 the head into the bowls and out, the squats for the pee and
+ *      the poop and up again, the bend to the treat and lying down with it. The plan and the walk wait for it.
  *   2. she turned in one frame (south to north). Now she turns 45 degrees at a time, POSE_TURN_S apart, and an
  *      animation that lacks her direction (the lie-down has three) starts once she has turned to its nearest one.
  *   3. the gaits ran at their full frame rate while she sped up and slowed down: her paws slid. Now a gait's

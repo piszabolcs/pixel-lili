@@ -1426,6 +1426,86 @@
    "action": "lies still with a guilty look, ears flat, only her eyes glance left and right, same size",
    "frames": 8,
    "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "eatin_W",
+   "start": "eatin_W0",
+   "last": "eat_drink_W0",
+   "action": "lowers her head into the food bowl in front of her and starts to eat, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "drinkin_W",
+   "start": "drinkin_W0",
+   "last": "drink_W0",
+   "action": "lowers her head into the water bowl in front of her and starts to drink, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "squat_SW",
+   "start": "stand_SW",
+   "last": "pee_SW0",
+   "action": "squats down low on her hind legs to pee, the way a female dog does, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "squatpoop_SE",
+   "start": "stand_SE",
+   "last": "poop_SE0",
+   "action": "hunches her back and squats down on her hind legs to poop, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "squatpoop_SW",
+   "start": "stand_SW",
+   "last": "poop_SW0",
+   "action": "hunches her back and squats down on her hind legs to poop, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "eattreatin_S",
+   "start": "eattreatin_S0",
+   "last": "eat_treat_S0",
+   "action": "bends down to the treat on the floor, front low, rear up, and nibbles it, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "eattreatin_SW",
+   "start": "eattreatin_SW0",
+   "last": "eat_treat_SW0",
+   "action": "bends down to the treat on the floor, front low, rear up, and nibbles it, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "eattreatin_SE",
+   "start": "eattreatin_SE0",
+   "last": "eat_treat_SE0",
+   "action": "bends down to the treat on the floor, front low, rear up, and nibbles it, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "liedowntreat_S",
+   "start": "eat_treat_S7",
+   "last": "chew_treat_S0",
+   "action": "lies down holding the treat in her mouth, the treat between her front paws, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "liedowntreat_SE",
+   "start": "eat_treat_SE7",
+   "last": "chew_treat_SE0",
+   "action": "lies down holding the treat in her mouth, the treat between her front paws, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
   }
  ]
 }

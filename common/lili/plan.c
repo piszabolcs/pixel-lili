@@ -96,8 +96,8 @@ static const act_t ACTS[RX_END] = {
     /* needs */
     [ACT_EAT]            = { N_FOOD         ,       { GO(TG_BOWL_FOOD), DR(DIR_W), AN(ANIM_EAT_DRINK, 4.0f), FX(FX_EAT) } },
     [ACT_DRINK]          = { N_WATER         ,      { GO(TG_BOWL_WATER), DR(DIR_W), AN(ANIM_DRINK, 3.0f), FX(FX_DRINK) } },
-    [ACT_USE_PAD]        = { 0     ,                { GO(SPOT_PAD), ON(ANIM_SQUAT), AN(ANIM_PEE, 3.0f), FX(FX_PAD) } },
-    [ACT_MISCHIEF_FLOOR] = { N_NO_MEMORIAL         ,{ GO(TG_FLOOR_AWAY), ON(ANIM_SQUAT), AN(ANIM_PEE, 2.0f), FX(FX_MESS), ON(ANIM_LOOK_AROUND) } },
+    [ACT_USE_PAD]        = { 0     ,                { GO(SPOT_PAD), AN(ANIM_PEE, 3.0f), FX(FX_PAD) } },     /* the squat (or the poop's) first: pose.c */
+    [ACT_MISCHIEF_FLOOR] = { N_NO_MEMORIAL         ,{ GO(TG_FLOOR_AWAY), AN(ANIM_PEE, 2.0f), FX(FX_MESS), ON(ANIM_LOOK_AROUND) } },
     [ACT_SLEEP_NOOK]     = { 0     ,                { GO(SPOT_NOOK), DR(DIR_S), ON(ANIM_LIE_DOWN), AN(ANIM_SLEEP_CURL, 10.0f) } },
     [ACT_SLEEP_RUG]      = { 0     ,                { GO(SPOT_RUG), ON(ANIM_LIE_DOWN), AN(ANIM_SLEEP_CURL, 10.0f) } },
     [ACT_NAP_SUNBEAM]    = { N_SUN         ,        { GO(TG_SUNBEAM), DR(DIR_S), AN(ANIM_SUN_SIT, 3.0f), AN(ANIM_SLEEP_CURL, 6.0f) } },
@@ -127,8 +127,9 @@ static const act_t ACTS[RX_END] = {
     [RX_TIRED]           = { 0, { PUTDOWN, ON(ANIM_SIT_DOWN), AN(ANIM_PANT_SMILE, 3.0f) } },
     [RX_GREET]           = { 0, { UNHIDE, ST(STYLE_TROT), GO(TG_TOY), PICKUP(ANYTOY), GO(TG_FRONT), DR(DIR_S), ON(ANIM_LIE_DOWN), AN(ANIM_CHEW_TOY, 6.0f) } },
     [RX_GREET_GUILTY]    = { 0, { GO(SPOT_NOOK), DR(DIR_S), ON(ANIM_LIE_DOWN), HIDE(1), PEEK(4.0f), AN(ANIM_GUILTY_PEEK, 2.0f) } },
-    /* the owner's treat (a long press on the floor): off to it, eaten where it lies, then chewed lying down (2026-10-28) */
-    [RX_TREAT]           = { 0, { UNHIDE, ST(STYLE_TROT), GO(TG_TREAT), EATTREAT(1.6f), DR(DIR_S), ON(ANIM_LIE_DOWN), AN(ANIM_CHEW_TREAT, 5.0f), FX(FX_TREAT) } },
+    /* the owner's treat (a long press on the floor): off to it, eaten where it lies, then chewed lying down (2026-10-28;
+       since 2026-10-29 the bend to it and lying down with it are pose.c's moves) */
+    [RX_TREAT]           = { 0, { UNHIDE, ST(STYLE_TROT), GO(TG_TREAT), EATTREAT(1.6f), DR(DIR_S), AN(ANIM_CHEW_TREAT, 5.0f), FX(FX_TREAT) } },
     [RX_SHAKE]           = { 0, { ON(ANIM_STARTLE), FX(FX_BARK), ON(ANIM_BARK_HEAD_FLIP), WT(1.0f) } },
     [RX_VOICE]           = { 0, { ON(ANIM_HEAD_TILT) } },
     [RX_TAP_LOOK]        = { 0, { LOOK(TG_TAP), WT(0.8f) } },
@@ -359,7 +360,7 @@ static int finish(world_t *w, int actor, plan_t *p) {
         an == ANIM_GUILTY_PEEK) {}
     else if (pose_curled(a)) set_anim(a, ANIM_SLEEP_CURL);                                /* curled up: asleep on */
     else if (pose_posed(a, ANIM_LIE_DOWN)) set_anim(a, ANIM_LIE_DOWN);                   /* its last frame: lying still */
-    else if (pose_resting(a) && an != ANIM_PEE && an != ANIM_POOP) set_anim(a, ANIM_IDLE_SIT_BLINK);
+    else if (pose_resting(a)) set_anim(a, ANIM_IDLE_SIT_BLINK);                          /* the squats are not resting: up again */
     else set_anim(a, ANIM_IDLE_STAND);
     return p->status;
 }
@@ -433,10 +434,10 @@ int plan_tick(world_t *w, int actor, float dt) {
             break;
         }
         case P_DROP: { int t = toy_held(w, actor); if (t >= 0) toy_drop(w, t); done = true; break; }
-        case P_EATTREAT:                                           /* the treat: her eating frames take it off the floor */
+        case P_EATTREAT:                                           /* the treat: her frames take it off the floor, from the bend to it on */
             if (p->rep == 0 && w->things.treat_view != (int8_t)a->view) { done = true; break; }   /* gone already */
             set_anim(a, ANIM_EAT_TREAT);
-            if (a->anim != ANIM_EAT_TREAT) break;
+            if (a->anim != ANIM_EAT_TREAT && a->anim != ANIM_EATTREAT_IN) break;
             if (p->rep == 0) { w->things.treat_view = -1; p->rep = 1; p->t = 0; }
             done = p->t >= q->t; break;
         case P_PUTDOWN: {                                          /* the rope: the pickup backwards, then it lies where its last frame has it */

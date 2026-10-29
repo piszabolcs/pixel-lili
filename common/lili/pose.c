@@ -3,45 +3,63 @@
 #include "lili_world.h"
 #include "asset_ids.h"
 
-enum { PO_ANY = 0, PO_STAND, PO_SIT, PO_LIE, PO_CURL };   /* curled up asleep is a pose of its own (2026-10-28, curl_up) */
+enum { PO_ANY = 0, PO_STAND, PO_SIT, PO_LIE, PO_CURL, PO_EAT, PO_DRINK, PO_SQUAT, PO_POOP, PO_TREAT };   /* curled up asleep is a pose of its own (2026-10-28, curl_up) */
+
+/* the moves between poses: the animation, the pose it starts in and the one it ends in, and the same move backwards.
+   2026-10-29 (the owner approved docs/img/pilot_2026-10-28/wave4_new.mp4): the head into the bowls, the squats for the
+   pee and the poop, the bend to the treat and lying down with it are poses of their own with their own ways in and
+   (but for the treat, which is eaten) out, so the plan asks for the eating, the pee or the chewing and gets the move first */
+static const struct { uint16_t anim, back; uint8_t from, to; } MOVES[] = {
+    { ANIM_SIT_DOWN, ANIM_STAND_UP, PO_STAND, PO_SIT },          { ANIM_STAND_UP, ANIM_SIT_DOWN, PO_SIT, PO_STAND },
+    { ANIM_LIE_DOWN, ANIM_GET_UP, PO_STAND, PO_LIE },            { ANIM_GET_UP, ANIM_LIE_DOWN, PO_LIE, PO_STAND },
+    { ANIM_CURL_UP, ANIM_UNCURL, PO_LIE, PO_CURL },              { ANIM_UNCURL, ANIM_CURL_UP, PO_CURL, PO_LIE },
+    { ANIM_EAT_IN, ANIM_EAT_OUT, PO_STAND, PO_EAT },             { ANIM_EAT_OUT, ANIM_EAT_IN, PO_EAT, PO_STAND },
+    { ANIM_DRINK_IN, ANIM_DRINK_OUT, PO_STAND, PO_DRINK },       { ANIM_DRINK_OUT, ANIM_DRINK_IN, PO_DRINK, PO_STAND },
+    { ANIM_SQUAT, ANIM_UNSQUAT, PO_STAND, PO_SQUAT },            { ANIM_UNSQUAT, ANIM_SQUAT, PO_SQUAT, PO_STAND },
+    { ANIM_SQUAT_POOP, ANIM_UNSQUAT_POOP, PO_STAND, PO_POOP },   { ANIM_UNSQUAT_POOP, ANIM_SQUAT_POOP, PO_POOP, PO_STAND },
+    { ANIM_EATTREAT_IN, 0, PO_STAND, PO_TREAT },                 { ANIM_LIEDOWN_TREAT, 0, PO_TREAT, PO_LIE },
+};
+#define N_MOVES (int)(sizeof MOVES / sizeof MOVES[0])
+static int move_of(uint16_t anim) {
+    for (int k = 0; k < N_MOVES; k++) if (MOVES[k].anim == anim) return k;
+    return -1;
+}
 
 /* the pose an animation starts (end = false) or ends in, read off its first and last frames in every direction
-   (docs/img/fix_2026-10-28/poses.png): the squat and the pad's business count as sitting, the bow and the tug as
-   standing; the treats sit in some directions and lie in others: no move for them */
+   (docs/img/fix_2026-10-28/poses.png): the bow and the tug count as standing, the eating, drinking, pee, poop and
+   treat sets hold the pose their move ends in (the chewing lies, where lying down with the treat ends) */
 static int pose_of(uint16_t anim, bool end) {
+    const int m = move_of(anim);
+    if (m >= 0) return end ? MOVES[m].to : MOVES[m].from;
     switch (anim) {
-    case ANIM_SIT_DOWN: case ANIM_SQUAT:                 return end ? PO_SIT : PO_STAND;
-    case ANIM_STAND_UP:                                  return end ? PO_STAND : PO_SIT;
-    case ANIM_LIE_DOWN: case ANIM_LIE_DOWN_ROPE:         return end ? PO_LIE : PO_STAND;
-    case ANIM_GET_UP:                                    return end ? PO_STAND : PO_LIE;
-    case ANIM_CURL_UP:                                   return end ? PO_CURL : PO_LIE;
-    case ANIM_UNCURL:                                    return end ? PO_LIE : PO_CURL;
+    case ANIM_LIE_DOWN_ROPE:                             return end ? PO_LIE : PO_STAND;
     case ANIM_SLEEP_CURL:                                return PO_CURL;
     case ANIM_IDLE_SIT_BLINK: case ANIM_PANT_SMILE: case ANIM_HEAD_TILT: case ANIM_SUN_SIT: case ANIM_LOOK_AROUND:
-    case ANIM_ASK_PET: case ANIM_PEE: case ANIM_POOP:   return PO_SIT;
-    case ANIM_CHEW_TOY: case ANIM_PET_ENJOY: case ANIM_GUILTY_PEEK: return PO_LIE;
-    case 0: case ANIM_EAT_TREAT: case ANIM_CHEW_TREAT:  return PO_ANY;
+    case ANIM_ASK_PET:                                   return PO_SIT;
+    case ANIM_CHEW_TOY: case ANIM_PET_ENJOY: case ANIM_GUILTY_PEEK: case ANIM_CHEW_TREAT: return PO_LIE;
+    case ANIM_EAT_DRINK:                                 return PO_EAT;
+    case ANIM_DRINK:                                     return PO_DRINK;
+    case ANIM_PEE:                                       return PO_SQUAT;
+    case ANIM_POOP:                                      return PO_POOP;
+    case ANIM_EAT_TREAT:                                 return PO_TREAT;
+    case 0:                                              return PO_ANY;
     default:                                             return PO_STAND;
     }
 }
-static bool is_move(uint16_t anim) {
-    return anim == ANIM_SIT_DOWN || anim == ANIM_STAND_UP || anim == ANIM_LIE_DOWN || anim == ANIM_GET_UP || anim == ANIM_CURL_UP || anim == ANIM_UNCURL;
-}
-static uint16_t reverse_move(uint16_t m) {
-    switch (m) {
-    case ANIM_SIT_DOWN: return ANIM_STAND_UP;  case ANIM_STAND_UP: return ANIM_SIT_DOWN;
-    case ANIM_LIE_DOWN: return ANIM_GET_UP;    case ANIM_GET_UP: return ANIM_LIE_DOWN;
-    case ANIM_CURL_UP: return ANIM_UNCURL;     case ANIM_UNCURL: return ANIM_CURL_UP;
-    default: return 0;
-    }
-}
-/* the move from one pose towards another (sitting to lying stands up first, curled up uncurls first), 0 = none needed */
+static bool is_move(uint16_t anim) { return move_of(anim) >= 0; }
+static uint16_t reverse_move(uint16_t m) { const int k = move_of(m); return k >= 0 ? MOVES[k].back : 0; }
+/* the move from one pose towards another: straight there when a move does it, else out of this pose first (up to
+   standing, or out of the ball onto her side), from standing to the ball the lie-down first; 0 = none needed, or
+   none drawn (up from the treat: a cut, as before) */
 static uint16_t move_between(int from, int to) {
     if (from == PO_ANY || to == PO_ANY || from == to) return 0;
-    if (from == PO_CURL) return ANIM_UNCURL;
-    if (from == PO_LIE) return to == PO_CURL ? ANIM_CURL_UP : ANIM_GET_UP;
-    if (from == PO_SIT) return ANIM_STAND_UP;
-    return to == PO_SIT ? ANIM_SIT_DOWN : ANIM_LIE_DOWN;            /* standing: to lying or to curled up, the lie-down first */
+    uint16_t out = 0;
+    for (int k = 0; k < N_MOVES; k++) {
+        if (MOVES[k].from != from) continue;
+        if (MOVES[k].to == to) return MOVES[k].anim;
+        if (MOVES[k].to == PO_STAND || from == PO_CURL) out = MOVES[k].anim;
+    }
+    return from == PO_STAND && to == PO_CURL ? ANIM_LIE_DOWN : out;
 }
 /* a move that ends in the pose she is in (asked to lie down when curled up counts: lying, nothing to do) */
 static bool already(const actor_t *a, uint16_t move) {
@@ -119,7 +137,7 @@ void pose_play(actor_t *a, uint16_t anim) {
     sprite_set_t s;
     if (is_move(a->anim) && !move_over(a) && source_set(a->anim, &s)) {  /* in the middle of a move */
         const uint16_t back = reverse_move(a->anim);
-        if (back == move_between(pose_of(a->anim, true), pose_of(anim, false))) {   /* back the way it came, from the frame it got to */
+        if (back && back == move_between(pose_of(a->anim, true), pose_of(anim, false))) {   /* back the way it came, from the frame it got to */
             const int f = pose_frame(&s, a->anim_t, false);
             start(a, back); a->anim_t = (float)(s.n_frames - 1 - f) / s.fps; a->want = anim == back ? 0 : anim;
         } else a->want = anim;                                          /* on after it */

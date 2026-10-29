@@ -291,9 +291,11 @@ static int shadow_hmax(uint16_t anim) {
     case ANIM_SLEEP_CURL: return 10;
     case ANIM_CHEW_TOY: case ANIM_CHEW_TREAT: case ANIM_LIE_DOWN_ROPE: case ANIM_GUILTY_PEEK: return 18;   /* lying, head up */
     case ANIM_PLAY_BOW: case ANIM_EAT_DRINK: case ANIM_DRINK: case ANIM_LIE_DOWN: case ANIM_TUG_ROPE:
-    case ANIM_EAT_TREAT: case ANIM_SNIFF: case ANIM_PICKUP: case ANIM_DROP: return 28;              /* head down, or going down */
+    case ANIM_EAT_TREAT: case ANIM_SNIFF: case ANIM_PICKUP: case ANIM_DROP: case ANIM_EAT_IN: case ANIM_EAT_OUT:
+    case ANIM_DRINK_IN: case ANIM_DRINK_OUT: case ANIM_EATTREAT_IN: case ANIM_LIEDOWN_TREAT: return 28;   /* head down, or going down */
     case ANIM_IDLE_SIT_BLINK: case ANIM_PANT_SMILE: case ANIM_LOOK_AROUND: case ANIM_BARK_HEAD_FLIP: case ANIM_HEAD_TILT:
-    case ANIM_SUN_SIT: case ANIM_ASK_PET: case ANIM_PET_ENJOY: case ANIM_SQUAT: case ANIM_PEE: case ANIM_POOP: return 42;   /* sitting, squatting */
+    case ANIM_SUN_SIT: case ANIM_ASK_PET: case ANIM_PET_ENJOY: case ANIM_SQUAT: case ANIM_PEE: case ANIM_POOP:
+    case ANIM_UNSQUAT: case ANIM_SQUAT_POOP: case ANIM_UNSQUAT_POOP: return 42;                      /* sitting, squatting */
     default: return LILI_SHADOW_HMAX;
     }
 }
@@ -374,12 +376,14 @@ static void painted_actor(const world_t *w, render8_t *r, const actor_t *a) {
 }
 
 /* a bowl in Lili's eating / drinking frames: the room's own bowl steps aside while she uses it, so her head
-   is in the bowl her frames carry (the room's bowl in front of her hid her head: the owner, 2026-10-23) */
+   is in the bowl her frames carry (the room's bowl in front of her hid her head: the owner, 2026-10-23); the head
+   into the bowl and out of it carry it too (2026-10-29) */
 static bool prop_in_use(const world_t *w, uint16_t img) {
     for (int a = 0; a < MAX_ACTORS; a++) {
-        const actor_t *ac = &w->actors[a];
+        const actor_t *ac = &w->actors[a]; const uint16_t an = ac->anim;
         if (!ac->present || ac->view != VIEW_ROOM) continue;
-        if ((img == IMG_BOWL_FOOD && ac->anim == ANIM_EAT_DRINK) || (img == IMG_BOWL_WATER && ac->anim == ANIM_DRINK)) return true;
+        if (img == IMG_BOWL_FOOD && (an == ANIM_EAT_DRINK || an == ANIM_EAT_IN || an == ANIM_EAT_OUT)) return true;
+        if (img == IMG_BOWL_WATER && (an == ANIM_DRINK || an == ANIM_DRINK_IN || an == ANIM_DRINK_OUT)) return true;
     }
     return false;
 }

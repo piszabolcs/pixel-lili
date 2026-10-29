@@ -97,7 +97,9 @@ static const struct { uint16_t id; const char *name; } ANIMS[] = {
     { ANIM_POUNCE, "pounce" }, { ANIM_ASK_PET, "ask_pet" }, { ANIM_DRINK, "drink" },
     { ANIM_LIE_DOWN, "lie_down" }, { ANIM_PEE, "pee" }, { ANIM_POOP, "poop" }, { ANIM_TUG_ROPE, "tug_rope" },
     { ANIM_EAT_TREAT, "eat_treat" }, { ANIM_CARRY_TROT, "carry_trot" }, { ANIM_LIE_DOWN_ROPE, "lie_down_rope" },
-    { ANIM_CHEW_TREAT, "chew_treat" } };
+    { ANIM_CHEW_TREAT, "chew_treat" }, { ANIM_EAT_IN, "eat_in" }, { ANIM_EAT_OUT, "eat_out" }, { ANIM_DRINK_IN, "drink_in" },
+    { ANIM_DRINK_OUT, "drink_out" }, { ANIM_UNSQUAT, "unsquat" }, { ANIM_SQUAT_POOP, "squat_poop" }, { ANIM_UNSQUAT_POOP, "unsquat_poop" },
+    { ANIM_EATTREAT_IN, "eattreat_in" }, { ANIM_LIEDOWN_TREAT, "liedown_treat" } };
 enum { N_ANIMS = (int)(sizeof ANIMS / sizeof ANIMS[0]) };
 static const map_prop_t *prop_named(const map_t *m, const char *name) {
     for (int i = 0; i < m->n_props; i++) if (!strcmp(m->props[i].name, name)) return &m->props[i];
@@ -409,24 +411,31 @@ static int demo_record(const char *dir, int fps) {
 /* --moves-record DIR (2026-10-28, the owner: "choppy, not matched"): one take of the moves between poses, the turns and
    a throw, 30 fps .ppm frames for a video: she sits, gets up and walks to the bowls, lies down on the rug and falls
    asleep, a whistle gets her up to the front, the rope is flicked and she fetches it; then a huff, the bench peek, a treat
-   and a poop on the pad (2026-10-28) */
+   and a poop on the pad (2026-10-28). --care-record DIR (2026-10-29): the care take, each with its way in and out: eating,
+   drinking, a pee on the pad, a treat, a poop on the pad, a puddle on the floor */
 static void ev(ev_type_t type, int a, int b, int c);
-static int moves_record(const char *dir) {
+static int moves_record(const char *dir, bool care) {
     canvas_init(); world_init(&s_world, 42); nav_init(&s_nav);
     s_world.season_force = 1; s_world.daypart_force = 1;
     const float dt = 1.0f / 30.0f; char path[512]; int n = 0;
     snprintf(path, sizeof path, "%s/log.txt", dir); FILE *lg = fopen(path, "w");   /* frame, x, y, anim, dir, frame shown: to find a moment */
-    static const struct { int act, ev; float hold; } TAKE[] = {
-        { ACT_SIT, 0, 1.0f }, { ACT_GO_BOWLS, 0, 0.5f }, { ACT_SLEEP_RUG, 0, 0 }, { -1, EV_WHISTLE, 0.5f }, { -1, EV_FLICK, 1.0f },
-        { ACT_HUFF, 0, 0.8f }, { ACT_HIDE_BENCH, 0, 0 }, { ACT_PEEK_BENCH, 0, 0.5f },   /* 2026-10-28: A13, A21 (the fetch has A14's pickup and drop) */
-        { -1, EV_LONG, 1.0f }, { ACT_USE_PAD, 0, 1.5f },                                 /* 2026-10-28: a treat, then (after the meals) a poop on the pad */
+    typedef struct { int act, ev; float hold, bowel; } take_t;                    /* bowel > 0: set before the action (8 = a poop) */
+    static const take_t MOVES[] = {
+        { ACT_SIT, 0, 1.0f, 0 }, { ACT_GO_BOWLS, 0, 0.5f, 0 }, { ACT_SLEEP_RUG, 0, 0, 0 }, { -1, EV_WHISTLE, 0.5f, 0 }, { -1, EV_FLICK, 1.0f, 0 },
+        { ACT_HUFF, 0, 0.8f, 0 }, { ACT_HIDE_BENCH, 0, 0, 0 }, { ACT_PEEK_BENCH, 0, 0.5f, 0 },   /* 2026-10-28: A13, A21 (the fetch has A14's pickup and drop) */
+        { -1, EV_LONG, 1.0f, 0 }, { ACT_USE_PAD, 0, 1.5f, 8 },                                    /* 2026-10-28: a treat, then (after the meals) a poop on the pad */
+    }, CARE[] = {
+        { ACT_EAT, 0, 1.5f, 0 }, { ACT_DRINK, 0, 1.5f, 0 }, { ACT_USE_PAD, 0, 1.5f, 1 }, { -1, EV_LONG, 1.5f, 0 }, { ACT_USE_PAD, 0, 1.5f, 8 },
+        { ACT_MISCHIEF_FLOOR, 0, 1.5f, 1 },
     };
-    for (int k = 0; k < (int)(sizeof TAKE / sizeof TAKE[0]); k++) {
+    const take_t *TAKE = care ? CARE : MOVES; const int n_take = care ? (int)(sizeof CARE / sizeof CARE[0]) : (int)(sizeof MOVES / sizeof MOVES[0]);
+    if (care) { s_world.things.food = 3; s_world.things.water = 3; s_world.hunger = 8; }
+    for (int k = 0; k < n_take; k++) {
         if (TAKE[k].act >= 0) plan_one(&s_world, 0, TAKE[k].act, ST_WALK);
         else if (TAKE[k].ev == EV_FLICK) { toy_t *ty = &s_world.things.toys[TOY_ROPE]; ty->x = 300; ty->y = 330; ev(EV_FLICK, 1500, -500, TOY_ROPE); }
         else if (TAKE[k].ev == EV_LONG) ev(EV_LONG, 300, 300, 0);
         else ev((ev_type_t)TAKE[k].ev, 0, 0, 0);
-        if (TAKE[k].act == ACT_USE_PAD) s_world.bowel = 8;
+        if (TAKE[k].bowel > 0) { s_world.bowel = TAKE[k].bowel; s_world.bladder = 9; }
         float t = 0, after = 0; const float limit = TAKE[k].act == ACT_SLEEP_RUG ? 9.0f : 30.0f;
         for (;;) {
             const int st = plan_tick(&s_world, 0, dt); world_tick(&s_world, dt); frame(); t += dt;
@@ -772,11 +781,19 @@ static int selftest_plan(void) {
 
 /* --selftest-reflex (spec 8.8, M4.5) and the care taps (8.10, M4.7): each reflex fires from its trigger, runs
    to its end with its effect, the priorities hold, and the sleeping, hidden or guilty dog answers only as she should */
+static uint64_t s_seen;                                       /* the animations a run showed (ids < 64): the pose moves' checks */
+static bool s_treat_twice;                                    /* her frames held the treat while it still lay on the floor */
+static void seen(void) {
+    const actor_t *l = &s_world.actors[0]; s_seen |= 1ull << (l->anim & 63);
+    if ((l->anim == ANIM_EATTREAT_IN || l->anim == ANIM_EAT_TREAT || l->anim == ANIM_LIEDOWN_TREAT) && s_world.things.treat_view >= 0) s_treat_twice = true;
+}
+#define SAW(a) ((s_seen >> (a)) & 1)
 static int run_plan(float limit) {
     int st = PLAN_RUNNING; float t = 0;
-    while ((st = plan_tick(&s_world, 0, 1.0f / 30.0f)) == PLAN_RUNNING && t < limit) { world_tick(&s_world, 1.0f / 30.0f); t += 1.0f / 30.0f; }
+    while ((st = plan_tick(&s_world, 0, 1.0f / 30.0f)) == PLAN_RUNNING && t < limit) { world_tick(&s_world, 1.0f / 30.0f); t += 1.0f / 30.0f; seen(); }
     return st;
 }
+static void settle(float s) { for (float t = 0; t < s; t += 1.0f / 30.0f) { world_tick(&s_world, 1.0f / 30.0f); seen(); } }   /* the pose after the plan */
 static void ev(ev_type_t type, int a, int b, int c) { ev_t e = { (uint8_t)type, (int16_t)a, (int16_t)b, (int16_t)c }; world_handle_event(&s_world, &e); }
 static void sleep_now(void) { s_world.actors[0].anim = ANIM_SLEEP_CURL; s_world.actors[0].anim_t = 5; s_world.plans[0].status = PLAN_DONE; }
 static int selftest_reflex(void) {
@@ -852,17 +869,32 @@ static int selftest_reflex(void) {
     world_init(&s_world, 41); s_world.hunger = 5; ev(EV_LONG, 300, 300, 0);
     CHECK(s_world.things.treat_view == VIEW_ROOM && s_world.things.treat_x == 300 && p->status == PLAN_RUNNING && p->prio == 4, "a long press on the floor: a treat there, and she is off to it");
     ev(EV_LONG, 200, 380, 0); CHECK(s_world.things.treat_x == 300, "one treat at a time");
+    s_seen = 0; s_treat_twice = false;
     CHECK(run_plan(30) == PLAN_DONE && s_world.things.treat_view < 0 && s_world.hunger < 4, "the treat eaten (less hungry), chewed, done");
     CHECK(fabsf(l->x - 300) < 40 && fabsf(l->y - 300) < 40, "she ate it where it lay");
+    CHECK(SAW(ANIM_EATTREAT_IN) && SAW(ANIM_EAT_TREAT) && SAW(ANIM_LIEDOWN_TREAT) && SAW(ANIM_CHEW_TREAT) && !SAW(ANIM_LIE_DOWN) && !s_treat_twice,
+          "2026-10-29: she bends to the treat (the floor's one gone as her frames take it), eats, lies down with it, chews");
     /* the poop (2026-10-28): after the meals a business is a poop, on the pad and (in mischief) on the floor; a tap cleans it */
     world_init(&s_world, 42); s_world.bowel = 8; s_world.bladder = 9;
-    plan_one(&s_world, 0, ACT_USE_PAD, ST_WALK); run_plan(30);
+    s_seen = 0; plan_one(&s_world, 0, ACT_USE_PAD, ST_WALK); run_plan(30);
     CHECK(s_world.things.pad == 2 && s_world.things.pad_poop && s_world.bowel == 0 && s_world.bladder == 0, "on the pad: a poop, the pad full, the bowel empty");
+    settle(2.0f);                                             /* the needs tick on meanwhile: after the checks above */
+    CHECK(SAW(ANIM_SQUAT_POOP) && SAW(ANIM_POOP) && SAW(ANIM_UNSQUAT_POOP) && !SAW(ANIM_SQUAT) && !SAW(ANIM_STAND_UP) && l->anim == ANIM_IDLE_STAND,
+          "2026-10-29: the poop's own squat, down and up again, then she stands");
     if (pak_image(&s_pak, IMG_PAD, &im)) { ev(EV_TAP, im.x + im.w / 2, im.y + im.h / 2, 0); CHECK(s_world.things.pad == 0 && !s_world.things.pad_poop, "a tap changes the pad, poop and all"); }
     s_world.bowel = 8; plan_one(&s_world, 0, ACT_MISCHIEF_FLOOR, ST_WALK); run_plan(30);
     CHECK(s_world.things.n_mess == 1 && s_world.things.mess_kind[0] == 1, "on the floor: a poop spot");
-    s_world.bowel = 1; s_world.bladder = 9; plan_one(&s_world, 0, ACT_MISCHIEF_FLOOR, ST_WALK); run_plan(30);
+    s_world.bowel = 1; s_world.bladder = 9; s_seen = 0; plan_one(&s_world, 0, ACT_MISCHIEF_FLOOR, ST_WALK); run_plan(30);
     CHECK(s_world.things.n_mess == 2 && s_world.things.mess_kind[1] == 0, "with the meals not gone through: a puddle");
+    CHECK(SAW(ANIM_SQUAT) && SAW(ANIM_PEE) && SAW(ANIM_UNSQUAT) && SAW(ANIM_SIT_DOWN) && SAW(ANIM_LOOK_AROUND) && !SAW(ANIM_SQUAT_POOP),
+          "2026-10-29: the pee's squat, up from it and sitting down to look around");
+    /* the bowls (2026-10-29): the head into the bowl first, out of it after */
+    world_init(&s_world, 43); s_world.hunger = 8; s_world.things.food = 3; s_seen = 0;
+    plan_one(&s_world, 0, ACT_EAT, ST_WALK); run_plan(30); settle(2.0f);
+    CHECK(SAW(ANIM_EAT_IN) && SAW(ANIM_EAT_DRINK) && SAW(ANIM_EAT_OUT) && l->anim == ANIM_IDLE_STAND, "eating: the head into the food bowl, out of it, then she stands");
+    world_init(&s_world, 44); s_world.things.water = 3; s_seen = 0;
+    plan_one(&s_world, 0, ACT_DRINK, ST_WALK); run_plan(30); settle(2.0f);
+    CHECK(SAW(ANIM_DRINK_IN) && SAW(ANIM_DRINK) && SAW(ANIM_DRINK_OUT) && l->anim == ANIM_IDLE_STAND, "drinking: the same at the water bowl");
     printf("selftest-reflex: ok\n");
     return 0;
 }
@@ -1691,7 +1723,8 @@ int main(int argc, char **argv) {
     if (argc > 2 && !strcmp(argv[1], "--demo-record")) return demo_record(argv[2], argc > 3 ? atoi(argv[3]) : 12);
     if (argc > 2 && !strcmp(argv[1], "--anim-viewer-shot")) return viewer_shot(argv[2], argc > 3 ? atoi(argv[3]) : 2);
     if (argc > 2 && !strcmp(argv[1], "--snapshot")) return snapshot(argv[2]);
-    if (argc > 2 && !strcmp(argv[1], "--moves-record")) return moves_record(argv[2]);
+    if (argc > 2 && !strcmp(argv[1], "--moves-record")) return moves_record(argv[2], false);
+    if (argc > 2 && !strcmp(argv[1], "--care-record")) return moves_record(argv[2], true);
     if (argc > 2 && !strcmp(argv[1], "--scene-shots")) return scene_shots(argv[2]);
     if (argc > 2 && !strcmp(argv[1], "--screenshot")) {
         s_debug = argc > 3 && !strcmp(argv[3], "--debug");

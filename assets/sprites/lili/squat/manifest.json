@@ -4,16 +4,73 @@
  "fps": 8,
  "loop": false,
  "dirs": [
+  1,
   7
  ],
  "frames": 8,
- "cell_w": 45,
+ "cell_w": 60,
  "cell_h": 59,
  "pivot": [
-  24,
+  31,
   59
  ],
  "files": [
+  {
+   "dir": 1,
+   "frame": 0,
+   "file": "d1_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 1,
+   "file": "d1_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 2,
+   "file": "d1_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 3,
+   "file": "d1_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 4,
+   "file": "d1_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 5,
+   "file": "d1_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 6,
+   "file": "d1_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 1,
+   "frame": 7,
+   "file": "d1_f7.png",
+   "mouth": null,
+   "head": null
+  },
   {
    "dir": 7,
    "frame": 0,
@@ -71,5 +128,5 @@
    "head": null
   }
  ],
- "source": "tools/pixellab_to_sprites.py (squat_pee_SE)"
+ "source": "tools/pixellab_to_sprites.py (squat_pee_SE, squat_SW)"
 }
