@@ -22,7 +22,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-T_SPRITE_SET, T_PALETTE, T_LUT, T_IMAGE = 1, 2, 3, 7
+T_SPRITE_SET, T_PALETTE, T_LUT, T_SOUND, T_IMAGE = 1, 2, 3, 5, 7
 YARD_OFFSET = 100                                  # the yard's smaller sprite sets: anim id + 100 (tools/pixellab_to_sprites.py)
 PALS = ["master", "room", "yard_spring", "yard_summer", "yard_autumn", "yard_winter"]          # PAL_ID = position + 1
 LUTS = ["sun_strong", "sun_weak", "cast_day", "cast_eve", "shade_out", "shade_in"]             # tools/bg_build.py TABLES
@@ -130,6 +130,12 @@ def main():
             raw_total += raw
             entries.append((man["id"], T_SPRITE_SET, payload))
             print(f"pack: {sub}/{name} (id {man['id']}): {len(man['files'])} frames, {raw} B raw -> {len(payload)} B")
+    sfx = []                                        # Lili's sound bank (tools/lili_sounds.py, 2026-10-29): one entry, its cues -> SFX_*
+    bank = os.path.join(ROOT, "assets", "sounds", "lili")
+    if os.path.exists(os.path.join(bank, "bank.bin")):
+        entries.append((1, T_SOUND, open(os.path.join(bank, "bank.bin"), "rb").read()))
+        sfx = [c["cue"] for c in json.load(open(os.path.join(bank, "bank.json"), encoding="utf-8"))["cues"]]
+        print(f"pack: sounds: {len(sfx)} cues, {len(entries[-1][2])} B")
     body = bytearray(); toc = bytearray(); off = 20
     for eid, et, pl in entries:
         toc += struct.pack("<HBBII", eid, et, 0, off, len(pl)); off += len(pl); body += pl
@@ -150,6 +156,8 @@ def main():
            "enum {"] + [f"    ANIM_{n.upper()} = {s['id']}," for n, s in cat.items()] + ["    ANIM_COUNT_LISTED", "};",
            "/* an animation drawn from another one's frames, backwards (stand_up = sit_down reversed); 0 = it has its own */",
            "#define ANIM_REVERSE_OF(a) (" + "".join(f"(a) == ANIM_{n.upper()} ? ANIM_{s['reverse_of'].upper()} : " for n, s in cat.items() if s.get("reverse_of")) + "0)",
+           "/* Lili's sounds: the cues of the bank (PAK_T_SOUND 1, tools/lili_sounds.py), in its order */",
+           "enum {"] + [f"    SFX_{n.upper()}," for n in sfx] + ["    SFX_COUNT", "};",
            "#endif", ""]
     open(os.path.join(ROOT, "common", "asset_ids.h"), "w", encoding="utf-8", newline="\n").write("\n".join(ids))
     print(f"pack: assets.pak {total} B ({len(entries)} entries, sprites {raw_total} B raw, backgrounds {bg_raw} B raw), common/asset_ids.h")

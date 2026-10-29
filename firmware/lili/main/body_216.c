@@ -10,6 +10,7 @@
 #include "board_pins.h"
 #include "display_port.h"
 #include "mic_es7210.h"
+#include "audio_216.h"
 #include "whistle.h"
 #include "imu_qmi.h"
 #include "rtc_pcf.h"
@@ -48,7 +49,7 @@ static uint8_t s_bright_active, s_state = BODY_ACTIVE;
 
 static void audio_task(void *arg) {
     (void)arg; static int16_t l[WH_N], r[WH_N];
-    for (;;) { if (mic_read(l, r, WH_N, 200) == WH_N) whistle_frame(l, r); else vTaskDelay(1); }
+    for (;;) { if (mic_read(l, r, WH_N, 200) == WH_N) { if (!audio216_self_mute()) whistle_frame(l, r); } else vTaskDelay(1); }   /* not her own bark (spec 5.8) */
 }
 
 /* the summer time (spec 5.6): the RTC keeps the local time, so at the change (the last Sunday of March / October) it
@@ -81,6 +82,7 @@ static void dst_check(world_t *w) {
 
 void body_init(void) {
     i2c_master_bus_handle_t bus = board_i2c_bus();
+    audio216_before_mic();                                          /* the speaker's TX on the mic's I2S (2026-10-29) */
     s_mic = bus && mic_init(bus) && mic_up();
     if (s_mic) { whistle_init(); xTaskCreatePinnedToCore(audio_task, "mic", 6144, NULL, 5, NULL, 1); }
     s_imu = bus && imu_init(bus);
@@ -142,7 +144,7 @@ bool body_poll(world_t *w, ev_queue_t *q, float dt) {
         if (ws.count > s_whistles) ev_push(q, EV_WHISTLE, 0, 0);    /* a new whistle since the last frame */
         s_whistles = ws.count;
         static int loud; static int64_t last_voice;
-        loud = ws.rms_db_l > VOICE_DB && !ws.tone ? loud + 1 : 0;
+        loud = ws.rms_db_l > VOICE_DB && !ws.tone && !audio216_self_mute() ? loud + 1 : 0;   /* her own voice is not the owner's */
         if (loud > 10 && now - last_voice > 8000000) { ev_push(q, EV_VOICE_ACTIVITY, 0, 0); last_voice = now; loud = 0; }
     }
     /* the body: shake, pickup, still or carried */

@@ -8,6 +8,11 @@
 #include <stdint.h>
 #include "driver/i2c_master.h"
 bool mic_init(i2c_master_bus_handle_t bus);        /* false = no ES7210 answered */
+/* before mic_init: the same I2S controller also sends (full duplex, 16 kHz 16-bit stereo) on dout_pin, for the
+   speaker's codec that shares the clocks (Lili's audio_216.c); mic_tx_chan is that channel, NULL without it */
+#include "driver/i2s_std.h"
+void mic_with_tx(int dout_pin);
+i2s_chan_handle_t mic_tx_chan(void);
 bool mic_up(void);                                 /* registers + the channel on (boot, and after a sleep) */
 void mic_down(void);                               /* the channel off, the chip suspended (the pocket-tank's set) */
 bool mic_is_up(void);

@@ -1,6 +1,7 @@
 /* lili_world.c - M2.1: an empty room and yard, and Lili as a placeholder capsule
  * (spec 7.7: nothing waits for the art). Platform-free C99, no malloc. */
 #include "lili_world.h"
+#include "sfx.h"
 #include "maps_gen.h"
 #include "toys.h"
 #include "pose.h"
@@ -77,8 +78,9 @@ void world_tick(world_t *w, float dt) {
     if (w->sparkle_t > 0) w->sparkle_t -= dt;
     if (w->bubble_t > 0) w->bubble_t -= dt;
     w->went_t += dt;
-    if (w->actors[0].view != w->went_view) { w->went_view = (uint8_t)w->actors[0].view; w->went_t = 0; }   /* through the door */
+    if (w->actors[0].view != w->went_view) { w->went_view = (uint8_t)w->actors[0].view; w->went_t = 0; sfx_play(SFX_PET_DOOR, -4); }   /* through the door */
     toys_tick(w, dt);
+    sfx_tick(w, dt);                                     /* her sounds at their moments (2026-10-29) */
     life_tick(w, dt);
     for (int i = 0; i < MAX_ACTORS; i++) {
         actor_t *a = &w->actors[i];
@@ -488,6 +490,7 @@ void world_put_treat(world_t *w, int x, int y) {          /* the owner's long pr
     gesture_ctx_t c; world_gesture_ctx(w, &c);
     if (c.lili.x1 > c.lili.x0 && x >= c.lili.x0 && x < c.lili.x1 && y >= c.lili.y0 && y < c.lili.y1) return;
     t->treat_view = (int8_t)w->view; t->treat_x = (int16_t)x; t->treat_y = (int16_t)y; t->treat_kind ^= 1;
+    sfx_play(SFX_TREAT_DROP, 0);
 }
 
 /* ---- the care taps (spec 8.10, M4.7): a bowl refilled, the pad changed, a spot cleaned (the last one forgives
@@ -531,9 +534,12 @@ bool world_care_tap(world_t *w, int x, int y) {
         sparkle(w, t->mess[best][0], t->mess[best][1]);
         t->mess[best][0] = t->mess[t->n_mess - 1][0]; t->mess[best][1] = t->mess[t->n_mess - 1][1]; t->mess_kind[best] = t->mess_kind[t->n_mess - 1]; t->n_mess--;
         if (!t->n_mess) reflex_forgiven(w);                      /* R1: the last one */
+        sfx_play(SFX_WIPE, 0);
         return true;
     }
-    if (best == C_FOOD) t->food = 3; else if (best == C_WATER) t->water = 3; else { t->pad = 0; t->pad_poop = 0; }
+    if (best == C_FOOD) { t->food = 3; sfx_play(SFX_KIBBLE_POUR, 0); }
+    else if (best == C_WATER) { t->water = 3; sfx_play(SFX_WATER_POUR, 0); }
+    else { t->pad = 0; t->pad_poop = 0; sfx_play(SFX_PAD_CHANGE, 0); }
     sparkle(w, x, y);
     return true;
 }

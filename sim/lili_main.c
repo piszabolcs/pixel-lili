@@ -1568,6 +1568,42 @@ static int bench(void) {
 
 /* ---------- the window: the picture on the left, the inspector on the right ---------- */
 #include "inspector.h"
+#include "sfx.h"
+/* Lili's sounds in the window (2026-10-29): SDL's audio thread mixes, the world's calls lock it */
+static SDL_AudioDeviceID s_adev;
+static void sfx_cb(void *u, Uint8 *out, int bytes) { (void)u; sfx_render((int16_t *)out, bytes / 2); }
+static void sfx_lock_sdl(bool on) { if (on) SDL_LockAudioDevice(s_adev); else SDL_UnlockAudioDevice(s_adev); }
+/* --selftest-sound (2026-10-29): the bank is in the pack and matches the code, a cue sounds, its cooldown holds, the
+   bark comes as her head goes up, the petting takes turns, the treat lands with a tap */
+static int selftest_sound(void) {
+    CHECK(sfx_init(&s_pak, 0), "the bank is in the pack and has the code's cues (tools/lili_sounds.py, tools/pack_assets.py)");
+    nav_init(&s_nav); world_init(&s_world, 81); actor_t *l = &s_world.actors[0];
+    static int16_t buf[SFX_RATE / 10];
+    sfx_play(SFX_BARK, 0); sfx_play(SFX_BARK, 0);
+    int peak = 0; for (int k = 0; k < 5; k++) { sfx_render(buf, SFX_RATE / 10); for (int i = 0; i < SFX_RATE / 10; i++) if (abs(buf[i]) > peak) peak = abs(buf[i]); }
+    printf("sound: a bark peaks at %d\n", peak);
+    CHECK(peak > 3000 && sfx_count(SFX_BARK) == 1, "a bark sounds, and not twice at once (its cooldown)");
+    for (int i = 0; i < 5; i++) world_tick(&s_world, 0.1f);   /* past the cooldown */
+    pose_snap(l, ANIM_BARK_HEAD_FLIP); for (int i = 0; i < 4; i++) world_tick(&s_world, 0.1f);
+    CHECK(sfx_count(SFX_BARK) == 2, "the bark animation barks as her head goes up");
+    pose_snap(l, ANIM_PET_ENJOY); for (int i = 0; i < 70; i++) world_tick(&s_world, 0.1f);
+    CHECK(sfx_count(SFX_WHIMPER) >= 1, "petted, she whimpers (the snorting breath takes turns with it once picked)");
+    sfx_stop_all();                                           /* nothing rendered here: the voices are still full */
+    world_put_treat(&s_world, l->x > 240 ? 150 : 330, 380);                                /* on the free floor, away from her */
+    CHECK(sfx_count(SFX_TREAT_DROP) == 1, "a treat put down taps on the floor");
+    printf("selftest-sound: ok\n");
+    return 0;
+}
+static void sim_sound_init(void) {
+    if (!sfx_init(&s_pak, 0)) { printf("sound: no bank in the pack (tools/lili_sounds.py, tools/pack_assets.py) - silent\n"); return; }
+    if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) { printf("sound: SDL audio init failed: %s\n", SDL_GetError()); return; }
+    SDL_AudioSpec want = { 0 }, have;
+    want.freq = SFX_RATE; want.format = AUDIO_S16SYS; want.channels = 1; want.samples = 512; want.callback = sfx_cb;
+    s_adev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
+    if (!s_adev) { printf("sound: SDL audio failed: %s\n", SDL_GetError()); return; }
+    sfx_set_lock(sfx_lock_sdl); SDL_PauseAudioDevice(s_adev, 0);
+    printf("sound: %d cues at %d Hz\n", SFX_COUNT, have.freq);
+}
 static ev_queue_t s_q;
 static lv_draw_buf_t s_draw_buf;
 static lv_obj_t *s_canvas;
@@ -1740,6 +1776,7 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--selftest-plan")) return selftest_plan();
     if (argc > 1 && !strcmp(argv[1], "--selftest-reflex")) return selftest_reflex();
     if (argc > 1 && !strcmp(argv[1], "--selftest-toys")) return selftest_toys();
+    if (argc > 1 && !strcmp(argv[1], "--selftest-sound")) return selftest_sound();
     if (argc > 1 && !strcmp(argv[1], "--selftest-progress")) return selftest_progress();
     if (argc > 1 && !strcmp(argv[1], "--selftest-calendar")) return selftest_calendar();
     if (argc > 1 && !strcmp(argv[1], "--selftest-offline")) return selftest_offline();
@@ -1779,6 +1816,7 @@ int main(int argc, char **argv) {
     ev_init(&s_q);
     ui_build();
     nav_init(&s_nav);
+    sim_sound_init();
     sim_load(argc > 1 && !strcmp(argv[1], "--fresh"));
     for (int i = 1; i + 1 < argc; i++) if (!strcmp(argv[i], "--brain") && !strcmp(argv[i + 1], "llm") && sim_model_load()) brain_use_llm(true);
     if (argc > 1 && !strcmp(argv[1], "--demo")) demo_start();      /* the window with the tour already running (G stops it) */

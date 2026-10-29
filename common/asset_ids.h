@@ -103,4 +103,31 @@ enum {
 };
 /* an animation drawn from another one's frames, backwards (stand_up = sit_down reversed); 0 = it has its own */
 #define ANIM_REVERSE_OF(a) ((a) == ANIM_STAND_UP ? ANIM_SIT_DOWN : (a) == ANIM_GET_UP ? ANIM_LIE_DOWN : (a) == ANIM_UNCURL ? ANIM_CURL_UP : (a) == ANIM_DROP ? ANIM_PICKUP : (a) == ANIM_EAT_OUT ? ANIM_EAT_IN : (a) == ANIM_DRINK_OUT ? ANIM_DRINK_IN : (a) == ANIM_UNSQUAT ? ANIM_SQUAT : (a) == ANIM_UNSQUAT_POOP ? ANIM_SQUAT_POOP : 0)
+/* Lili's sounds: the cues of the bank (PAK_T_SOUND 1, tools/lili_sounds.py), in its order */
+enum {
+    SFX_BARK,
+    SFX_WHIMPER,
+    SFX_SNORT,
+    SFX_SNIFF,
+    SFX_HUFF,
+    SFX_PANT,
+    SFX_SNORE,
+    SFX_WHINE,
+    SFX_YELP,
+    SFX_GROWL,
+    SFX_YAWN,
+    SFX_EAT,
+    SFX_DRINK,
+    SFX_CRUNCH,
+    SFX_CHEW,
+    SFX_RATTLE,
+    SFX_KIBBLE_POUR,
+    SFX_WATER_POUR,
+    SFX_WIPE,
+    SFX_PAD_CHANGE,
+    SFX_TREAT_DROP,
+    SFX_TOY_LAND,
+    SFX_PET_DOOR,
+    SFX_COUNT
+};
 #endif

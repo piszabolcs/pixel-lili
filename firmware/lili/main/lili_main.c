@@ -32,6 +32,7 @@
 #include "gesture.h"
 #include "touch_216.h"
 #include "body_216.h"
+#include "audio_216.h"
 #include "ui.h"
 #include "battery_port.h"
 #include "plan.h"
@@ -224,6 +225,7 @@ void app_main(void) {
     lili_load();
     llm_init();
     body_init();
+    audio216_init(board_i2c_bus(), &s_pak);                          /* her sounds (2026-10-29): after the mic, which owns the I2S */
     s_ui = psram(sizeof *s_ui); if (s_ui) ui_init(s_ui);
     battery_port_init(board_i2c_bus());
     if (s_ui) ui_show(s_ui);                               /* power-on: the bar for 4 s */

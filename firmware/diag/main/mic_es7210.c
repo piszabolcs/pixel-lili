@@ -14,7 +14,10 @@ static const char *TAG = "mic";
 #define RATE     16000
 
 static i2c_master_dev_handle_t s_dev;
-static i2s_chan_handle_t s_rx;
+static i2s_chan_handle_t s_rx, s_tx;
+static int s_tx_dout = -1;              /* mic_with_tx: the same I2S controller drives the ES8311 speaker codec too (Lili, 2026-10-29) */
+void mic_with_tx(int dout_pin) { s_tx_dout = dout_pin; }
+i2s_chan_handle_t mic_tx_chan(void) { return s_tx; }
 static bool s_up;
 static int s_gain = 10;                 /* 30 dB: the IDF example's choice for the ES7210's own mics */
 static int16_t s_buf[2 * 1024];
@@ -28,7 +31,9 @@ bool mic_init(i2c_master_bus_handle_t bus) {
     if (i2c_master_bus_add_device(bus, &cfg, &s_dev) != ESP_OK) return false;
     i2s_chan_config_t cc = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
     cc.dma_desc_num = 4; cc.dma_frame_num = 512;
-    if (i2s_new_channel(&cc, NULL, &s_rx) != ESP_OK) { ESP_LOGE(TAG, "no I2S RX channel"); return false; }
+    /* the speaker's codec hangs on the same MCLK / BCLK / LRCK: two controllers would fight over them, so with a TX
+       wanted the one controller runs both ways (full duplex), the same clocks, the data out on its own pin */
+    if (i2s_new_channel(&cc, s_tx_dout >= 0 ? &s_tx : NULL, &s_rx) != ESP_OK) { ESP_LOGE(TAG, "no I2S RX channel"); return false; }
     i2s_std_config_t std = {
         .clk_cfg  = I2S_STD_CLK_DEFAULT_CONFIG(RATE),                  /* MCLK = 256 fs = 4.096 MHz */
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
@@ -36,6 +41,10 @@ bool mic_init(i2c_master_bus_handle_t bus) {
                       .invert_flags = { .mclk_inv = false, .bclk_inv = false, .ws_inv = false } },
     };
     if (i2s_channel_init_std_mode(s_rx, &std) != ESP_OK) { ESP_LOGE(TAG, "I2S std init failed"); return false; }
+    if (s_tx) {
+        std.gpio_cfg.dout = s_tx_dout; std.gpio_cfg.din = I2S_GPIO_UNUSED;
+        if (i2s_channel_init_std_mode(s_tx, &std) != ESP_OK) { ESP_LOGE(TAG, "I2S TX init failed"); i2s_del_channel(s_tx); s_tx = NULL; }
+    }
     return mic_up();
 }
 

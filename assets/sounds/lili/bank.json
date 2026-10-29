@@ -1,0 +1,191 @@
+{
+ "rate": 16000,
+ "format": "mu-law",
+ "cues": [
+  {
+   "cue": "bark",
+   "takes": [
+    "bark_a_1 2.02s",
+    "bark_a_2 2.11s",
+    "bark_a_3 2.01s",
+    "bark_a_4 1.79s",
+    "bark_b_1 2.26s",
+    "bark_b_2 2.70s",
+    "bark_b_3 2.45s",
+    "bark_b_4 2.29s"
+   ],
+   "gain_db": 0,
+   "cooldown_ms": 400
+  },
+  {
+   "cue": "whimper",
+   "takes": [
+    "whimper_a_3 2.56s"
+   ],
+   "gain_db": -3,
+   "cooldown_ms": 1500
+  },
+  {
+   "cue": "snort",
+   "takes": [],
+   "gain_db": -3,
+   "cooldown_ms": 1500
+  },
+  {
+   "cue": "sniff",
+   "takes": [
+    "sniff_a_1 1.30s"
+   ],
+   "gain_db": -6,
+   "cooldown_ms": 1500
+  },
+  {
+   "cue": "huff",
+   "takes": [],
+   "gain_db": -2,
+   "cooldown_ms": 600
+  },
+  {
+   "cue": "pant",
+   "takes": [
+    "pant_a_1 1.60s"
+   ],
+   "gain_db": -12,
+   "cooldown_ms": 1500
+  },
+  {
+   "cue": "snore",
+   "takes": [
+    "snore_a_2 0.89s",
+    "snore_a_3 1.65s"
+   ],
+   "gain_db": -18,
+   "cooldown_ms": 3000
+  },
+  {
+   "cue": "whine",
+   "takes": [
+    "whine_a_3 1.21s"
+   ],
+   "gain_db": -4,
+   "cooldown_ms": 2500
+  },
+  {
+   "cue": "yelp",
+   "takes": [
+    "yelp_a_2 0.27s"
+   ],
+   "gain_db": 0,
+   "cooldown_ms": 800
+  },
+  {
+   "cue": "growl",
+   "takes": [
+    "growl_a_1 1.04s",
+    "growl_a_2 1.39s",
+    "growl_a_3 1.54s",
+    "growl_a_4 0.91s"
+   ],
+   "gain_db": -4,
+   "cooldown_ms": 1800
+  },
+  {
+   "cue": "yawn",
+   "takes": [
+    "yawn_a_1 1.20s"
+   ],
+   "gain_db": -6,
+   "cooldown_ms": 3000
+  },
+  {
+   "cue": "eat",
+   "takes": [
+    "eat_a_1 1.83s"
+   ],
+   "gain_db": -6,
+   "cooldown_ms": 1800
+  },
+  {
+   "cue": "drink",
+   "takes": [
+    "drink_a_1 1.94s"
+   ],
+   "gain_db": -6,
+   "cooldown_ms": 1800
+  },
+  {
+   "cue": "crunch",
+   "takes": [
+    "crunch_a_1 1.22s"
+   ],
+   "gain_db": -4,
+   "cooldown_ms": 800
+  },
+  {
+   "cue": "chew",
+   "takes": [
+    "chew_a_1 1.81s"
+   ],
+   "gain_db": -8,
+   "cooldown_ms": 1800
+  },
+  {
+   "cue": "rattle",
+   "takes": [
+    "rattle_a_1 0.72s"
+   ],
+   "gain_db": -8,
+   "cooldown_ms": 400
+  },
+  {
+   "cue": "kibble_pour",
+   "takes": [],
+   "gain_db": -6,
+   "cooldown_ms": 500
+  },
+  {
+   "cue": "water_pour",
+   "takes": [],
+   "gain_db": -6,
+   "cooldown_ms": 500
+  },
+  {
+   "cue": "wipe",
+   "takes": [
+    "wipe_a_1 0.72s"
+   ],
+   "gain_db": -6,
+   "cooldown_ms": 300
+  },
+  {
+   "cue": "pad_change",
+   "takes": [
+    "pad_change_a_4 0.68s"
+   ],
+   "gain_db": -6,
+   "cooldown_ms": 500
+  },
+  {
+   "cue": "treat_drop",
+   "takes": [
+    "treat_drop_a_4 0.29s"
+   ],
+   "gain_db": -6,
+   "cooldown_ms": 200
+  },
+  {
+   "cue": "toy_land",
+   "takes": [],
+   "gain_db": -8,
+   "cooldown_ms": 200
+  },
+  {
+   "cue": "pet_door",
+   "takes": [
+    "pet_door_a_4 0.87s"
+   ],
+   "gain_db": -8,
+   "cooldown_ms": 500
+  }
+ ]
+}

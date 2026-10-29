@@ -3,6 +3,7 @@
 #include "nav.h"
 #include "maps_gen.h"
 #include "asset_ids.h"
+#include "sfx.h"
 #include <math.h>
 
 /* the owner (2026-10-28): the rope spun, flew far and bounced like a rubber ball. A knotted rope is soft and heavy:
@@ -42,6 +43,7 @@ void toy_through_door(world_t *w, int toy) {
     const int y = d->y + (to == VIEW_ROOM ? 20 : -22) * (int)LILI_K;
     t->view = to; t->x = d->x; t->y = nav_clear(to, d->x, y, 0) ? y : d->y;
     t->z = 0; t->vx = t->vy = t->vz = 0; t->spin = 0;
+    sfx_play(SFX_PET_DOOR, -6);
 }
 
 void toys_init(world_t *w) {
@@ -96,7 +98,10 @@ int toy_near(const world_t *w, int actor, float r) {
     }
     return best;
 }
-void toy_pick(world_t *w, int toy, int actor) { toy_t *t = &w->things.toys[toy]; t->held_by = (int8_t)actor; t->vx = t->vy = t->vz = 0; }
+void toy_pick(world_t *w, int toy, int actor) {
+    toy_t *t = &w->things.toys[toy]; t->held_by = (int8_t)actor; t->vx = t->vy = t->vz = 0;
+    if (toy == TOY_PLUSH) sfx_play(SFX_RATTLE, -4);          /* the pig's rattle (2026-10-29) */
+}
 void toy_drop(world_t *w, int toy) {
     toy_t *t = &w->things.toys[toy];
     if (t->held_by < 0) return;
@@ -129,6 +134,7 @@ void toys_tick(world_t *w, float dt) {
         const bool flying = t->z > 0 || t->vz > 0;
         t->vz -= TOY_GRAVITY * dt; t->z += t->vz * dt;
         if (flying && t->z <= 0) {
+            if (t->vz < -20.0f * LILI_K) { sfx_play(SFX_TOY_LAND, 0); if (i == TOY_PLUSH) sfx_play(SFX_RATTLE, -6); }   /* a soft cloth thump */
             t->z = 0; t->vx *= TOY_LAND_SKID; t->vy *= TOY_LAND_SKID;
             t->vz = t->vz < -TOY_HOP_VZ ? -t->vz * TOY_BOUNCE : 0;
         }
