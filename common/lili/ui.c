@@ -9,7 +9,10 @@
 #define STAY_S    4.0f
 #define BAR_X     ((LILI_PHYS_W - UI_BAR_W) / 2)
 #define CARD_X    ((LILI_PHYS_W - UI_CARD_W) / 2)
-#define FROST     0.22f       /* the white over the blurred picture (spec 7.8) */
+#define TINT_K    150         /* of 256: the dark glass over the blurred picture (spec 7.8 had 22 % white; the owner, 2026-10-29: */
+#define TINT_R    24          /* the white text was hard to read on it) */
+#define TINT_G    18
+#define TINT_B    16
 
 static uint16_t rgb(int r, int g, int b) { r = r < 0 ? 0 : r > 255 ? 255 : r; g = g < 0 ? 0 : g > 255 ? 255 : g; b = b < 0 ? 0 : b > 255 ? 255 : b;
                                             return (uint16_t)((r & 0xF8) << 8 | (g & 0xFC) << 3 | b >> 3); }
@@ -20,12 +23,17 @@ static void unpack(uint16_t c, int *r, int *g, int *b) { *r = (c >> 8) & 0xF8; *
 
 void ui_init(ui_t *u) { memset(u, 0, sizeof *u); u->battery = 1; }
 void ui_show(ui_t *u) { u->want = true; u->idle = 0; }
+/* BOOT (the owner, 2026-10-29): a press brings the bar and it stays; the next press takes it, the card with it */
+void ui_toggle(ui_t *u) {
+    if (u->want || u->settings) { u->want = false; u->pinned = false; u->settings = false; }
+    else { u->want = true; u->pinned = true; u->idle = 0; }
+}
 bool ui_visible(const ui_t *u) { return u->show > 0.01f || u->settings; }
 uint8_t ui_brightness(const world_t *w) { static const uint8_t L[3] = { 70, 150, 255 }; return L[w->set_bright % 3]; }
 
 void ui_tick(ui_t *u, float dt) {
     if (u->settings) { u->want = true; u->idle = 0; }
-    if (u->want) { u->idle += dt; if (u->idle > STAY_S) u->want = false; }
+    if (u->want && !u->pinned) { u->idle += dt; if (u->idle > STAY_S) u->want = false; }
     const float target = u->want ? 1.0f : 0.0f, step = dt / SLIDE_S;
     u->show = u->show < target ? (u->show + step > target ? target : u->show + step) : (u->show - step < target ? target : u->show - step);
 }
@@ -65,9 +73,9 @@ static void frost(uint16_t *dst, int w, int h, int rad, const render8_t *r, int 
             #define BL(c) (((c)[iy][ix] * w00 + (c)[iy][ix + 1] * w10 + (c)[iy + 1][ix] * w01 + (c)[iy + 1][ix + 1] * w11) >> 16)
             int R = BL(cr), G = BL(cg), B = BL(cb);
             #undef BL
-            R = (R * 200 + 255 * 56) >> 8; G = (G * 200 + 255 * 56) >> 8; B = (B * 200 + 255 * 56) >> 8;   /* 22 % white (56 / 256) */
+            R = (R * (256 - TINT_K) + TINT_R * TINT_K) >> 8; G = (G * (256 - TINT_K) + TINT_G * TINT_K) >> 8; B = (B * (256 - TINT_K) + TINT_B * TINT_K) >> 8;
             const bool edge = x == a || x == b - 1 || y == 0 || y == h - 1;
-            if (edge) { R = (R + 255) / 2; G = (G + 255) / 2; B = (B + 255) / 2; }            /* the 50 % white rim */
+            if (edge) { R = (R * 166 + 255 * 90) >> 8; G = (G * 166 + 255 * 90) >> 8; B = (B * 166 + 255 * 90) >> 8; }   /* a 35 % white rim */
             else if (y <= 2 && x > a + 4 && x < b - 5) { R = (R * 3 + 255) / 4; G = (G * 3 + 255) / 4; B = (B * 3 + 255) / 4; }   /* the light on the top edge */
             dst[y * w + x] = rgb(R, G, B) | 1;                                                       /* never 0: 0 = outside */
         }
@@ -112,20 +120,23 @@ static void compose_bar(ui_t *u, const world_t *w, const render8_t *r) {
     uint16_t *d = u->bar;
     frost(d, UI_BAR_W, UI_BAR_H, UI_BAR_H / 2, r, BAR_X, bar_y(u));
     lili_date_t dt; life_date(world_now(w), &dt); char t[8]; snprintf(t, sizeof t, "%02d:%02d", dt.hour, dt.minute);
-    text(d, UI_BAR_W, UI_BAR_H, 30, 23, 2, WHITE, t);
-    icon9(d, UI_BAR_W, UI_BAR_H, 98, 4, IC_FOOD, WHITE);   gauge(d, 92, 26, 1 - w->hunger / 10, WARM);       /* fed */
-    icon9(d, UI_BAR_W, UI_BAR_H, 144, 4, IC_BOLT, WHITE);  gauge(d, 136, 26, w->energy / 10, rgb(250, 220, 90));
-    icon9(d, UI_BAR_W, UI_BAR_H, 186, 4, IC_HEART, WHITE); gauge(d, 180, 26, w->happy / 10, rgb(240, 110, 120));
-    if (u->has_battery) {                                  /* the battery: its outline, the charge, the % (a bolt when charging) */
-        fill(d, UI_BAR_W, UI_BAR_H, 228, 18, 30, 16, INK); fill(d, UI_BAR_W, UI_BAR_H, 258, 23, 3, 6, INK);
-        fill(d, UI_BAR_W, UI_BAR_H, 230, 20, 26, 12, rgb(230, 225, 215));
-        fill(d, UI_BAR_W, UI_BAR_H, 230, 20, (int)(26 * u->battery + 0.5f), 12, u->battery < 0.15f ? rgb(230, 60, 50) : rgb(110, 200, 110));
-        char pc[8]; snprintf(pc, sizeof pc, "%d%%", (int)(u->battery * 100 + 0.5f)); text(d, UI_BAR_W, UI_BAR_H, 228, 40, 1, WHITE, pc);
-        if (u->charging) icon9(d, UI_BAR_W, UI_BAR_H, 234, 16, IC_BOLT, rgb(255, 240, 120));
+    text(d, UI_BAR_W, UI_BAR_H, 16, 23, 2, WHITE, t);                                   /* the time at the left (2026-10-29) */
+    /* Lili's three gauges in the middle, each icon over its bar with a gap (2026-10-29: they ran into each other) */
+    static const int GX[3] = { UI_BAR_W / 2 - 48, UI_BAR_W / 2, UI_BAR_W / 2 + 48 };
+    const uint16_t *IC[3] = { IC_FOOD, IC_BOLT, IC_HEART };
+    const float V[3] = { 1 - w->hunger / 10, w->energy / 10, w->happy / 10 };                /* fed, energy, mood */
+    const uint16_t C[3] = { WARM, rgb(250, 220, 90), rgb(240, 110, 120) };
+    for (int i = 0; i < 3; i++) { icon9(d, UI_BAR_W, UI_BAR_H, GX[i] - 9, 13, IC[i], WHITE); gauge(d, GX[i] - 17, 39, V[i], C[i]); }
+    if (u->has_battery) {                                  /* the battery: its outline, the charge, the % under it (a bolt when charging) */
+        fill(d, UI_BAR_W, UI_BAR_H, 254, 15, 30, 16, INK); fill(d, UI_BAR_W, UI_BAR_H, 284, 20, 3, 6, INK);
+        fill(d, UI_BAR_W, UI_BAR_H, 256, 17, 26, 12, rgb(230, 225, 215));
+        fill(d, UI_BAR_W, UI_BAR_H, 256, 17, (int)(26 * u->battery + 0.5f), 12, u->battery < 0.15f ? rgb(230, 60, 50) : rgb(110, 200, 110));
+        char pc[8]; snprintf(pc, sizeof pc, "%d%%", (int)(u->battery * 100 + 0.5f)); text(d, UI_BAR_W, UI_BAR_H, 270 - text_w(pc, 1) / 2, 37, 1, WHITE, pc);
+        if (u->charging) icon9(d, UI_BAR_W, UI_BAR_H, 260, 14, IC_BOLT, rgb(255, 240, 120));
     }
-    icon9(d, UI_BAR_W, UI_BAR_H, 282, 22, IC_SPK, WHITE);
-    if (w->set_muted) icon9(d, UI_BAR_W, UI_BAR_H, 294, 22, IC_X, rgb(240, 90, 80));
-    icon9(d, UI_BAR_W, UI_BAR_H, 318, 22, IC_GEAR, WHITE);
+    icon9(d, UI_BAR_W, UI_BAR_H, 296, 23, IC_SPK, WHITE);
+    if (w->set_muted) icon9(d, UI_BAR_W, UI_BAR_H, 308, 23, IC_X, rgb(240, 90, 80));
+    icon9(d, UI_BAR_W, UI_BAR_H, 330, 23, IC_GEAR, WHITE);
 }
 static const char *ROWS[] = { "Fényerő", "Hang", "Gondolatbuborék", "Keresési segítség", "Idő", "Bezárás" };
 enum { ROW_Y0 = 56, ROW_H = 44, N_ROWS = 6 };
@@ -196,8 +207,8 @@ bool ui_tap(ui_t *u, world_t *w, int x, int y) {
         if (y >= by - 16 && y < by + UI_BAR_H + 16 && x >= BAR_X - 8 && x < BAR_X + UI_BAR_W + 8) {   /* a finger's slack around the bar (2026-10-28) */
             u->idle = 0;
             const int bx = x - BAR_X;
-            if (bx >= 270 && bx < 312) w->set_muted = !w->set_muted;              /* 44 px targets (spec 7.8) */
-            else if (bx >= 312) u->settings = true;
+            if (bx >= 290 && bx < 324) w->set_muted = !w->set_muted;              /* the speaker and the gear, with the bar's slack */
+            else if (bx >= 324) u->settings = true;
             return true;
         }
     }

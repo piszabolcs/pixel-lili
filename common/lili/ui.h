@@ -17,14 +17,15 @@
 #define UI_CARD_Y 78
 typedef struct {
     float   show, idle;                    /* the bar's slide (0 up and away .. 1 down) and the seconds untouched */
-    bool    want, settings;
+    bool    want, settings, pinned;        /* pinned: BOOT brought it, it stays until the next press (2026-10-29) */
     float   battery; bool charging, has_battery;  /* the platform's PMIC reading (no battery: the icon hides) */
     uint16_t bar[UI_BAR_W * UI_BAR_H];     /* the bar, composed each frame it shows (46 KB) */
     uint16_t card[UI_CARD_W * UI_CARD_H];  /* the settings card (232 KB): the platform places the ui_t (PSRAM) */
 } ui_t;
 
 void ui_init(ui_t *u);
-void ui_show(ui_t *u);                                   /* BOOT, a wake: the bar slides down for 4 s */
+void ui_show(ui_t *u);                                   /* a wake: the bar slides down for 4 s */
+void ui_toggle(ui_t *u);                                 /* BOOT: the bar down to stay, or up and away (the card too) */
 void ui_tick(ui_t *u, float dt);
 /* compose what shows from the world and the 8-bit canvas (after the world is drawn, before the flush) */
 void ui_prepare(ui_t *u, const world_t *w, const render8_t *r);

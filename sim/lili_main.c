@@ -1496,6 +1496,10 @@ static int selftest_ui(void) {
     CHECK(!s_ui.settings, "Bezárás closes the card");
     for (int i = 0; i < 200; i++) ui_tick(&s_ui, 0.03f);
     CHECK(s_ui.show < 0.01f && !ui_tap(&s_ui, &s_world, 300, 50), "4 s untouched: the bar slides away, and a tap there is the world's again");
+    ui_toggle(&s_ui); for (int i = 0; i < 400; i++) ui_tick(&s_ui, 0.03f);
+    CHECK(s_ui.show > 0.99f, "BOOT (2026-10-29): the bar comes down and stays");
+    ui_toggle(&s_ui); for (int i = 0; i < 10; i++) ui_tick(&s_ui, 0.03f);
+    CHECK(s_ui.show < 0.01f, "the next press takes it away");
     uint16_t c[5]; CHECK(font_glyph(0x151, c) && font_glyph(0x170, c) && font_glyph(0xE1, c) && !font_glyph(0x4E2D, c), "the font has ő, Ű, á (and no CJK)");
     {   /* the search hint (D-06): off by default; on, a paw at the room's door for 8 s after she went out */
         static render8_t a, b; world_init(&s_world, 62); world_tick(&s_world, 0.01f);
@@ -1772,7 +1776,7 @@ int main(int argc, char **argv) {
         for (int k = 0; k < 4; k++) if (key_edge(SDL_SCANCODE_1 + k)) ev_push(&s_q, EV_SET_SEASON, k, 0);
         if (key_edge(SDL_SCANCODE_D)) { int c = s_world.daypart_force; ev_push(&s_q, EV_SET_DAYPART, c >= 3 ? -1 : c + 1, 0); }
         if (key_edge(SDL_SCANCODE_M)) s_debug = !s_debug;
-        if (key_edge(SDL_SCANCODE_B)) ui_show(&s_ui);                  /* the panel's BOOT: the glass status bar (spec 7.8) */
+        if (key_edge(SDL_SCANCODE_B)) ui_toggle(&s_ui);                /* the panel's BOOT: the glass status bar on and off (spec 7.8) */
         if (key_edge(SDL_SCANCODE_A)) {
             actor_t *l = &s_world.actors[0];
             int k = 0;

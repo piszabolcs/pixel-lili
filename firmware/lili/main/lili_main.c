@@ -185,7 +185,7 @@ static void keys_poll(void) {                  /* a press = one event on the fal
     static int prev_boot = 1, prev_key3 = 1;
     int boot = gpio_get_level(PIN_BOOT), key3 = gpio_get_level(PIN_KEY3);
     if (prev_key3 && !key3) { demo_stop(); ev_push(&s_q, EV_SWITCH_VIEW, 0, 0); }   /* the tour's spots belong to its own view */
-    if (prev_boot && !boot) { if (s_ui) ui_show(s_ui); body_owner(&s_world); }     /* BOOT: the glass status bar (spec 5.4, 7.8); the demo: the console's `demo` */
+    if (prev_boot && !boot) { if (s_ui) ui_toggle(s_ui); body_owner(&s_world); }   /* BOOT: the glass status bar on and off (spec 5.4, 7.8); the demo: the console's `demo` */
     prev_boot = boot; prev_key3 = key3;
 }
 
