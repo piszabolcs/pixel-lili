@@ -17,11 +17,12 @@
 #include <string.h>
 
 enum { P_END = 0, P_GOTO, P_ANIM, P_ONCE, P_WAIT, P_DIR, P_PICK, P_DROP, P_TOSS, P_VIEW, P_HIDE, P_UNHIDE, P_PEEK, P_FOLLOW, P_STYLE, P_FX, P_LOOK,
-       P_PICKUP, P_PUTDOWN, P_EATTREAT };
+       P_PICKUP, P_PUTDOWN, P_EATTREAT, P_MAYBE, P_IF };
 /* walk targets: a map spot (its SPOT_* id), or one of these */
 enum { TG_FRONT = 40, TG_RANDOM, TG_RANDOM_FAR, TG_TOY, TG_ROPE, TG_PLUSH, TG_DOOR, TG_SUNBEAM, TG_BUSH_HIDE, TG_BUSH_EDGE,
        TG_BOWL_FOOD, TG_BOWL_WATER, TG_FLOOR_AWAY, TG_INSIDE, TG_TAP, TG_TREAT };
 enum { FX_EAT = 1, FX_DRINK, FX_PAD, FX_MESS, FX_BARK, FX_HUFF, FX_FORGIVE, FX_TREAT };
+enum { C_WATER = 1 };                         /* P_IF's conditions: water in the bowl */
 enum {                                        /* preconditions (spec 8.7, 10.5's context mask) */
     N_ROOM = 1 << 0, N_YARD = 1 << 1, N_TOY_VIEW = 1 << 2, N_MOUTH = 1 << 3, N_FREE_MOUTH = 1 << 4, N_FOOD = 1 << 5,
     N_WATER = 1 << 6, N_SUN = 1 << 7, N_NO_MEMORIAL = 1 << 8, N_HIDDEN = 1 << 9, N_AUTUMN = 1 << 10, N_WARM = 1 << 11,
@@ -40,6 +41,8 @@ typedef struct { uint8_t op, arg; uint16_t anim; float t; } prim_t;
 #define PICKUP(toy) { P_PICKUP, toy, 0, 0 }             /* the pick, with the rope through the pickup's frames (A14) */
 #define PUTDOWN     { P_PUTDOWN, 0, 0, 0 }               /* the drop, with the rope through the same frames backwards */
 #define EATTREAT(t) { P_EATTREAT, 0, 0, t }              /* the treat off the floor and eaten (2026-10-28) */
+#define MAYBE(pct, n) { P_MAYBE, n, 0, pct }             /* a coin: pct % on with the next n primitives, else past them (2026-10-29) */
+#define IF(c, n)    { P_IF, n, c, 0 }                    /* on with the next n primitives if the condition holds, else past them */
 #define TOSS        { P_TOSS, 0, 0, 0 }
 #define VIEW        { P_VIEW, 0, 0, 0 }
 #define HIDE(p)     { P_HIDE, p, 0, 0 }
@@ -52,7 +55,7 @@ typedef struct { uint8_t op, arg; uint16_t anim; float t; } prim_t;
 typedef struct { uint32_t need; prim_t p[PRIMS]; } act_t;
 /* the reflexes' own sequences, after the brain's actions in the same table (spec 8.8) */
 enum { RX_FORGIVEN = ACT_COUNT, RX_CALL, RX_CALL_OTHER, RX_PET, RX_PET_END, RX_FETCH, RX_TEASE, RX_TIRED, RX_GREET, RX_GREET_GUILTY,
-       RX_SHAKE, RX_VOICE, RX_TAP_LOOK, RX_TAP_GO, RX_JOY, RX_TREAT, RX_END };
+       RX_SHAKE, RX_VOICE, RX_TAP_LOOK, RX_TAP_GO, RX_JOY, RX_TREAT, RX_ASK_FOOD, RX_ASK_WATER, RX_END };
 
 static const act_t ACTS[RX_END] = {
     /* moving about */
@@ -70,8 +73,12 @@ static const act_t ACTS[RX_END] = {
     [ACT_GO_TREE]        = { 0     ,                { GO(SPOT_TREE), AN(ANIM_SNIFF, 2.0f) } },
     [ACT_GO_TOY]         = { N_TOY_VIEW,            { GO(TG_TOY), AN(ANIM_SNIFF, 1.0f) } },
     /* through the door (spec 8.4: she goes out, the camera stays) */
-    [ACT_ENTER_YARD]     = { N_ROOM,                { GO(TG_DOOR), VIEW, GO(TG_INSIDE), ON(ANIM_LOOK_AROUND) } },
-    [ACT_ENTER_ROOM]     = { N_YARD,                { GO(TG_DOOR), VIEW, GO(TG_INSIDE), AN(ANIM_IDLE_STAND, 1.0f) } },
+    /* the owner (2026-10-29): "the yard is empty, let her take the toys out too": now and then she takes a toy along
+       (a loose one in this view, or the one in her mouth) and often leaves it on the other side */
+    [ACT_ENTER_YARD]     = { N_ROOM,                { MAYBE(50, 2), GO(TG_TOY), PICKUP(ANYTOY), GO(TG_DOOR), VIEW, GO(TG_INSIDE), MAYBE(60, 1), PUTDOWN,
+                                                      ON(ANIM_LOOK_AROUND) } },
+    [ACT_ENTER_ROOM]     = { N_YARD,                { MAYBE(40, 2), GO(TG_TOY), PICKUP(ANYTOY), GO(TG_DOOR), VIEW, GO(TG_INSIDE), MAYBE(60, 1), PUTDOWN,
+                                                      AN(ANIM_IDLE_STAND, 1.0f) } },
     /* play */
     [ACT_PICKUP_ROPE]    = { N_ROPE | N_FREE_MOUTH, { GO(TG_ROPE), PICKUP(TOY_ROPE) } },
     [ACT_PICKUP_PLUSH]   = { N_PLUSH | N_FREE_MOUTH,{ GO(TG_PLUSH), AN(ANIM_SNIFF, 0.6f), PICK(TOY_PLUSH) } },
@@ -94,7 +101,8 @@ static const act_t ACTS[RX_END] = {
     [ACT_PANT_IDLE]      = { 0,                     { AN(ANIM_PANT_SMILE, 3.0f) } },
     [ACT_STRETCH]        = { 0,                     { ON(ANIM_PLAY_BOW), AN(ANIM_IDLE_STAND, 1.0f) } },
     /* needs */
-    [ACT_EAT]            = { N_FOOD         ,       { GO(TG_BOWL_FOOD), DR(DIR_W), AN(ANIM_EAT_DRINK, 4.0f), FX(FX_EAT) } },
+    [ACT_EAT]            = { N_FOOD         ,       { GO(TG_BOWL_FOOD), DR(DIR_W), AN(ANIM_EAT_DRINK, 4.0f), FX(FX_EAT),   /* a drink after the meal */
+                                                      IF(C_WATER, 4), GO(TG_BOWL_WATER), DR(DIR_W), AN(ANIM_DRINK, 2.0f), FX(FX_DRINK) } },
     [ACT_DRINK]          = { N_WATER         ,      { GO(TG_BOWL_WATER), DR(DIR_W), AN(ANIM_DRINK, 3.0f), FX(FX_DRINK) } },
     [ACT_USE_PAD]        = { 0     ,                { GO(SPOT_PAD), AN(ANIM_PEE, 3.0f), FX(FX_PAD) } },     /* the squat (or the poop's) first: pose.c */
     [ACT_MISCHIEF_FLOOR] = { N_NO_MEMORIAL         ,{ GO(TG_FLOOR_AWAY), AN(ANIM_PEE, 2.0f), FX(FX_MESS), ON(ANIM_LOOK_AROUND) } },
@@ -135,6 +143,10 @@ static const act_t ACTS[RX_END] = {
     [RX_TAP_LOOK]        = { 0, { LOOK(TG_TAP), WT(0.8f) } },
     [RX_TAP_GO]          = { 0, { LOOK(TG_TAP), WT(0.4f), GO(TG_TAP), ON(ANIM_SNIFF) } },
     [RX_JOY]             = { 0, { DR(DIR_S), AN(ANIM_IDLE_STAND, 1.2f) } },                  /* a tap on her: a wag (spec 8.10) */
+    /* 2026-10-29, the owner: "I do not get when to feed her". Hungry or thirsty at an empty bowl, she shows it: to the
+       bowl, a sniff in it, then she turns to the owner and asks (reflex_needs) */
+    [RX_ASK_FOOD]        = { 0, { GO(TG_BOWL_FOOD), DR(DIR_W), AN(ANIM_SNIFF, 1.2f), DR(DIR_S), AN(ANIM_ASK_PET, 3.0f) } },
+    [RX_ASK_WATER]       = { 0, { GO(TG_BOWL_WATER), DR(DIR_W), AN(ANIM_SNIFF, 1.2f), DR(DIR_S), AN(ANIM_ASK_PET, 3.0f) } },
 };
 
 /* the schema's styles (st_walk st_trot st_sprint st_tiptoe st_scurry st_sleepy st_curious) -> the gaits; a high
@@ -298,8 +310,8 @@ static void set_anim(actor_t *a, uint16_t anim) { pose_play(a, anim); }   /* a c
 static void effect(world_t *w, int actor, int fx) {
     things_t *t = &w->things; const actor_t *a = &w->actors[actor];
     switch (fx) {
-    case FX_EAT:   if (t->food) t->food--; break;
-    case FX_DRINK: if (t->water) t->water--; break;
+    case FX_EAT:   if (t->food) t->food--; w->thirst = w->thirst + 2.0f > 10 ? 10 : w->thirst + 2.0f; break;   /* dry kibble: thirsty after it */
+    case FX_DRINK: if (t->water) t->water--; w->thirst = 0; break;
     case FX_PAD:   if (t->pad < 2) t->pad++; if (w->plans[actor].poop) { t->pad_poop = 1; t->pad = 2; } break;
     case FX_TREAT: w->hunger = w->hunger > 1.5f ? w->hunger - 1.5f : 0; w->happy = w->happy < 9 ? w->happy + 1 : 10; break;
     case FX_MESS:  if (t->n_mess < MESS_MAX) {
@@ -480,6 +492,8 @@ int plan_tick(world_t *w, int actor, float dt) {
             break;
         case P_STYLE: b->style = q->arg; done = true; break;
         case P_FX:    effect(w, actor, q->arg); done = true; break;
+        case P_MAYBE: if (world_rand(w) % 100 >= (uint32_t)q->t) p->pi += q->arg; done = true; break;
+        case P_IF:    if (!(q->anim == C_WATER && w->things.water)) p->pi += q->arg; done = true; break;
         }
         if (!done) return PLAN_RUNNING;
         p->pi++; p->t = 0; p->rep = 0;
@@ -530,6 +544,19 @@ bool reflex_forgiven(world_t *w) {                             /* R1: the last s
 }
 bool reflex_greet(world_t *w) {                                /* R6: the owner is back (a wake after > 15 min) */
     return fire(w, 0, w->things.guilty ? RX_GREET_GUILTY : RX_GREET, 6, w->things.guilty ? BB_SWEAT : BB_HEART);
+}
+
+/* hungry with an empty food bowl, or thirsty with an empty water bowl: she goes and asks, at most every
+   NEED_ASK_S, awake, not guilty; a running reflex is not interrupted (the brain's plans are) */
+#define NEED_ASK_S 90.0f
+#define NEED_AT    6.0f
+bool reflex_needs(world_t *w) {
+    const things_t *t = &w->things;
+    if (w->need_ask_t < NEED_ASK_S || plan_asleep(w, 0) || t->guilty) return false;
+    const int rx = w->hunger >= NEED_AT && !t->food ? RX_ASK_FOOD : w->thirst >= NEED_AT && !t->water ? RX_ASK_WATER : -1;
+    if (rx < 0 || !fire(w, 0, rx, 9, BB_FOOD)) return false;
+    w->need_ask_t = 0;
+    return true;
 }
 
 bool reflex_event(world_t *w, const ev_t *e) {

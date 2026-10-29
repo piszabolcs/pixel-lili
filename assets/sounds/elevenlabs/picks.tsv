@@ -1,0 +1,25 @@
+cue	takes	the owner's word (2026-10-29, from docs/img/pilot_2026-10-28/hangok_1.mp4)
+bark_a	1 2 3 4	"mind a 4 random váltakozva, szerintem mind jó"
+bark_b	1 2 3 4	"itt is jó mind, de amúgy inkább olyan volt az ugatása, hogy baúúú baúúúúú" (bark_c generated for that)
+whimper_a	3
+snort_a	-	"ez malacröfögés; nála inkább nehezen veszi a levegőt, azért van horkolós, röfögős hangja" (snort_b generated)
+sniff_a	1
+huff_a	-	"ezek csak pff hangok; mélyről jövő, mintha csukott szájjal ugatna: mmmbpfff" (huff_b generated)
+pant_a	1
+snore_a	2 3
+whine_a	3
+yelp_a	2
+growl_a	1 2 3 4
+yawn_a	1
+eat_a	1
+drink_a	1
+crunch_a	1
+chew_a	1
+rattle_a	1
+kibble_pour_a	-	"mintha üveget öntenél" (kibble_pour_b generated)
+water_pour_a	-	"mintha üveget öntenél" (water_pour_b generated)
+wipe_a	1
+pad_change_a	4
+treat_drop_a	4
+toy_land_a	-	"túlságosan kopog, mintha fadarab esne le, miközben két szövet játéka van" (toy_land_b generated)
+pet_door_a	4

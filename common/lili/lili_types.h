@@ -100,6 +100,8 @@ typedef struct {
     /* the fifth layer (spec 9, life.c): the needs 0..10, the clock, the owner */
     float    hunger, energy, happy, bored, lonely, bladder;
     float    bowel;                /* 0..10, the meals going through: at LIFE_POOP_AT a business is a poop (2026-10-28; not one of the brain's inputs) */
+    float    thirst;               /* 0..10 (2026-10-29; not one of the brain's inputs, not saved): with an empty water bowl she asks */
+    float    need_ask_t;           /* seconds since she last went to an empty bowl to ask (plan.c reflex_needs) */
     int64_t  epoch0;               /* local seconds (since 1970, no zone) at clock_s = 0: the RTC / the PC's clock */
     float    owner_t;              /* seconds since the owner last did something (a finger, the voice, a shake) */
     int8_t   day_force;            /* -1 = from the date, else DAY_* (the sim's special-day check) */

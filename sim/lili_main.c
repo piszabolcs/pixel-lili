@@ -781,6 +781,7 @@ static int selftest_plan(void) {
 
 /* --selftest-reflex (spec 8.8, M4.5) and the care taps (8.10, M4.7): each reflex fires from its trigger, runs
    to its end with its effect, the priorities hold, and the sleeping, hidden or guilty dog answers only as she should */
+#include "brain.h"
 static uint64_t s_seen;                                       /* the animations a run showed (ids < 64): the pose moves' checks */
 static bool s_treat_twice;                                    /* her frames held the treat while it still lay on the floor */
 static void seen(void) {
@@ -895,6 +896,20 @@ static int selftest_reflex(void) {
     world_init(&s_world, 44); s_world.things.water = 3; s_seen = 0;
     plan_one(&s_world, 0, ACT_DRINK, ST_WALK); run_plan(30); settle(2.0f);
     CHECK(SAW(ANIM_DRINK_IN) && SAW(ANIM_DRINK) && SAW(ANIM_DRINK_OUT) && l->anim == ANIM_IDLE_STAND, "drinking: the same at the water bowl");
+    /* 2026-10-29, the owner: "I do not get when to feed her". Hungry at an empty bowl she goes and asks, then not again for a while */
+    world_init(&s_world, 45); s_world.hunger = 8; s_world.things.food = 0; s_world.need_ask_t = 100;
+    { decision_t d = { { ACT_WANDER, ACT_NONE, ACT_NONE }, ST_WALK, FC_NEUTRAL, BB_NONE, 5, 1.0f }; brain_apply(&s_world, &d, 1.0f, 0); }
+    s_seen = 0;
+    CHECK(p->status == PLAN_RUNNING && s_world.bubble == BB_FOOD && run_plan(30) == PLAN_DONE && SAW(ANIM_SNIFF) && SAW(ANIM_ASK_PET) && l->dir == DIR_S &&
+          fabsf(l->x - 273) < 3 && fabsf(l->y - 450) < 3, "hungry at the empty bowl: she goes, sniffs in it and asks the owner, a food bubble over her");
+    { decision_t d = { { ACT_WANDER, ACT_NONE, ACT_NONE }, ST_WALK, FC_NEUTRAL, BB_NONE, 5, 1.0f }; brain_apply(&s_world, &d, 1.0f, 0); }
+    CHECK(p->d.a[0] == ACT_WANDER, "and not again at once");
+    world_init(&s_world, 46); s_world.thirst = 8; s_world.things.water = 0; s_world.need_ask_t = 100;
+    { decision_t d = { { ACT_WANDER, ACT_NONE, ACT_NONE }, ST_WALK, FC_NEUTRAL, BB_NONE, 5, 1.0f }; brain_apply(&s_world, &d, 1.0f, 0); }
+    CHECK(run_plan(30) == PLAN_DONE && fabsf(l->x - 351) < 3, "thirsty at the empty water bowl: the same there");
+    world_init(&s_world, 47); s_world.hunger = 8; s_world.things.food = 3; s_world.things.water = 3;
+    plan_one(&s_world, 0, ACT_EAT, ST_WALK); run_plan(40);
+    CHECK(s_world.things.food == 2 && s_world.things.water == 2 && s_world.thirst == 0, "a meal, then a drink: both bowls a serving down");
     printf("selftest-reflex: ok\n");
     return 0;
 }
@@ -927,9 +942,29 @@ static int selftest_toys(void) {
     float dx, h; toy_mouth(l, &dx, &h);
     CHECK(ty->held_by == 0 && fabsf(ty->x - (l->x + dx)) < 0.5f && ty->z > 20, "in her mouth it is at her head");
     plan_one(&s_world, 0, ACT_ENTER_YARD, ST_WALK); run_plan(40); toys_tick(&s_world, 0.03f);
-    CHECK(l->view == VIEW_YARD && ty->view == VIEW_YARD, "it goes out with her, in her mouth");
-    toy_drop(&s_world, TOY_ROPE);
-    CHECK(ty->held_by < 0 && ty->view == VIEW_YARD && nav_clear(VIEW_YARD, (int)ty->x, (int)ty->y, 0) && ty->rot == toy_rot_held(l->dir), "dropped, it lies on the yard's floor the way it was in her mouth");
+    CHECK(l->view == VIEW_YARD && ty->view == VIEW_YARD, "it goes out with her, in her mouth (or put down out there)");
+    if (ty->held_by == 0) {
+        toy_drop(&s_world, TOY_ROPE);
+        CHECK(ty->held_by < 0 && ty->view == VIEW_YARD && nav_clear(VIEW_YARD, (int)ty->x, (int)ty->y, 0) && ty->rot == toy_rot_held(l->dir), "dropped, it lies on the yard's floor the way it was in her mouth");
+    } else CHECK(nav_clear(VIEW_YARD, (int)ty->x, (int)ty->y, 0), "put down, it lies on the yard's floor");
+    /* the owner (2026-10-29): a toy taken to the door goes through it; in the yard it comes back in the same way */
+    s_world.view = VIEW_YARD; { const map_point_t *d = &MAPS[VIEW_YARD].points[SPOT_DOOR_YARD];
+        ev(EV_DRAG, d->x, d->y, TOY_ROPE); ev(EV_DROP, d->x, d->y, TOY_ROPE); }
+    for (int i = 0; i < 60; i++) toys_tick(&s_world, 1.0f / 30.0f);
+    { const map_point_t *d = &MAPS[VIEW_ROOM].points[SPOT_DOOR];
+      CHECK(ty->view == VIEW_ROOM && ty->held_by < 0 && fabsf(ty->x - d->x) < 2 && ty->y > d->y && nav_clear(VIEW_ROOM, (int)ty->x, (int)ty->y, 0), "dropped at the yard's door, it lies just inside the room's"); }
+    s_world.view = VIEW_ROOM; { const map_point_t *d = &MAPS[VIEW_ROOM].points[SPOT_DOOR];
+        ev(EV_DRAG, d->x + 4, d->y + 2, TOY_ROPE); ev(EV_DROP, d->x + 4, d->y + 2, TOY_ROPE); }
+    for (int i = 0; i < 60; i++) toys_tick(&s_world, 1.0f / 30.0f);
+    CHECK(ty->view == VIEW_YARD && nav_clear(VIEW_YARD, (int)ty->x, (int)ty->y, 0), "and the other way: out to the yard");
+    { int out = 0;                                            /* she takes a loose toy along now and then */
+      for (int seed = 70; seed < 80; seed++) {
+          world_init(&s_world, (uint32_t)seed); s_world.things.toys[TOY_PLUSH].view = TOY_AWAY;
+          plan_one(&s_world, 0, ACT_ENTER_YARD, ST_WALK); run_plan(60);
+          out += s_world.actors[0].view == VIEW_YARD && s_world.things.toys[TOY_ROPE].view == VIEW_YARD;
+      }
+      printf("toys: the rope went out with her %d times in 10\n", out);
+      CHECK(out >= 2 && out <= 8, "going out, she takes the rope along now and then"); }
     printf("selftest-toys: ok\n");
     return 0;
 }
@@ -944,8 +979,8 @@ static int selftest_progress(void) {
     const float h0 = s_world.hunger, b0 = s_world.bladder, lo0 = s_world.lonely;
     l->anim = ANIM_IDLE_STAND;
     for (int i = 0; i < 3600; i++) life_tick(&s_world, 1.0f);       /* an hour awake, alone */
-    CHECK(fabsf(s_world.hunger - h0 - 0.35f) < 0.01f && fabsf(s_world.bladder - b0 - 0.45f) < 0.01f && fabsf(s_world.lonely - lo0 - 0.6f) < 0.01f,
-          "an hour alone: hunger +0.35, bladder +0.45, lonely +0.6 (spec 9.1)");
+    CHECK(fabsf(s_world.hunger - h0 - 0.8f) < 0.01f && fabsf(s_world.bladder - b0 - 0.45f) < 0.01f && fabsf(s_world.lonely - lo0 - 0.6f) < 0.01f,
+          "an hour alone: hunger +0.8 (2026-10-29: two or three meals a day), bladder +0.45, lonely +0.6 (spec 9.1)");
     const float e0 = s_world.energy; l->anim = ANIM_SLEEP_CURL;
     for (int i = 0; i < 3600; i++) life_tick(&s_world, 1.0f);
     CHECK(fabsf(s_world.energy - (e0 + 2.5f > 10 ? 10 : e0 + 2.5f)) < 0.01f, "an hour asleep: energy +2.5");

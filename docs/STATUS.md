@@ -69,6 +69,9 @@ Jelek: **kész** = megvan és a tesztek zöldek; **[G] vár** = elkészült, a g
 8. A flash utáni kifagyás (a kijelző el sem indult, a régi kép maradt, az érintés halott): az I2C-busz felszabadítása induláskor, türelmesebb táblafelismerés, újraindítás, ha a kijelző mégsem indul; a napló kiírja az újraindítás okát.
 9. Jutalomfalat: hosszú nyomás a padlón, odamegy, megeszi, fekve rágja. Kaka: evés után a pelenkára vagy rosszalkodáskor a földre, a kaka képe a kelléklapról, koppintásra eltűnik; a pelenkán sárga folt, a tócsa nedves folt. A plüss visszajött a gazdi képéből (rózsaszín malacos csörgő), saját színekkel. Videó `docs/img/pilot_2026-10-28/moves_care.mp4`.
 10. A gondozás átmenetei (2026-10-29, PixelLab utolsó kockával, a gazdi jóváhagyta): a fej a tálba és ki (evés, ivás), guggolás pisiléshez és kakiláshoz, majd fel, lehajolás a kekszhez, lefekvés vele. Videók: `docs/img/pilot_2026-10-28/wave4_new.mp4` (előtte és utána), `care_moves.mp4` (a játékban, `./lilisim --care-record DIR`).
+11. Udvar (2026-10-29): az ajtóhoz húzott játék átkerül a másik oldalra, Lili néha kiviszi vagy behozza a játékát.
+12. Etetés (2026-10-29): napi 2-3 étkezés, evés után ivás, üres tálnál odamegy és kéreget; a tálak 4 fokozatú képe jóváhagyásra vár.
+13. Hang (2026-10-29, folyamatban): ElevenLabs, 24 hang, a gazdi választása `assets/sounds/elevenlabs/picks.tsv`, meghallgató videók `docs/img/pilot_2026-10-28/hangok_1.mp4`, `hangok_2.mp4`; a lejátszás még nincs bekötve.
 
 <!-- /overview -->
 

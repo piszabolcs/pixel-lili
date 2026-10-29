@@ -15,5 +15,7 @@ void toy_drop(world_t *w, int toy);                             /* out of it, on
 int  toy_held(const world_t *w, int actor);                     /* the toy in her mouth, -1 = none */
 int  toy_near(const world_t *w, int actor, float r);            /* the nearest loose toy in her view within r px, -1 = none */
 void toy_mouth(const actor_t *a, float *dx, float *h);          /* her mouth: dx across from the paws, h above them */
+bool toy_at_door(const world_t *w, int toy);                   /* loose, at its view's door (2026-10-29) */
+void toy_through_door(world_t *w, int toy);                    /* into the other view, a little inside its door */
 
 #endif

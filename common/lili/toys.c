@@ -25,6 +25,24 @@
 #define TOY_WALL       0.45f
 #define TOY_TURN_PX    (15.0f * LILI_K)
 static const float FRICTION[TOY_COUNT] = { 3.8f, 4.5f };      /* ... and this per second: rope, plush */
+/* the owner (2026-10-29): "the toys cannot go out to the yard; if I take one to the door, let it go out". A loose toy
+   that comes to rest at a door (the finger let it go there, or it slid there) goes through: it lies a little inside
+   the other view's door, the way Lili comes in (plan.c TG_INSIDE) */
+#define TOY_DOOR_R     (14.0f * LILI_K)
+static const map_point_t *door_of(view_t v) { return &MAPS[v].points[v == VIEW_ROOM ? SPOT_DOOR : SPOT_DOOR_YARD]; }
+bool toy_at_door(const world_t *w, int toy) {
+    const toy_t *t = &w->things.toys[toy];
+    if (t->held_by >= 0 || t->view >= VIEW_COUNT) return false;
+    const map_point_t *d = door_of((view_t)t->view);
+    return d->z >= 0 && fabsf(t->x - d->x) < TOY_DOOR_R && fabsf(t->y - d->y) < TOY_DOOR_R;
+}
+void toy_through_door(world_t *w, int toy) {
+    toy_t *t = &w->things.toys[toy];
+    const view_t to = (view_t)(1 - t->view); const map_point_t *d = door_of(to);
+    const int y = d->y + (to == VIEW_ROOM ? 20 : -22) * (int)LILI_K;
+    t->view = to; t->x = d->x; t->y = nav_clear(to, d->x, y, 0) ? y : d->y;
+    t->z = 0; t->vx = t->vy = t->vz = 0; t->spin = 0;
+}
 
 void toys_init(world_t *w) {
     static const int START[TOY_COUNT] = { SPOT_ROPE_START, SPOT_PLUSH_START };
@@ -128,5 +146,6 @@ void toys_tick(world_t *w, float dt) {
         if (!nav_clear(t->view, (int)nx, (int)t->y, 0)) { t->vx = -t->vx * TOY_WALL; nx = t->x; }
         if (!nav_clear(t->view, (int)nx, (int)ny, 0)) { t->vy = -t->vy * TOY_WALL; ny = t->y; }
         t->x = nx; t->y = ny;
+        if (t->z <= 0 && t->vz <= 0 && fabsf(t->vx) < 1 && fabsf(t->vy) < 1 && toy_at_door(w, i)) toy_through_door(w, i);   /* it has just stopped there */
     }
 }

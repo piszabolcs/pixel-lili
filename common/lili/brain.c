@@ -149,6 +149,7 @@ void brain_asked(world_t *w) { w->ask_t = 0; w->ask_now = 0; w->brain_sig = V_SI
 void brain_apply(world_t *w, decision_t *d, float margin, int rule) {
     w->rule = (int8_t)rule; w->margin = margin;
     if (rule < 0) return;
+    if (reflex_needs(w)) return;                                          /* an empty bowl she needs: that first (2026-10-29) */
     if (margin < BRAIN_HESITATE && d->a[0] != ACT_HEAD_TILT) { d->a[2] = d->a[1]; d->a[1] = d->a[0]; d->a[0] = ACT_HEAD_TILT; }   /* torn: a head tilt first */
     plan_start(w, 0, d);
 }

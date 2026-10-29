@@ -54,8 +54,13 @@ int world_day(const world_t *w) {
 }
 
 /* ---- the needs (spec 9.1, per hour) ---- */
-#define LIFE_HUNGER_AWAKE    0.35f
-#define LIFE_HUNGER_OFF      0.30f
+/* 2026-10-29, the owner: "I do not get when to feed or water her, the bowl never empties". At 0.35 / h she ate once in
+   ~17 hours and a full bowl (3 meals) lasted three days; now it is two or three meals a day, a bowl a day */
+#define LIFE_HUNGER_AWAKE    0.8f
+#define LIFE_HUNGER_OFF      0.5f
+#define LIFE_THIRST_AWAKE    1.2f      /* she drinks after each meal too (plan.c ACT_EAT) */
+#define LIFE_THIRST_OFF      0.4f
+#define LIFE_THIRST_MEAL     2.0f      /* dry kibble (the offline meals; awake, plan.c FX_EAT adds the same) */
 #define LIFE_ENERGY_PLAY    -1.5f
 #define LIFE_ENERGY_IDLE    -0.4f
 #define LIFE_ENERGY_SLEEP    2.5f
@@ -75,7 +80,7 @@ int life_bucket(float v) { int b = (int)(v * 0.999f); return b < 0 ? 0 : b > 9 ?
 
 void life_init(world_t *w, int64_t now) {
     w->epoch0 = now - (int64_t)w->clock_s;
-    w->hunger = 2; w->energy = 8; w->happy = 7; w->bored = 2; w->lonely = 2; w->bladder = 2; w->bowel = 2; w->things.treat_view = -1;
+    w->hunger = 2; w->energy = 8; w->happy = 7; w->bored = 2; w->lonely = 2; w->bladder = 2; w->bowel = 2; w->thirst = 2; w->things.treat_view = -1;
     w->owner_t = 1e6f; w->day_force = -1; w->last_kind = 7; w->last_t = 0;
 }
 void life_owner(world_t *w) { w->owner_t = 0; }
@@ -95,6 +100,8 @@ void life_tick(world_t *w, float dt) {
     w->lonely  = clamp10(w->lonely + (owner ? LIFE_LONELY_OWNER : LIFE_LONELY_ALONE) * h);
     w->bladder = clamp10(w->bladder + LIFE_BLADDER * h);
     w->bowel   = clamp10(w->bowel + LIFE_BOWEL * h);
+    w->thirst  = clamp10(w->thirst + (asleep ? LIFE_THIRST_OFF : LIFE_THIRST_AWAKE) * h);
+    w->need_ask_t += dt;
 }
 
 /* the brain's F22 "last activity" kinds (model/schema_lili.json: last_play .. last_none) */
@@ -103,8 +110,8 @@ static void kind(world_t *w, int k) { if (w->last_kind != k) { w->last_kind = (u
 
 void life_after_action(world_t *w, int actor, int act) {
     switch (act) {
-    case ACT_EAT:            w->hunger = 0; w->bladder = clamp10(w->bladder + 2); w->bowel = clamp10(w->bowel + LIFE_BOWEL_MEAL); kind(w, LAST_EAT); break;
-    case ACT_DRINK:          w->bladder = clamp10(w->bladder + 1); kind(w, LAST_EAT); break;
+    case ACT_EAT:            w->hunger = 0; w->bladder = clamp10(w->bladder + 2); w->bowel = clamp10(w->bowel + LIFE_BOWEL_MEAL); kind(w, LAST_EAT); break;   /* the thirst: plan.c FX_EAT, before the drink after it */
+    case ACT_DRINK:          w->bladder = clamp10(w->bladder + 1); w->thirst = 0; kind(w, LAST_EAT); break;
     case ACT_USE_PAD:        w->bladder = 0; if (w->plans[actor].poop) w->bowel = 0; kind(w, LAST_REST); break;
     case ACT_MISCHIEF_FLOOR: w->bladder = 0; if (w->plans[actor].poop) w->bowel = 0; kind(w, LAST_MISCHIEF); break;
     case ACT_PICKUP_ROPE: case ACT_PICKUP_PLUSH: case ACT_BRING_TOY: case ACT_CHEW_TOY: case ACT_PLAY_BOW: case ACT_ZOOMIES:
@@ -169,7 +176,9 @@ int life_offline(world_t *w, int64_t dt, offline_log_t *log) {
         w->lonely  = clamp10(w->lonely + LIFE_LONELY_ALONE * h);
         w->bladder = clamp10(w->bladder + LIFE_BLADDER * h);
         w->bowel   = clamp10(w->bowel + LIFE_BOWEL * h);
-        if (w->hunger > 5 && t->food && !asleep) { t->food--; w->hunger = 0; w->bladder = clamp10(w->bladder + 2); w->bowel = clamp10(w->bowel + LIFE_BOWEL_MEAL); log->meals++; }
+        w->thirst  = clamp10(w->thirst + (asleep ? LIFE_THIRST_OFF : LIFE_THIRST_AWAKE) * h);
+        if (w->hunger > 5 && t->food && !asleep) { t->food--; w->hunger = 0; w->bladder = clamp10(w->bladder + 2); w->bowel = clamp10(w->bowel + LIFE_BOWEL_MEAL); w->thirst = clamp10(w->thirst + LIFE_THIRST_MEAL); log->meals++; }
+        if (w->thirst > 5 && t->water && !asleep) { t->water--; w->thirst = 0; w->bladder = clamp10(w->bladder + 1); }   /* the bowl empties while she is alone too */
         if (w->bladder >= 8) {                                /* H8 / H9 (spec 9.2) */
             if (rnd01(w) < life_mischief_p(w, day)) {
                 int n = 1 + (int)(world_rand(w) % 2);

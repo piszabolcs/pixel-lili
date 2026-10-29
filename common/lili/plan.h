@@ -23,6 +23,7 @@ int         plan_describe(const world_t *w, int actor, char *buf, int n);
 bool        reflex_event(world_t *w, const ev_t *e);
 bool        reflex_greet(world_t *w);
 bool        reflex_forgiven(world_t *w);
+bool        reflex_needs(world_t *w);                             /* hungry / thirsty at an empty bowl: she asks (2026-10-29) */
 bool        plan_asleep(const world_t *w, int actor);
 
 #endif
