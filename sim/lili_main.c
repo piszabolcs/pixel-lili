@@ -919,6 +919,9 @@ static int selftest_reflex(void) {
     world_init(&s_world, 49); s_world.energy = 0.5f; s_world.things.guilty = true; p->hide = 1; s_world.need_ask_t = 100;
     { decision_t d = { { ACT_PEEK_BENCH, ACT_NONE, ACT_NONE }, ST_WALK, FC_NEUTRAL, BB_SWEAT, 5, 1.0f }; brain_apply(&s_world, &d, 1.0f, 0); }
     CHECK(p->d.a[0] == ACT_SLEEP_NOOK && s_world.bubble == BB_ZZZ, "worn out and hiding: she goes to sleep under the bench");
+    run_plan(30);
+    { decision_t d = { { ACT_ZOOMIES, ACT_NONE, ACT_NONE }, ST_WALK, FC_NEUTRAL, BB_NONE, 5, 1.0f }; brain_apply(&s_world, &d, 1.0f, 0); }
+    CHECK(l->anim == ANIM_SLEEP_CURL && p->d.a[0] != ACT_ZOOMIES, "and the brain does not wake her while she is tired");
     world_init(&s_world, 50); s_world.bubbles_on = true; pose_snap(l, ANIM_PET_ENJOY); world_tick(&s_world, 0.05f);
     CHECK(s_world.bubble == BB_SMILE && s_world.bubble_t > 0, "petted: a smile over her head");
     printf("selftest-reflex: ok\n");

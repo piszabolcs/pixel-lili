@@ -557,6 +557,7 @@ bool reflex_greet(world_t *w) {                                /* R6: the owner 
 #define NEED_AT    6.0f
 bool reflex_needs(world_t *w) {
     const things_t *t = &w->things;
+    if (plan_asleep(w, 0) && w->energy < 3.0f) return true;     /* tired and asleep: the brain's plan would wake her at once (on the panel it did) */
     if (w->need_ask_t < NEED_ASK_S || plan_asleep(w, 0)) return false;
     int rx = -1;
     /* worn out (the owner, 2026-10-29: "the lightning is empty, what is it for?": guilty under the bench she never slept,
