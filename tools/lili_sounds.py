@@ -58,10 +58,14 @@ def picks():
                 out[row[0]] = [int(n) for n in row[1].split()]
     return out
 
-def decode(path):
+# a cue's own low-pass (Hz) under the 7 kHz one: the snores' takes whistle at 4-5 kHz, which the small speaker
+# brought out over the snore itself (the owner, 2026-10-29: "snoring, the sound sometimes whistles")
+LOWPASS = {"snore": 1800}
+
+def decode(path, lowpass=7000):
     wsl = "/mnt/" + path[0].lower() + path[2:].replace("\\", "/")
     r = subprocess.run(["wsl", "-d", "Ubuntu-24.04", "--", "ffmpeg", "-loglevel", "error", "-i", wsl, "-ac", "1", "-ar", str(RATE),
-                        "-af", "highpass=f=350,lowpass=f=7000", "-f", "s16le", "-"], capture_output=True, check=True)
+                        "-af", f"highpass=f=350,lowpass=f={lowpass},lowpass=f={lowpass}", "-f", "s16le", "-"], capture_output=True, check=True)
     return np.frombuffer(r.stdout, np.int16).astype(np.float32) / 32768
 
 def tidy(x):
@@ -89,7 +93,7 @@ def main():
         first = len(clips); used = []
         for t in takes:
             for n in pk.get(t, []):
-                x = tidy(decode(os.path.join(SRC, f"{t}_{n}.ogg")))
+                x = tidy(decode(os.path.join(SRC, f"{t}_{n}.ogg"), LOWPASS.get(name, 7000)))
                 if not len(x): continue
                 b = mulaw(x); clips.append((len(data), len(b))); data += b.tobytes(); used.append(f"{t}_{n} {len(x) / RATE:.2f}s")
         cues.append((first, len(clips) - first, 0, int(round(256 * 10 ** (db / 20))), cool, name))

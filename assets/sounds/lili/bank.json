@@ -9,7 +9,7 @@
     "bark_a_2 2.11s",
     "bark_a_3 2.01s",
     "bark_a_4 1.79s",
-    "bark_b_1 2.26s",
+    "bark_b_1 2.40s",
     "bark_b_2 2.70s",
     "bark_b_3 2.45s",
     "bark_b_4 2.29s",
@@ -30,7 +30,7 @@
   {
    "cue": "snort",
    "takes": [
-    "snort_b_1 1.44s"
+    "snort_b_1 1.39s"
    ],
    "gain_db": -3,
    "cooldown_ms": 1500
@@ -38,7 +38,7 @@
   {
    "cue": "sniff",
    "takes": [
-    "sniff_a_1 1.30s"
+    "sniff_a_1 1.29s"
    ],
    "gain_db": -6,
    "cooldown_ms": 1500
@@ -63,7 +63,7 @@
    "cue": "snore",
    "takes": [
     "snore_a_2 0.89s",
-    "snore_a_3 1.65s"
+    "snore_a_3 1.19s"
    ],
    "gain_db": -18,
    "cooldown_ms": 3000
@@ -136,7 +136,7 @@
   {
    "cue": "rattle",
    "takes": [
-    "rattle_a_1 0.72s"
+    "rattle_a_1 0.68s"
    ],
    "gain_db": -8,
    "cooldown_ms": 400

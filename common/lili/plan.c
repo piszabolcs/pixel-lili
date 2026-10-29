@@ -305,6 +305,14 @@ static void through_door(world_t *w, int actor) {
 }
 
 static float once_len(uint16_t anim) { return pose_once_len(anim); }   /* a one-shot animation's length in seconds */
+/* the action lies down or sleeps after primitive pi (then a walk of a step to its spot is not worth getting up for) */
+static bool lies_after(int act, int pi) {
+    for (int k = pi + 1; k < PRIMS && ACTS[act].p[k].op != P_END; k++) {
+        const prim_t *q = &ACTS[act].p[k];
+        if ((q->op == P_ONCE || q->op == P_ANIM) && (q->anim == ANIM_LIE_DOWN || q->anim == ANIM_SLEEP_CURL || q->anim == ANIM_GUILTY_PEEK)) return true;
+    }
+    return false;
+}
 static void set_anim(actor_t *a, uint16_t anim) { pose_play(a, anim); }   /* a change of pose plays its move first (pose.c) */
 
 static void effect(world_t *w, int actor, int fx) {
@@ -405,6 +413,9 @@ int plan_tick(world_t *w, int actor, float dt) {
             if (p->rep == 0) {                                     /* start the walk */
                 int16_t gx, gy;
                 if (!target(w, actor, q->arg, &gx, &gy)) { done = true; break; }
+                /* lying or asleep a step from it already: no getting up to walk there (the owner, 2026-10-29: asleep on the rug,
+                   the brain's "sleep on the rug" again, and she got up, turned to and fro and lay down again) */
+                if (pose_lying(a) && lies_after(p->d.a[p->ai], p->pi) && abs(gx - (int)a->x) + abs(gy - (int)a->y) < 24) { done = true; break; }
                 if (p->hide == 1) p->hide = 0;                     /* out from under the bench */
                 p->gx = gx; p->gy = gy; nav_plan(a->view, a->x, a->y, gx, gy, b); p->rep = 1;
             }

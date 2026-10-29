@@ -1826,6 +1826,25 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--selftest-reflex")) return selftest_reflex();
     if (argc > 1 && !strcmp(argv[1], "--selftest-toys")) return selftest_toys();
     if (argc > 1 && !strcmp(argv[1], "--selftest-sound")) return selftest_sound();
+    if (argc > 1 && !strcmp(argv[1], "--probe-sleep")) {             /* the owner (2026-10-29): asleep, a ZZ over her head, she turns to and fro */
+        nav_init(&s_nav); world_init(&s_world, 91); s_world.bubbles_on = true;
+        actor_t *l = &s_world.actors[0]; const bool rug = getenv("P_RUG") != NULL;
+        const map_point_t *n = &MAPS[VIEW_ROOM].points[rug ? SPOT_RUG : SPOT_NOOK];
+        l->x = n->x; l->y = n->y; s_world.energy = getenv("P_E") ? (float)atof(getenv("P_E")) : 0.3f;
+        if (!rug) { s_world.things.guilty = true; s_world.things.n_mess = 1; s_world.things.mess[0][0] = 300; s_world.things.mess[0][1] = 330; s_world.plans[0].hide = 1; }
+        pose_snap(l, getenv("P_AWAKE") ? ANIM_LIE_DOWN : ANIM_SLEEP_CURL); if (!getenv("P_AWAKE")) l->anim_t = 5;
+        uint16_t an = 0; int dir = -1; uint8_t bb = 255; float t = 0;
+        for (int i = 0; i < 30 * 240; i++, t += 1.0f / 30) {
+            if (i % 240 == 120) { ev_t e = { EV_VOICE_ACTIVITY, 0, 0, 0 }; world_handle_event(&s_world, &e); }   /* the panel's noise every 8 s */
+            brain_tick(&s_world, 1.0f / 30); plan_tick(&s_world, 0, 1.0f / 30); world_tick(&s_world, 1.0f / 30);
+            if (l->anim != an || (int)l->dir != dir || (s_world.bubble_t > 0 ? s_world.bubble : 0) != bb) {
+                char pd[64]; plan_describe(&s_world, 0, pd, sizeof pd);
+                printf("%6.1f s anim %2u dir %d bubble %u energy %.2f | %s\n", t, l->anim, l->dir, s_world.bubble_t > 0 ? s_world.bubble : 0, s_world.energy, pd);
+                an = l->anim; dir = l->dir; bb = s_world.bubble_t > 0 ? s_world.bubble : 0;
+            }
+        }
+        return 0;
+    }
     if (argc > 1 && !strcmp(argv[1], "--selftest-progress")) return selftest_progress();
     if (argc > 1 && !strcmp(argv[1], "--selftest-calendar")) return selftest_calendar();
     if (argc > 1 && !strcmp(argv[1], "--selftest-offline")) return selftest_offline();
