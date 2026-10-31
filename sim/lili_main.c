@@ -561,6 +561,10 @@ static int selftest_nav(void) {
     CHECK(nav_dir_hyst(DIR_S, 5.5f, 10) == DIR_S && nav_dir(5.5f, 10) == DIR_SE && nav_dir_hyst(DIR_S, 10, 10) == DIR_SE, "the facing keeps until the vector is clearly past the sector (29 degrees: SE without hysteresis, still S with it; 45 turns SE)");
     memset(b, 0, sizeof *b);                                     /* a goal in a wall: false, and the path ends at the nearest floor */
     CHECK(!nav_plan(VIEW_ROOM, 240, 300, 5, 5, b) && b->n > 0 && nav_clear(VIEW_ROOM, b->path[b->n - 1][0], b->path[b->n - 1][1], 0), "an unreachable goal: the nearest reachable place");
+    /* the owner (2026-10-31): "she walks into the vase, and onto the bowls" */
+    CHECK(!nav_clear(VIEW_ROOM, 182, 430, 0) && !nav_clear(VIEW_ROOM, 254, 430, 0) && !nav_clear(VIEW_ROOM, 332, 430, 0), "the vase's foot and the bowls are not floor");
+    memset(b, 0, sizeof *b);
+    CHECK(nav_clear(VIEW_ROOM, 273, 450, 0) && nav_clear(VIEW_ROOM, 351, 451, 0) && nav_plan(VIEW_ROOM, 240, 300, 273, 450, b) && nav_plan(VIEW_ROOM, 120, 300, 351, 451, b), "and her places at their east edges stay reachable");
     printf("selftest-nav: ok\n");
     return 0;
 }

@@ -118,8 +118,10 @@ bool nav_plan(view_t v, float x0, float y0, int x1, int y1, body_t *b) {
             if (nx < 0 || ny < 0 || nx >= MAP_GW || ny >= MAP_GH) continue;
             const int n = ny * MAP_GW + nx;
             if (s_nav->state[n] == 2 || !cl[n]) continue;
-            /* keep the margin; inside it (she starts or ends near a wall: a bowl) only towards more room or along it */
-            if (cl[n] <= margin && n != goal && !(cl[c] <= margin && cl[n] >= cl[c])) continue;
+            /* keep the margin; inside it (she starts or ends near a wall: a bowl) only towards more room or along it,
+               or on the last cells to the goal (2026-10-31: the bowls are blocked, and her place is at a bowl's edge) */
+            const int dgx = nx > gx ? nx - gx : gx - nx, dgy = ny > gy ? ny - gy : gy - ny;
+            if (cl[n] <= margin && n != goal && !(cl[c] <= margin && cl[n] >= cl[c]) && (dgx > margin || dgy > margin)) continue;
             if (k >= 4 && (!cl[cy * MAP_GW + nx] || !cl[ny * MAP_GW + cx])) continue;   /* no squeezing past a corner */
             uint32_t g = s_nav->g[c] + (k < 4 ? 10u : 14u); if (g > 0xFFFF) g = 0xFFFF;
             if (s_nav->state[n] == 1 && g >= s_nav->g[n]) continue;
