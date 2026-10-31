@@ -21,7 +21,8 @@ void sfx_play(int cue, int gain_db);           /* a variant at random (not the o
 void sfx_stop_all(void);
 int  sfx_render(int16_t *out, int n);          /* mix n mono samples; the voices still live after it (0 = silence) */
 bool sfx_active(void);
-void sfx_set_volume(int level);                /* 0 off, 1 quiet (-12 dB), 2 normal */
+void sfx_set_volume(int level);                /* the settings card's steps: 0 off, 1 quiet (-18 dB), 2 middle (-9 dB), 3 full */
+void sfx_hush(bool on);                        /* the screen asleep (the panel): nothing sounds, what plays stops */
 int  sfx_volume(void);
 uint16_t sfx_count(int cue);                   /* how many times a cue started (the selftests) */
 void sfx_tick(world_t *w, float dt);           /* her moments; called by world_tick */

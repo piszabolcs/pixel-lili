@@ -38,14 +38,14 @@ static bool s_mic, s_imu, s_con;
 static motion_t s_motion;
 static int s_whistles;
 static int64_t s_owner_us, s_off_since_us;
-static bool s_upright;
+static bool s_upright, s_pmic_key;
 static uint8_t s_bright_active, s_state = BODY_ACTIVE;
 #define DIM_AFTER_US     (60LL * 1000000)
 #define OFF_AFTER_US     (11LL * 60 * 1000000)
 #define POCKET_OFF_US    (30LL * 1000000)  /* carried this long, and as long since the owner touched or woke her */
 #define POCKET_UPRIGHT   0.35f              /* and the screen near upright (|g_z| under 0.35 g): a pocket, not a hand looking at it */
 #define DIM_LEVEL        48
-#define VOICE_DB         (-38.0f)        /* the frame's level a voice must pass (tune on the panel [G]) */
+#define VOICE_DB         (-32.0f)        /* the frame's level a voice must pass (2026-10-31: -38 let the room's hum make her listen every 8 s) */
 
 static void audio_task(void *arg) {
     (void)arg; static int16_t l[WH_N], r[WH_N];
@@ -114,6 +114,9 @@ static void set_state(int st, world_t *w) {
     s_state = (uint8_t)st;
 }
 void body_owner(world_t *w) { s_owner_us = esp_timer_get_time(); set_state(BODY_ACTIVE, w); }
+void body_pwr_short(world_t *w) { if (s_state == BODY_OFF) body_owner(w); else set_state(BODY_OFF, w); }
+void body_pmic_key(void) { s_pmic_key = true; }
+int64_t body_off_us(void) { return s_state == BODY_OFF ? esp_timer_get_time() - s_off_since_us : 0; }
 
 static void console(world_t *w, char *line) {
     char *cmd = strtok(line, " "), *arg = strtok(NULL, "");
@@ -146,8 +149,8 @@ bool body_poll(world_t *w, ev_queue_t *q, float dt) {
         if (ws.count > s_whistles) ev_push(q, EV_WHISTLE, 0, 0);    /* a new whistle since the last frame */
         s_whistles = ws.count;
         static int loud; static int64_t last_voice;
-        loud = ws.rms_db_l > VOICE_DB && !ws.tone && !audio216_self_mute() ? loud + 1 : 0;   /* her own voice is not the owner's */
-        if (loud > 10 && now - last_voice > 8000000) { ev_push(q, EV_VOICE_ACTIVITY, 0, 0); last_voice = now; loud = 0; }
+        loud = ws.rms_db_l > VOICE_DB && !ws.tone && !audio216_self_mute() && s_state != BODY_OFF ? loud + 1 : 0;   /* her own voice is not the owner's */
+        if (loud > 15 && now - last_voice > 20000000) { ev_push(q, EV_VOICE_ACTIVITY, 0, 0); last_voice = now; loud = 0; }
     }
     /* the body: shake, pickup, still or carried */
     if (s_imu) {
@@ -162,7 +165,7 @@ bool body_poll(world_t *w, ev_queue_t *q, float dt) {
     /* the PWR key: a press puts the screen to sleep or wakes it */
     static bool pwr_prev;
     const bool pwr = gpio_get_level(S_PIN_PWR_SENSE);
-    if (pwr && !pwr_prev) { if (s_state == BODY_OFF) body_owner(w); else set_state(BODY_OFF, w); }
+    if (pwr && !pwr_prev && !s_pmic_key) body_pwr_short(w);
     pwr_prev = pwr;
     /* the console */
     if (s_con) {

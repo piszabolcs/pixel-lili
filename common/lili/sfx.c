@@ -10,7 +10,8 @@ typedef struct { const uint8_t *d; uint32_t pos, len; int32_t gain_q8; int16_t f
 static const bank_cue_t *s_cues; static const uint8_t *s_clips, *s_data; static int s_n_cues, s_n_clips;
 static int16_t s_ulaw[256];
 static voice_t s_v[SFX_VOICES];
-static int s_volume = 2, s_master_q8 = 256;
+static int s_volume = 3, s_master_q8 = 256;
+static bool s_hush;
 static uint32_t s_now_ms, s_last_ms[SFX_COUNT > 0 ? SFX_COUNT : 1];
 static uint8_t s_last_var[SFX_COUNT > 0 ? SFX_COUNT : 1];
 static uint16_t s_count[SFX_COUNT > 0 ? SFX_COUNT : 1];
@@ -46,12 +47,13 @@ bool sfx_init(const pak_t *p, int master_db) {
     return true;
 }
 void sfx_set_lock(void (*l)(bool)) { s_lock = l; }
-void sfx_set_volume(int level) { s_volume = level < 0 ? 0 : level > 2 ? 2 : level; }
+void sfx_set_volume(int level) { s_volume = level < 0 ? 0 : level > 3 ? 3 : level; }
+void sfx_hush(bool on) { if (on && !s_hush) sfx_stop_all(); s_hush = on; }
 int  sfx_volume(void) { return s_volume; }
 uint16_t sfx_count(int cue) { return cue >= 0 && cue < SFX_COUNT ? s_count[cue] : 0; }
 
 void sfx_play(int cue, int gain_db) {
-    if (!s_cues || cue < 0 || cue >= s_n_cues || !s_volume) return;
+    if (!s_cues || cue < 0 || cue >= s_n_cues || !s_volume || s_hush) return;
     const uint8_t *c = (const uint8_t *)&s_cues[cue];
     const int first = c[0], n = c[1], gain = c[4] | c[5] << 8, cool = c[6] | c[7] << 8;
     if (!n || (s_last_ms[cue] && (int32_t)(s_now_ms - s_last_ms[cue]) < cool)) return;
@@ -66,7 +68,7 @@ void sfx_play(int cue, int gain_db) {
     if (slot >= 0) {
         voice_t *v = &s_v[slot];
         v->d = s_data + rd32(cl); v->len = rd32(cl + 4); v->pos = 0; v->fade = 0; v->cue = (uint8_t)cue; v->live = 1;
-        v->gain_q8 = (int32_t)gain * q8_of_db(gain_db) / 256 * s_master_q8 / 256 * (s_volume == 1 ? 64 : 256) / 256;
+        v->gain_q8 = (int32_t)gain * q8_of_db(gain_db) / 256 * s_master_q8 / 256 * (s_volume == 1 ? 32 : s_volume == 2 ? 91 : 256) / 256;
         s_last_ms[cue] = s_now_ms; s_last_var[cue] = (uint8_t)k; s_count[cue]++;
     }
     lock(false);
@@ -104,13 +106,13 @@ static const rule_t RULES[] = {
     { ANIM_HUFF, SFX_HUFF, -1, 0.1f, 0 },                     /* A13: the 2nd frame */
     { ANIM_SNIFF, SFX_SNIFF, -1, 0.0f, 2.6f },
     /* petting: silent (the owner, 2026-10-29: the snorting breath was "scary", then the whimper "not good either") */
-    { ANIM_PANT_SMILE, SFX_PANT, -1, 0.0f, 1.8f },
+    /* panting: silent (the owner, 2026-10-31: "she pants all the time, so annoying") */
     { ANIM_SLEEP_CURL, SFX_SNORE, -1, 1.5f, 4.5f },
     { ANIM_ASK_PET, SFX_WHINE, -1, 0.3f, 4.0f },
     { ANIM_GUILTY_PEEK, SFX_WHINE, -1, 1.0f, 6.0f },
     { ANIM_STARTLE, SFX_YELP, -1, 0.0f, 0 },
     { ANIM_TUG_ROPE, SFX_GROWL, -1, 0.2f, 2.4f },
-    { ANIM_CURL_UP, SFX_YAWN, -1, 0.2f, 0 },
+    /* curling up: silent (2026-10-31: the yawn take was a 6 kHz squeal, "it squeaks as she falls asleep") */
     { ANIM_EAT_DRINK, SFX_EAT, -1, 0.0f, 2.0f },
     { ANIM_DRINK, SFX_DRINK, -1, 0.0f, 2.0f },
     { ANIM_EAT_TREAT, SFX_CRUNCH, -1, 0.1f, 0 },
@@ -120,6 +122,8 @@ static const rule_t RULES[] = {
 static uint16_t s_anim; static float s_t, s_next; static uint8_t s_turn;
 void sfx_tick(world_t *w, float dt) {
     s_now_ms += (uint32_t)(dt * 1000.0f + 0.5f);
+    const int vol = w->set_muted ? 0 : w->set_volume;       /* the settings card (2026-10-31: it was never wired) */
+    if (vol != s_volume) { sfx_set_volume(vol); if (!vol) sfx_stop_all(); }
     if (!s_cues) return;
     const actor_t *a = &w->actors[0];
     if (!a->present) return;

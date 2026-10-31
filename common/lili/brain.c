@@ -150,6 +150,7 @@ void brain_apply(world_t *w, decision_t *d, float margin, int rule) {
     w->rule = (int8_t)rule; w->margin = margin;
     if (rule < 0) return;
     if (reflex_needs(w)) return;                                          /* an empty bowl she needs: that first (2026-10-29) */
+    if (reflex_outing(w, d)) margin = 1.0f;                               /* a while indoors: out to the yard (2026-10-31) */
     if (margin < BRAIN_HESITATE && d->a[0] != ACT_HEAD_TILT) { d->a[2] = d->a[1]; d->a[1] = d->a[0]; d->a[0] = ACT_HEAD_TILT; }   /* torn: a head tilt first */
     plan_start(w, 0, d);
 }

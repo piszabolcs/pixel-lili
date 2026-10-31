@@ -10,7 +10,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "nvs.h"
 #include <string.h>
 
 static const char *TAG = "audio";
@@ -25,7 +24,6 @@ static i2s_chan_handle_t s_tx;
 static SemaphoreHandle_t s_mx;
 static bool s_up;
 static volatile int64_t s_last_sound_us;
-static int s_volume = 2;
 static int16_t s_mono[BLOCK], s_st[2 * BLOCK];
 
 static void lock(bool on) { if (on) xSemaphoreTake(s_mx, portMAX_DELAY); else xSemaphoreGive(s_mx); }
@@ -76,19 +74,10 @@ bool audio216_init(i2c_master_bus_handle_t bus, const pak_t *pak) {
     if (!sfx_init(pak, MASTER_DB)) { ESP_LOGW(TAG, "no sound bank in the pack (tools/lili_sounds.py, tools/pack_assets.py): silent"); return false; }
     gpio_config_t io = { .pin_bit_mask = 1ULL << PIN_AMP, .mode = GPIO_MODE_OUTPUT, .pull_down_en = GPIO_PULLDOWN_ENABLE };
     gpio_config(&io); amp(false);
-    nvs_handle_t h; uint8_t v;
-    if (nvs_open("lili", NVS_READONLY, &h) == ESP_OK) { if (nvs_get_u8(h, "snd", &v) == ESP_OK && v <= 2) s_volume = v; nvs_close(h); }
-    sfx_set_volume(s_volume);
     s_mx = xSemaphoreCreateMutex(); sfx_set_lock(lock);
     xTaskCreatePinnedToCore(player, "audio", 4096, NULL, 6, NULL, 1);
-    ESP_LOGI(TAG, "%d cues, volume %d, master %d dB", SFX_COUNT, s_volume, MASTER_DB);
+    ESP_LOGI(TAG, "%d cues, master %d dB (the volume: the settings card)", SFX_COUNT, MASTER_DB);
     return true;
 }
 bool audio216_self_mute(void) { return s_up && (esp_timer_get_time() - s_last_sound_us) < SELF_MUTE_MS * 1000LL; }
-void audio216_set_volume(int level) {
-    s_volume = level < 0 ? 0 : level > 2 ? 2 : level;
-    if (s_mx) { lock(true); sfx_set_volume(s_volume); lock(false); }
-    nvs_handle_t h;
-    if (nvs_open("lili", NVS_READWRITE, &h) == ESP_OK) { nvs_set_u8(h, "snd", (uint8_t)s_volume); nvs_commit(h); nvs_close(h); }
-}
-int audio216_volume(void) { return s_volume; }
+

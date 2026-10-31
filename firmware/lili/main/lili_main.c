@@ -33,6 +33,7 @@
 #include "touch_216.h"
 #include "body_216.h"
 #include "audio_216.h"
+#include "sfx.h"
 #include "ui.h"
 #include "battery_port.h"
 #include "plan.h"
@@ -178,6 +179,27 @@ static void llm_tick(float dt) {
     }
 }
 
+/* the power off (2026-10-31, the owner: "the power key does not turn it off, the battery drains for nothing"): the save,
+   then the PMIC cuts every rail; the PWR key boots her again and life_offline lives the time between */
+#define AUTO_OFF_US (5LL * 60 * 1000000)      /* the screen asleep this long on the battery: off */
+static void power_off(const char *why) {
+    ESP_LOGI(TAG, "power off (%s): saving, then the PMIC cut (the PWR key boots her)", why);
+    lili_save(); sfx_hush(true); display_port_sleep();
+    vTaskDelay(pdMS_TO_TICKS(50));
+    if (battery_port_poweroff()) vTaskDelay(pdMS_TO_TICKS(1000));          /* the rails drop here */
+    ESP_LOGW(TAG, "still powered after the cut (the USB cable holds the board up): the screen stays asleep");
+}
+/* the PWR key, asked of the PMIC ten times a second: a short press = the screen asleep / awake, 1.5 s = power off */
+static void pwr_poll(int64_t now) {
+    static int64_t t;
+    if (now - t < 100000) return;
+    t = now;
+    const int k = battery_port_key_poll();
+    if (k == 1) body_pwr_short(&s_world);
+    else if (k == 2) power_off("the PWR key held");
+    if (body_off_us() > AUTO_OFF_US && battery_port_state() == BAT_ON_BATTERY) power_off("the screen asleep 5 minutes");
+}
+
 static void keys_init(void) {
     gpio_config_t pu = { .pin_bit_mask = (1ULL << PIN_BOOT) | (1ULL << PIN_KEY3), .mode = GPIO_MODE_INPUT, .pull_up_en = GPIO_PULLUP_ENABLE };
     gpio_config(&pu);
@@ -227,7 +249,7 @@ void app_main(void) {
     body_init();
     audio216_init(board_i2c_bus(), &s_pak);                          /* her sounds (2026-10-29): after the mic, which owns the I2S */
     s_ui = psram(sizeof *s_ui); if (s_ui) ui_init(s_ui);
-    battery_port_init(board_i2c_bus());
+    if (battery_port_init(board_i2c_bus())) { battery_port_key_init(); body_pmic_key(); }   /* the PWR key through the PMIC: short and long press */
     if (s_ui) ui_show(s_ui);                               /* power-on: the bar for 4 s */
     /* M6.4: from power-on she lives by her own brain; BOOT starts (and stops) the demo tour */
     memset(s_bg, 0, sizeof *s_bg);
@@ -248,7 +270,9 @@ void app_main(void) {
             gesture_feed(&g, &gc, down, tx, ty, (uint32_t)(t0 / 1000), &s_q);
             world_finger(&s_world, down, tx, ty);
         }
-        const bool screen = body_poll(&s_world, &s_q, dt);      /* the mic, the IMU, the PWR key, the console, the energy states */
+        const bool screen = body_poll(&s_world, &s_q, dt);      /* the mic, the IMU, the console, the energy states */
+        pwr_poll(t0);
+        sfx_hush(!screen);                              /* the screen asleep: she makes no sound (2026-10-31) */
         ev_t ev; while (ev_pop(&s_q, &ev)) {
             ESP_LOGI(TAG, "event %s %d %d %d", ev_name((ev_type_t)ev.type), ev.a, ev.b, ev.c);
             if (ev.type == EV_TAP && s_ui && ui_tap(s_ui, &s_world, ev.a, ev.b)) continue;   /* the interface's tap, not the world's */

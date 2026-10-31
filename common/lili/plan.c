@@ -573,6 +573,16 @@ static void need_start(world_t *w, int act, int bubble) {
     decision_t d = { { (uint8_t)act, ACT_NONE, ACT_NONE }, ST_TROT, FC_NEUTRAL, (uint8_t)bubble, 7, 1.0f };
     p->rounds = 0; plan_start(w, 0, &d); p->prio = 7; w->need_ask_t = 0;      /* above R8's voice and R9's tap, below a call, a pet, a throw */
 }
+/* the go_out rule wants her bored (>= 4), and with the owner there boredom only falls: on the panel she never went
+   out (the owner, 2026-10-31). Awake indoors for 4-7 minutes by day, not tired, not guilty: the next decision is the yard */
+#define OUTING_S 240.0f
+bool reflex_outing(world_t *w, decision_t *d) {
+    if (w->room_t < OUTING_S || world_daypart(w) == 3 || w->energy < 3.5f || w->things.guilty || plan_asleep(w, 0)
+        || !plan_possible(w, 0, ACT_ENTER_YARD)) return false;
+    const decision_t go = { { ACT_ENTER_YARD, ACT_SNIFF_AROUND, ACT_NONE }, ST_TROT, FC_EARS_PERK, BB_NONE, 5, 1.0f };
+    *d = go; w->room_t = -(float)(world_rand(w) % 180);                 /* the next one in 4-7 minutes */
+    return true;
+}
 bool reflex_needs(world_t *w) {
     const things_t *t = &w->things;
     if (plan_asleep(w, 0) && w->energy < 3.0f) return true;     /* tired and asleep: the brain's plan would wake her at once (on the panel it did) */

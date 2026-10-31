@@ -924,6 +924,13 @@ static int selftest_reflex(void) {
     CHECK(l->anim == ANIM_SLEEP_CURL && p->d.a[0] != ACT_ZOOMIES, "and the brain does not wake her while she is tired");
     world_init(&s_world, 50); s_world.bubbles_on = true; pose_snap(l, ANIM_PET_ENJOY); world_tick(&s_world, 0.05f);
     CHECK(s_world.bubble == BB_SMILE && s_world.bubble_t > 0, "petted: a smile over her head");
+    /* the owner (2026-10-31): "she never goes out to the yard" */
+    world_init(&s_world, 51); s_world.daypart_force = 1; s_world.energy = 8; s_world.room_t = 300;
+    { decision_t d = { { ACT_LIE_DOWN, ACT_NONE, ACT_NONE }, ST_WALK, FC_NEUTRAL, BB_NONE, 5, 0.05f }; brain_apply(&s_world, &d, 0.05f, 0); }
+    CHECK(p->d.a[0] == ACT_ENTER_YARD && s_world.room_t <= 0 && run_plan(60) == PLAN_DONE && l->view == VIEW_YARD, "five minutes awake indoors by day: out to the yard");
+    world_init(&s_world, 52); s_world.daypart_force = 3; s_world.energy = 8; s_world.room_t = 300;
+    { decision_t d = { { ACT_LIE_DOWN, ACT_NONE, ACT_NONE }, ST_WALK, FC_NEUTRAL, BB_NONE, 5, 1.0f }; brain_apply(&s_world, &d, 1.0f, 0); }
+    CHECK(p->d.a[0] == ACT_LIE_DOWN, "but not at night");
     printf("selftest-reflex: ok\n");
     return 0;
 }
@@ -1637,6 +1644,19 @@ static int selftest_sound(void) {
     CHECK(sfx_count(SFX_BARK) == 2, "the bark animation barks as her head goes up");
     pose_snap(l, ANIM_PET_ENJOY); for (int i = 0; i < 70; i++) world_tick(&s_world, 0.1f);
     CHECK(sfx_count(SFX_WHIMPER) == 0 && sfx_count(SFX_SNORT) == 0, "petted, she is quiet (the owner, 2026-10-29: neither sound)");
+    pose_snap(l, ANIM_PANT_SMILE); for (int i = 0; i < 70; i++) world_tick(&s_world, 0.1f);
+    pose_snap(l, ANIM_CURL_UP); for (int i = 0; i < 20; i++) world_tick(&s_world, 0.1f);
+    CHECK(sfx_count(SFX_PANT) == 0 && sfx_count(SFX_YAWN) == 0, "no panting, no squealing yawn as she curls up (the owner, 2026-10-31)");
+    sfx_stop_all(); s_world.set_muted = true; world_tick(&s_world, 0.1f);
+    pose_snap(l, ANIM_BARK_HEAD_FLIP); for (int i = 0; i < 6; i++) world_tick(&s_world, 0.1f);
+    CHECK(sfx_count(SFX_BARK) == 2 && !sfx_active(), "the settings card's mute silences her");
+    s_world.set_muted = false; s_world.set_volume = 1; for (int i = 0; i < 6; i++) world_tick(&s_world, 0.1f);
+    pose_snap(l, ANIM_BARK_HEAD_FLIP); for (int i = 0; i < 6; i++) world_tick(&s_world, 0.1f);
+    { int pk = 0; for (int k = 0; k < 5; k++) { sfx_render(buf, SFX_RATE / 10); for (int i = 0; i < SFX_RATE / 10; i++) if (abs(buf[i]) > pk) pk = abs(buf[i]); }
+      printf("sound: a quiet bark peaks at %d\n", pk);
+      CHECK(sfx_count(SFX_BARK) == 3 && pk > 0 && pk < peak / 4, "its quietest step is much quieter"); }
+    sfx_stop_all(); sfx_hush(true); sfx_play(SFX_BARK, 0); CHECK(!sfx_active(), "the screen asleep: hushed"); sfx_hush(false);
+    s_world.set_volume = 2; world_tick(&s_world, 0.1f);
     sfx_stop_all();                                           /* nothing rendered here: the voices are still full */
     world_put_treat(&s_world, l->x > 240 ? 150 : 330, 380);                                /* on the free floor, away from her */
     CHECK(sfx_count(SFX_TREAT_DROP) == 1, "a treat put down taps on the floor");

@@ -102,6 +102,7 @@ void life_tick(world_t *w, float dt) {
     w->bowel   = clamp10(w->bowel + LIFE_BOWEL * h);
     w->thirst  = clamp10(w->thirst + (asleep ? LIFE_THIRST_OFF : LIFE_THIRST_AWAKE) * h);
     w->need_ask_t += dt;
+    if (w->actors[0].view == VIEW_YARD) w->room_t = 0; else if (!asleep) w->room_t += dt;
 }
 
 /* the brain's F22 "last activity" kinds (model/schema_lili.json: last_play .. last_none) */

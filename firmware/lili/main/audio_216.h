@@ -13,6 +13,4 @@
 void audio216_before_mic(void);                               /* before mic_init: the TX beside the mic's RX */
 bool audio216_init(i2c_master_bus_handle_t bus, const pak_t *pak);   /* after mic_init; false = silent */
 bool audio216_self_mute(void);                                /* the speaker is (just) playing: the mic does not listen */
-void audio216_set_volume(int level);                         /* 0 off, 1 quiet, 2 normal (NVS "lili" / "snd") */
-int  audio216_volume(void);
 #endif
