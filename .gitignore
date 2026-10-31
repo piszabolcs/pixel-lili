@@ -76,3 +76,6 @@ docs/review/animaciok.html
 
 # the simulator's save (spec 9.7)
 sim/lili_save.bin
+
+# KAPU knowledge files (PixelLab, ElevenLabs docs): third-party content, kept local
+docs/kapu/

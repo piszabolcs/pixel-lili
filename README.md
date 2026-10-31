@@ -1,67 +1,152 @@
+<div align="center">
+
 # Pixel Lili
 
-Zsebben hordható, érintőképernyős virtuális kutya **Lili**, a 2026. szeptember 12-én elhunyt chihuahua emlékére. Egy Waveshare ESP32-S3-Touch-AMOLED-2.16 panelen fut, internet nélkül. A viselkedését egy helyben futó, pici nyelvi modell irányítja, amelyet Lili valódi szokásaiból tanítottunk (egy szabálymotor "tanár" mintáiból).
+**Zsebben hordható virtuális chihuahua egy ESP32-S3 panelen, Lili emlékére**
 
-A projekt a [mediacutlet/pocket-tank](https://github.com/mediacutlet/pocket-tank) (MIT) kódbázisára épül: a hardveres portokat, a 4 bites LLM-motort, a szimulátor keretet és a mentési mintát onnan vesszük át, a halakat Lili váltja fel. Az átvett részek térképe: [docs/UPSTREAM.md](docs/UPSTREAM.md).
+![C](https://img.shields.io/badge/C-ESP--IDF%205-00599C?style=flat-square&logo=c&logoColor=white)
+![ESP32-S3](https://img.shields.io/badge/ESP32--S3-AMOLED%202.16-E7352C?style=flat-square&logo=espressif&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)
+![Status](https://img.shields.io/badge/status-active-2EA44F?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
-| A szoba (ősz, délután) | Az udvar (tél, este) | Az állapotsáv és a beállítások |
-|---|---|---|
-| ![szoba](docs/img/snapshots/room_autumn_afternoon.png) | ![udvar](docs/img/snapshots/yard_winter_evening.png) | ![beállítások](docs/img/m10_ui_settings.png) |
+[Funkciók](#funkciók) · [Képernyőképek](#képernyőképek) · [Architektúra](#architektúra) · [Telepítés](#telepítés)
 
-![a szimulátor az inspectorral](docs/img/m11_inspector.png)
+</div>
 
-## Mit tud
+> [!NOTE]
+> **English summary.** Pixel Lili is a pocket-sized virtual chihuahua on a Waveshare ESP32-S3 AMOLED 2.16 panel, made in memory of Lili, a real dog who died on 12 September 2026. She lives on her own without internet: a 5.2 M-parameter 4-bit language model on the second core decides what she does, trained on a rule engine that encodes Lili's real habits. It is a fork of [mediacutlet/pocket-tank](https://github.com/mediacutlet/pocket-tank) (MIT): the hardware ports, the 4-bit LLM engine and the simulator frame come from there, the fish became a dog.
 
-1. **Lili 33 animációval él** mind a 8 irányban (PixelLab, a gazdi jóváhagyásával), a szobában és az udvaron, négy évszakkal és négy napszakkal, fénnyel és árnyékkal.
-2. **Magától él:** éhes lesz, elfárad, unatkozik, magányos lesz, pisilnie kell; eszik, alszik a kuckóban, napozik, bújócskázik a bokorban, játszik a kötéllel és a plüssel, és ha a pelenka tele van vagy nagyon unatkozik, a padlóra pisil, utána bűnösen a sarokülő alá bújik, amíg fel nem takarítasz.
-3. **Az agya** egy 5,2 millió paraméteres modell (4 bit, 2,76 MB), a panel második magján fut, egy döntés 1,7 mp. Ha nincs modell, ugyanazt a szabálymotor teszi (`model/teacher_rules.yaml`, a 15 szokás).
-4. **Az érintés:** koppintás, simogatás (oda-vissza húzás rajta), a játék eldobása pöccintéssel, húzása, felhúzás a szélről (nézetváltás), koppintás az ajtón. Etetés, pelenkacsere, takarítás koppintással.
-5. **A test:** füttyre előjön (a mikrofon füttydetektora), rázásra megriad és ugat, felvételre felébred; a kijelző elhalványul, ha nem nézed, zsebben kikapcsol.
-6. **Az idő:** valós óra (RTC), évszakok a dátumból, különleges napok (január 15., június 27., szeptember 12.: ezen a napon nem rosszalkodik, a közeledben marad). Ha sokáig távol vagy, a távollétet is leéli (mit evett, aludt, csinált), és egy jelenettel fogad.
-7. **Mentés** 5 percenként (NVS), áramszünet után is ott folytatja, ahol abbahagyta.
+<p align="center">
+  <img src="docs/screenshots/01-room.png" alt="Lili a szobában, ősz délután" width="480" />
+</p>
 
-## Kipróbálás a szimulátorban (WSL, Ubuntu)
+## A probléma
 
-```bash
-cd sim && make LILI=1 && ./lilisim
+Lili 2019 januárjában született, és 2026. szeptember 12-én ment el. A hangjáról nincs felvétel, a szokásai (a mély, félig vonyító ugatás, a sarokülő alá bújás bűntudatában, a szőnyegen alvás) csak emlékként élnek. Egy fotóalbum nem mozog, egy általános kutyás játék pedig nem ő.
+
+## A megoldás
+
+Egy kis kijelzős eszköz, amin Lili a saját szokásai szerint él tovább: eszik, alszik, rosszalkodik, játszik, kimegy az udvarra, és reagál az érintésre, a füttyre és arra, hogy elővesszük a zsebből. A viselkedését egy helyben futó, pici nyelvi modell választja ki, amelyet a gazdi leírásaiból írt szabálymotor mintáin tanítottunk. Nem kell hozzá internet, telefon vagy felhő.
+
+## Funkciók
+
+- **Saját élete.** Éhes lesz, szomjas, elfárad, unatkozik, magányos lesz és pisilnie kell; ha a pelenka tele van, a padlóra pisil, utána bűnösen a sarokülő alá bújik, amíg fel nem takarítasz.
+- **56 animáció 8 irányban.** PixelLab-bal generált és kézzel tisztított pixel art: ugatás felcsapott fejjel, simogatás, kötélhúzás, plüss hordása, ásás, hempergés, felugrás a sarokülőre.
+- **Szoba és élő udvar.** Négy évszak és négy napszak fénnyel és árnyékkal; az udvaron veréb csipeget és elrepül, ha Lili odarohan, nyáron pillangók, ősszel levelek hullnak, télen havazik.
+- **Érintés, hang, mozgás.** Koppintás, simogatás, a játék eldobása pöccintéssel; füttyre előjön (mikrofonos füttydetektor), rázásra megriad, felvételre felébred. Saját hangjai vannak (ugatás, szaglászás, evés, ivás, horkolás).
+- **Gondozás.** Etetés, itatás, jutalomfalat, pelenkacsere és takarítás koppintással; a tálak láthatóan fogynak.
+- **Valós idő.** RTC óra, évszakok a dátumból, különleges napok; ha sokáig távol voltál, leéli a kiesett időt, és egy jelenettel fogad.
+- **Emléklap és napló.** A bal szélről behúzva az emléklap, a jobb szélről a napló: hány napja vagytok együtt, mennyit evett, ivott, és hova pisilt.
+- **Takarékos.** A kijelző elhalványul, elalszik, akkun 5 perc alvó kijelző után kikapcsol; a PWR gomb rövid nyomásra kijelzőt kapcsol, hosszúra ment és kikapcsol.
+
+## Képernyőképek
+
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="docs/screenshots/02-yard-summer.png" alt="Nyári udvar" /><br/><sub>Nyári udvar pillangókkal és csipegető verébbel</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/03-corner-bench.png" alt="Alvás a sarokülőn" /><br/><sub>Felugrott a sarokülőre, és a takarón alszik</sub></td>
+  </tr>
+  <tr>
+    <td align="center" width="50%"><img src="docs/screenshots/04-memorial.png" alt="Emléklap" /><br/><sub>Az emléklap: Lili odajön és leül elé</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/05-diary.png" alt="Napló" /><br/><sub>Lili naplója (minta számokkal)</sub></td>
+  </tr>
+  <tr>
+    <td align="center" width="50%"><img src="docs/screenshots/06-yard-winter-evening.png" alt="Téli este az udvaron" /><br/><sub>Téli este az udvaron</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/07-room-night.png" alt="A szoba éjjel" /><br/><sub>A szoba éjjel</sub></td>
+  </tr>
+</table>
+
+## Architektúra
+
+```mermaid
+flowchart LR
+  subgraph Panel["ESP32-S3 panel"]
+    subgraph Core1["Core 1"]
+      LLM["4 bites nyelvi modell (5,2 M param.)"]
+      MIC["Mikrofon, füttydetektor"]
+    end
+    subgraph Core0["Core 0, a képkocka-ciklus"]
+      BRAIN["Agy: kérdés és válasz"]
+      PLAN["Terv-végrehajtó, reflexek"]
+      WORLD["Világ: igények, játékok, udvari élet"]
+      RENDER["8 bites render, üvegmaszk"]
+    end
+    PAK[("Pak a flashben: sprite-ok, hátterek, hangok")]
+  end
+  SENS["Érintés, IMU, RTC, PWR gomb"] --> PLAN
+  MIC --> PLAN
+  BRAIN <--> LLM
+  BRAIN --> PLAN --> WORLD --> RENDER
+  PAK --> RENDER
+  WORLD --> SND["Hangkeverő, ES8311"]
+  RENDER --> LCD["480 x 480 AMOLED"]
 ```
 
-Billentyűk: Tab szoba/udvar, W fütty, N név, Space rázás, Enter felvétel, T +1 óra, 1-4 évszak, D napszak, A animáció, R irány, B állapotsáv, G bemutató, M debug, Q kilépés (mentéssel). Az egér a képen az ujj. Az inspectorban akcióválasztó is van.
+A közös C mag (`common/lili`) ugyanaz a panelen és a szimulátorban: a világ, a terv-végrehajtó, a navigáció, a gesztusok és a render. A modell a második magon fut, egy döntés kb. 1,7 másodperc; addig Lili tétlenkedik, modell nélkül a szabálymotor dönt. A grafika és a hangok egy saját flash-partíción lévő csomagból (pak) jönnek, memóriába leképezve.
 
-További módok: `./lilisim --brain llm` (a betanított modellel), `--demo` (bemutató kör), `--anim-viewer` (egy animáció mind a 8 irányból), `--snapshot DIR` (4 évszak x 4 napszak x 2 nézet), `--fresh` (új kezdés).
+## Technológiák
 
-## A panelen
+| Réteg | Technológia |
+|---|---|
+| Firmware | C, ESP-IDF 5, FreeRTOS, ESP32-S3 (Waveshare AMOLED 2.16) |
+| Agy | 4 bites kvantált transzformer saját C motoron, PyTorch tanítás (WSL, CUDA) |
+| Szimulátor | C, SDL2, LVGL, fej nélküli öntesztek |
+| Grafika | PixelLab (PixMiniMax), Python + Pillow + NumPy feldolgozás |
+| Hang | ElevenLabs hangeffektek, G.711 µ-law bank, ES8311 kodek |
+| Eszközök | Python 3.12 (pak építés, flashelés, sprite-ok, hangbank) |
 
-```bash
-bash tools/build_lili.sh
+## Telepítés
+
+Előfeltételek: WSL (Ubuntu 24.04) SDL2-vel, ESP-IDF 5, Python 3.12, a panel USB-n.
+
+1. Szimulátor fordítása és indítása:
+   ```bash
+   cd sim && make LILI=1 && ./lilisim
+   ```
+2. A firmware fordítása:
+   ```bash
+   bash tools/build_lili.sh
+   ```
+3. Flashelés (app, grafikai csomag és modell):
+   ```bash
+   py -3.12 tools/flash_216.py lili
+   ```
+
+## Használat
+
+- **Szimulátor:** Tab szoba/udvar, W fütty, Space rázás, Enter felvétel, T +1 óra, 1-4 évszak, D napszak, G bemutató, Q kilépés mentéssel. Az egér a képen az ujj.
+- **Panel:** simogasd oda-vissza húzva, pöccintsd el a játékot, koppints a tálra vagy a foltra. Felső vagy alsó szélről húzva vált szobát, a bal szélről az emléklap, a jobb szélről a napló jön. BOOT: állapotsáv, PWR: kijelző ki/be, hosszan: kikapcsolás.
+- **Tesztek:** `cd sim && make LILI=1 check` (26 önteszt csoport, ablak nélkül).
+- **Az agy tanítása:** lásd [docs/retrain-v4.md](docs/retrain-v4.md) és a `model/` mappa.
+
+## Mappaszerkezet
+
+```text
+pixel-lili/
+├── common/lili/     # a közös C mag: világ, terv, navigáció, render, hang, udvari élet
+├── firmware/lili/   # az ESP32-S3 app (ESP-IDF): test, hang, érintés, energia
+├── sim/             # SDL2 szimulátor és öntesztek
+├── model/           # a tanár szabályai, tanítás, 4 bites export
+├── assets/          # sprite-ok, hátterek, térképek, hangok, paletták
+├── tools/           # pak építés, flashelés, PixelLab és ElevenLabs feldolgozás
+├── docs/            # döntések, státusz, mérések, képernyőképek
+└── PIXEL_LILI_SPEC.md  # a teljes terv
 ```
 
-```bash
-py -3.12 tools/flash_216.py lili
-```
+## Tervek
 
-A `lili` készlet az appot, a pakot (a grafika, 3,97 MB) és a modellt is felírja. Soros konzol: `py -3.12 tools/serial_log.py --seconds 60 --send "help"`. Parancsok: `time`, `settime 2026-10-27T14:05:00`, `status`, `brain rules|model`, `demo`, `whistle`, `shake`, `wake`.
+- [ ] 7 napos valós próba a panelen, akkus mérésekkel
+- [ ] A modell újratanítása az új udvari és sarokülős viselkedéssel
+- [ ] Évszakos díszek és a különleges napok saját jelenetei
+- [ ] Lili hangjainak finomhangolása a kis hangszóróra
 
-Gombok: BOOT = állapotsáv, KEY3 = szoba/udvar, PWR = kijelző ki/be.
+## Licenc
 
-## Az agy tanítása (RTX 5060, WSL)
+MIT, lásd [LICENSE](LICENSE). A [mediacutlet/pocket-tank](https://github.com/mediacutlet/pocket-tank) eredeti szerzői jogi megjegyzése megmaradt; az átvett részek térképe: [docs/UPSTREAM.md](docs/UPSTREAM.md).
 
-```bash
-cd sim && for s in $(seq 1 32); do ./lilisim --dump-traces ../model/out/lili/traces_s$s.jsonl --hours 100 --seed $s & done; wait
-```
+---
 
-```bash
-python3 model/prep_lili.py && python3 model/train_lili.py --size S && python3 model/eval_lili.py --size S && python3 model/export_lili_q4.py --size S
-```
-
-184 ezer tanítópár, 3 perc tanítás. Az S modell: A1 87 % egyezés a tanár legvalószínűbb választásával, a tanár címkéje a top-2-ben 93,6 %, mind a 12 viselkedési próba (P1-P12) teljesül, a panelen is.
-
-## Tesztek
-
-`cd sim && make LILI=1 check`: 18 önteszt (render, navigáció, gesztusok, terv-végrehajtó, reflexek, játékfizika, igények, naptár, távollét, mentés, próbák, egy nap élet, a modell a C motoron, mozgásérzékelő, felület) és a sebességmérés. Csak zöld állapot kerül commitba.
-
-## Hol tart
-
-Állapot és a nyitott kérdések: [docs/STATUS.md](docs/STATUS.md) (a tetején áttekintő tábla). Döntések: [docs/decisions.md](docs/decisions.md). Mérések: [docs/stats.md](docs/stats.md). A teljes terv: [PIXEL_LILI_SPEC.md](PIXEL_LILI_SPEC.md) (12. fejezet: mérföldkövek). Munkaszabályok: [CLAUDE.md](CLAUDE.md).
-
-Ami még hátravan: a hiányzó grafikák (évszakos díszek, különleges napok, játékok, foltok, ikonok, néhány animáció), Lili saját hangja a gazdi videóiból (M9), a 7 napos valós próba a panelen (M11.1), utána a v1.0.
+<div align="center">
+<sub>Készítette: Pintér Szabolcs · <a href="https://github.com/piszabolcs">GitHub</a> · <a href="https://www.linkedin.com/in/piszabolcs">LinkedIn</a></sub>
+</div>
