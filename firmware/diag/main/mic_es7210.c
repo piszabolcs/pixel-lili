@@ -31,6 +31,7 @@ bool mic_init(i2c_master_bus_handle_t bus) {
     if (i2c_master_bus_add_device(bus, &cfg, &s_dev) != ESP_OK) return false;
     i2s_chan_config_t cc = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
     cc.dma_desc_num = 4; cc.dma_frame_num = 512;
+    cc.auto_clear = true;                                             /* the TX with nothing to send sends zeros */
     /* the speaker's codec hangs on the same MCLK / BCLK / LRCK: two controllers would fight over them, so with a TX
        wanted the one controller runs both ways (full duplex), the same clocks, the data out on its own pin */
     if (i2s_new_channel(&cc, s_tx_dout >= 0 ? &s_tx : NULL, &s_rx) != ESP_OK) { ESP_LOGE(TAG, "no I2S RX channel"); return false; }
@@ -44,6 +45,9 @@ bool mic_init(i2c_master_bus_handle_t bus) {
     if (s_tx) {
         std.gpio_cfg.dout = s_tx_dout; std.gpio_cfg.din = I2S_GPIO_UNUSED;
         if (i2s_channel_init_std_mode(s_tx, &std) != ESP_OK) { ESP_LOGE(TAG, "I2S TX init failed"); i2s_del_channel(s_tx); s_tx = NULL; }
+        /* full duplex: the RX takes its BCLK / LRCK from the TX, so the TX runs for good (2026-10-31: the speaker's
+           idle disabled it, and the mic read nothing at all: no whistle, while the panting had kept it alive) */
+        else i2s_channel_enable(s_tx);
     }
     return mic_up();
 }

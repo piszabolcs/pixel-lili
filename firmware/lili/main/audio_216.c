@@ -34,7 +34,6 @@ static void silence(int ms) {
 }
 static void up(void) {
     const int64_t t0 = esp_timer_get_time();
-    i2s_channel_enable(s_tx);                                 /* the clocks run already (the mic's RX) */
     const bool ok = codec_port_up();
     silence(150); codec_port_settled();
     amp(true); silence(100);
@@ -42,8 +41,7 @@ static void up(void) {
     ESP_LOGI(TAG, "up in %lld ms%s", (long long)((esp_timer_get_time() - t0) / 1000), ok ? "" : " (codec writes FAILED)");
 }
 static void down(void) {
-    amp(false); silence(10);
-    i2s_channel_disable(s_tx);
+    amp(false); silence(10);                                  /* the TX itself runs on: the mic's clocks (mic_es7210.c) */
     codec_port_down();
     s_up = false;
     ESP_LOGI(TAG, "down (idle)");

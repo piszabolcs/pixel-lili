@@ -3,7 +3,8 @@
  * ES8311 and the ES7210 share MCLK 42, BCLK 9, LRCK 45; the speaker's data goes out on 8), the ES8311 (codec_port.c)
  * and the NS4150B amplifier (its CTRL on 46). The codec and the amp are up only while something plays and for
  * IDLE_MS after (the pops stay inside the silence written around them). While it plays and SELF_MUTE_MS after,
- * the mic does not listen (spec 5.8: her own bark is not a whistle). */
+ * the mic does not listen (spec 5.8: her own bark is not a whistle). The I2S TX never stops: in full duplex it
+ * clocks the mic's RX too (idle, it sends zeros). */
 #ifndef AUDIO_216_H
 #define AUDIO_216_H
 #include <stdbool.h>
