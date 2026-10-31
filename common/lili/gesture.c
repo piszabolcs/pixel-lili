@@ -58,7 +58,8 @@ void gesture_feed(gesture_t *g, const gesture_ctx_t *c, bool down, int x, int y,
         gesture_init(g);
         g->down = true; g->t0 = g->last_t = t; g->x0 = g->x = (int16_t)x; g->y0 = g->y = (int16_t)y;
         g->toy = (int8_t)toy_at(c, x, y);
-        g->edge = y < G_EDGE_PX || y >= LILI_LOG_H - G_EDGE_PX;
+        g->side = (int8_t)(x < G_EDGE_PX ? -1 : x >= LILI_LOG_W - G_EDGE_PX ? 1 : 0);
+        g->edge = y < G_EDGE_PX || y >= LILI_LOG_H - G_EDGE_PX || g->side;
         g->approach_d = c->lili.x1 > c->lili.x0 ? dist_to(&c->lili, x, y) : 1 << 20;
         g->h[0].x = (int16_t)x; g->h[0].y = (int16_t)y; g->h[0].t = t; g->nh = 1; g->hi = 1;
         return;
@@ -84,7 +85,8 @@ void gesture_feed(gesture_t *g, const gesture_ctx_t *c, bool down, int x, int y,
     g->h[g->hi].x = (int16_t)x; g->h[g->hi].y = (int16_t)y; g->h[g->hi].t = t;
     g->hi = (uint8_t)((g->hi + 1) % GESTURE_HIST); if (g->nh < GESTURE_HIST) g->nh++;
     if (!g->moved && !g->long_sent && t - g->t0 > G_LONG_MS && g->toy < 0) { ev_push(q, EV_LONG, g->x0, g->y0); g->long_sent = true; }
-    if (g->edge && !g->swipe_sent && abs(y - g->y0) > G_SWIPE_PX) { ev_push(q, EV_SWITCH_VIEW, x, y); g->swipe_sent = true; }
+    if (g->side && !g->swipe_sent && (x - g->x0) * -g->side > G_SWIPE_PX) { ev_push(q, EV_EDGE_SWIPE, g->side, 0); g->swipe_sent = true; }
+    if (g->edge && !g->swipe_sent && abs(y - g->y0) > G_SWIPE_PX && (y - g->y0) * (y - g->y0) > (x - g->x0) * (x - g->x0)) { ev_push(q, EV_SWITCH_VIEW, x, y); g->swipe_sent = true; }
     if (g->toy >= 0) {                                             /* a toy under the finger: it follows */
         if (g->moved && (dx || dy)) { ev_push3(q, EV_DRAG, x, y, g->toy); g->dragging = true; }
     } else if (!g->edge) {

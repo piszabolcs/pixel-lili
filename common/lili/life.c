@@ -79,7 +79,7 @@ static float toward(float v, float to, float step) { return v < to ? (v + step >
 int life_bucket(float v) { int b = (int)(v * 0.999f); return b < 0 ? 0 : b > 9 ? 9 : b; }
 
 void life_init(world_t *w, int64_t now) {
-    w->epoch0 = now - (int64_t)w->clock_s;
+    w->epoch0 = now - (int64_t)w->clock_s; w->first_start = now;
     w->hunger = 2; w->energy = 8; w->happy = 7; w->bored = 2; w->lonely = 2; w->bladder = 2; w->bowel = 2; w->thirst = 2; w->things.treat_view = -1;
     w->owner_t = 1e6f; w->day_force = -1; w->last_kind = 7; w->last_t = 0;
 }
@@ -102,6 +102,7 @@ void life_tick(world_t *w, float dt) {
     w->bowel   = clamp10(w->bowel + LIFE_BOWEL * h);
     w->thirst  = clamp10(w->thirst + (asleep ? LIFE_THIRST_OFF : LIFE_THIRST_AWAKE) * h);
     w->need_ask_t += dt;
+    w->stat_on_frac += dt; while (w->stat_on_frac >= 1.0f) { w->stat_on_frac -= 1.0f; w->stat[STAT_ON_S]++; }
     if (w->actors[0].view == VIEW_YARD) w->room_t = 0; else if (!asleep) w->room_t += dt;
 }
 
@@ -178,8 +179,8 @@ int life_offline(world_t *w, int64_t dt, offline_log_t *log) {
         w->bladder = clamp10(w->bladder + LIFE_BLADDER * h);
         w->bowel   = clamp10(w->bowel + LIFE_BOWEL * h);
         w->thirst  = clamp10(w->thirst + (asleep ? LIFE_THIRST_OFF : LIFE_THIRST_AWAKE) * h);
-        if (w->hunger > 5 && t->food && !asleep) { t->food--; w->hunger = 0; w->bladder = clamp10(w->bladder + 2); w->bowel = clamp10(w->bowel + LIFE_BOWEL_MEAL); w->thirst = clamp10(w->thirst + LIFE_THIRST_MEAL); log->meals++; }
-        if (w->thirst > 5 && t->water && !asleep) { t->water--; w->thirst = 0; w->bladder = clamp10(w->bladder + 1); }   /* the bowl empties while she is alone too */
+        if (w->hunger > 5 && t->food && !asleep) { t->food--; w->hunger = 0; w->bladder = clamp10(w->bladder + 2); w->bowel = clamp10(w->bowel + LIFE_BOWEL_MEAL); w->thirst = clamp10(w->thirst + LIFE_THIRST_MEAL); log->meals++; w->stat[STAT_MEALS]++; }
+        if (w->thirst > 5 && t->water && !asleep) { t->water--; w->thirst = 0; w->bladder = clamp10(w->bladder + 1); w->stat[STAT_DRINKS]++; }   /* the bowl empties while she is alone too */
         if (w->bladder >= 8) {                                /* H8 / H9 (spec 9.2) */
             if (rnd01(w) < life_mischief_p(w, day)) {
                 int n = 1 + (int)(world_rand(w) % 2);
@@ -194,8 +195,8 @@ int life_offline(world_t *w, int64_t dt, offline_log_t *log) {
                         }
                     }
                 }
-                t->guilty = true; log->pees_floor++;
-            } else { if (t->pad < 2) t->pad++; if (w->bowel >= LIFE_POOP_AT) { t->pad_poop = 1; t->pad = 2; } log->pees_pad++; }
+                t->guilty = true; log->pees_floor++; w->stat[STAT_PEE_FLOOR]++; if (w->bowel >= LIFE_POOP_AT) w->stat[STAT_POOP_FLOOR]++;
+            } else { if (t->pad < 2) t->pad++; if (w->bowel >= LIFE_POOP_AT) { t->pad_poop = 1; t->pad = 2; w->stat[STAT_POOP_PAD]++; } log->pees_pad++; w->stat[STAT_PEE_PAD]++; }
             if (w->bowel >= LIFE_POOP_AT) w->bowel = 0;
             w->bladder = 0;
         }

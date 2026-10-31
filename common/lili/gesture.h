@@ -11,6 +11,7 @@
  *   DRAG_TOY     starts on a toy, slower                      EV_DRAG (x, y, toy) while it moves, EV_DROP at the end
  *   APPROACH     finger down, nearing her, < 300 px / s, she is bowing              EV_APPROACH (distance)
  *   EDGE_SWIPE   from within 24 px of the top / bottom edge, > 120 px vertically    EV_SWITCH_VIEW
+ *   SIDE_SWIPE   from within 24 px of the left / right edge, > 120 px inwards       EV_EDGE_SWIPE (a = -1 left, 1 right)
  * Logical px (= physical on the 480 panel), milliseconds. Platform-free, no malloc. */
 #ifndef LILI_GESTURE_H
 #define LILI_GESTURE_H
@@ -37,6 +38,7 @@ typedef struct {
     int32_t  path;                                         /* how far it has travelled, px */
     int8_t   toy;                                          /* the toy it landed on, -1 = none */
     bool     moved, long_sent, swipe_sent, dragging, petting, edge;
+    int8_t   side;                 /* landed at the left (-1) / right (1) edge: the pages (2026-10-31) */
     int8_t   sx, sy;                                       /* the last movement's sign per axis (the rub's turns) */
     uint8_t  n_turn; uint32_t turn_t[8];                   /* the turns' times (a ring of the last 8) */
     int32_t  rub_path;                                     /* px travelled over her hitbox this press */

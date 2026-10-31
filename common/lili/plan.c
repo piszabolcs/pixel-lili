@@ -318,11 +318,12 @@ static void set_anim(actor_t *a, uint16_t anim) { pose_play(a, anim); }   /* a c
 static void effect(world_t *w, int actor, int fx) {
     things_t *t = &w->things; const actor_t *a = &w->actors[actor];
     switch (fx) {
-    case FX_EAT:   if (t->food) t->food--; w->thirst = w->thirst + 2.0f > 10 ? 10 : w->thirst + 2.0f; break;   /* dry kibble: thirsty after it */
-    case FX_DRINK: if (t->water) t->water--; w->thirst = 0; break;
-    case FX_PAD:   if (t->pad < 2) t->pad++; if (w->plans[actor].poop) { t->pad_poop = 1; t->pad = 2; } break;
-    case FX_TREAT: w->hunger = w->hunger > 1.5f ? w->hunger - 1.5f : 0; w->happy = w->happy < 9 ? w->happy + 1 : 10; break;
-    case FX_MESS:  if (t->n_mess < MESS_MAX) {
+    case FX_EAT:   w->stat[STAT_MEALS]++; if (t->food) t->food--; w->thirst = w->thirst + 2.0f > 10 ? 10 : w->thirst + 2.0f; break;   /* dry kibble: thirsty after it */
+    case FX_DRINK: w->stat[STAT_DRINKS]++; if (t->water) t->water--; w->thirst = 0; break;
+    case FX_PAD:   w->stat[w->plans[actor].poop ? STAT_POOP_PAD : STAT_PEE_PAD]++; if (t->pad < 2) t->pad++; if (w->plans[actor].poop) { t->pad_poop = 1; t->pad = 2; } break;
+    case FX_TREAT: w->stat[STAT_TREATS]++; w->hunger = w->hunger > 1.5f ? w->hunger - 1.5f : 0; w->happy = w->happy < 9 ? w->happy + 1 : 10; break;
+    case FX_MESS:  w->stat[w->plans[actor].poop ? STAT_POOP_FLOOR : STAT_PEE_FLOOR]++;
+                   if (t->n_mess < MESS_MAX) {
                        t->mess_kind[t->n_mess] = w->plans[actor].poop;
                        t->mess[t->n_mess][0] = (int16_t)a->x; t->mess[t->n_mess][1] = (int16_t)a->y; t->n_mess++;
                    }
@@ -603,6 +604,9 @@ bool reflex_event(world_t *w, const ev_t *e) {
     const int me = 0; actor_t *a = &w->actors[me]; plan_t *p = &w->plans[me];
     const bool asleep = plan_asleep(w, me), here = a->view == w->view, guilty = w->things.guilty;
     switch (e->type) {
+    case EV_EDGE_SWIPE:                                        /* the memorial page opens: she comes and sits before it (2026-10-31) */
+        if (e->a >= 0 || asleep || !here || guilty || p->hide) return false;
+        return fire(w, me, RX_CALL, 2, BB_HEART);
     case EV_WHISTLE: case EV_CALL_NAME:                        /* R2: she comes to the owner, from anywhere */
         if (deep_asleep(w, me) || guilty) return false;
         return fire(w, me, here ? RX_CALL : RX_CALL_OTHER, 2, BB_EXCLAIM);

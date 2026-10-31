@@ -3,7 +3,8 @@
  * Payload v1 (append only, never reorder): i64 saved_at, i64 first_start, 6 x f32 needs, u8 guilty, u8 n_mess,
  * 4 x (i16, i16) spots, u8 pad, u8 food, u8 water, u8 view, f32 x, f32 y, u8 dir, u16 anim,
  * 2 x (u8 view, f32 x, f32 y, i8 held_by) toys, u32 pets, u32 plays, u8 last_kind,
- * then (appended) u8 brightness, u8 volume, u8 muted, u8 search hint, u8 bubbles. */
+ * then (appended) u8 brightness, u8 volume, u8 muted, u8 search hint, u8 bubbles, ..., and (2026-10-31) u8 n, n x u32
+ * the statistics (STAT_*). */
 #include "save.h"
 #include "life.h"
 #include "toys.h"
@@ -40,6 +41,7 @@ int save_write(const world_t *w, int64_t first_start, uint8_t *buf, int cap) {
     f32(&o, w->bowel); for (int i = 0; i < MESS_MAX; i++) u8(&o, w->things.mess_kind[i]);                              /* the poop, the treat (appended 2026-10-28) */
     u8(&o, w->things.pad_poop); u8(&o, (uint8_t)w->things.treat_view); u8(&o, w->things.treat_kind);
     u16(&o, (uint16_t)w->things.treat_x); u16(&o, (uint16_t)w->things.treat_y);
+    u8(&o, STAT_COUNT); for (int i = 0; i < STAT_COUNT; i++) u32(&o, w->stat[i]);                                     /* the statistics page (2026-10-31) */
     const int len = o.n - start;
     if (o.n + 4 > cap) return 0;
     buf[6] = (uint8_t)len; buf[7] = (uint8_t)(len >> 8);
@@ -94,6 +96,8 @@ bool save_read(world_t *w, const uint8_t *buf, int len, int64_t *saved_at, int64
     w->things.pad_poop = g8(&r, 0) != 0;
     { const int8_t tv = (int8_t)g8(&r, 0xFF); w->things.treat_view = tv >= 0 && tv < VIEW_COUNT ? tv : -1; }
     w->things.treat_kind = g8(&r, 0) & 1; w->things.treat_x = (int16_t)g16(&r, 0); w->things.treat_y = (int16_t)g16(&r, 0);
+    { const int n = g8(&r, 0); for (int i = 0; i < n; i++) { const uint32_t v = g32(&r, 0); if (i < STAT_COUNT) w->stat[i] = v; } }
+    w->first_start = first;
     if (saved_at) *saved_at = at;
     if (first_start) *first_start = first;
     return true;

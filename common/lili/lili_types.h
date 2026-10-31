@@ -82,6 +82,9 @@ typedef struct {
     uint8_t  poop;                    /* this business is a poop (decided as it starts, plan.c) */
 } plan_t;
 
+/* the statistics page's counters (2026-10-31): appended only (the save keeps them in this order) */
+enum { STAT_MEALS, STAT_DRINKS, STAT_TREATS, STAT_PEE_PAD, STAT_PEE_FLOOR, STAT_POOP_PAD, STAT_POOP_FLOOR,
+       STAT_OUTINGS, STAT_WHISTLES, STAT_ON_S, STAT_COUNT };
 typedef struct {
     uint32_t seed;             /* every random number comes from here (spec 4.6: deterministic selftests) */
     uint32_t rng;
@@ -109,6 +112,9 @@ typedef struct {
     uint8_t  last_kind;            /* the brain's "last activity" (F22): LAST_* in life.c */
     float    last_t;               /* seconds in that kind of activity (F23) */
     uint32_t pets, plays;          /* statistics (spec 9.7) */
+    uint32_t stat[STAT_COUNT];     /* the owner's statistics page (2026-10-31, ui.c): STAT_*, saved */
+    float    stat_on_frac;         /* the running second's fraction for STAT_ON_S */
+    int64_t  first_start;          /* local seconds of her very first start (the save keeps it) */
     /* the sixth layer (spec 10, brain.c): what the next question will say, and when it is asked */
     uint8_t  brain_sig, owner_back;        /* F18's signal and F16's "back after an absence", until the next question */
     float    ask_t;                        /* seconds since the last question */
@@ -126,5 +132,6 @@ typedef struct {
     bool     finger_down;          /* the finger on the glass (follow_finger), set by the platform each frame */
     int16_t  finger_x, finger_y;
 } world_t;
+
 
 #endif

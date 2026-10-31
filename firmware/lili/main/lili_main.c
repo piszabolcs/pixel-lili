@@ -276,6 +276,7 @@ void app_main(void) {
         ev_t ev; while (ev_pop(&s_q, &ev)) {
             ESP_LOGI(TAG, "event %s %d %d %d", ev_name((ev_type_t)ev.type), ev.a, ev.b, ev.c);
             if (ev.type == EV_TAP && s_ui && ui_tap(s_ui, &s_world, ev.a, ev.b)) continue;   /* the interface's tap, not the world's */
+            if (ev.type == EV_EDGE_SWIPE && s_ui) ui_page(s_ui, ev.a);                   /* the side pages (2026-10-31); the world sees it too */
             world_handle_event(&s_world, &ev);
         }
         if (s_ui) ui_tick(s_ui, dt);

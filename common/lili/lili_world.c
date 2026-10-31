@@ -81,7 +81,10 @@ void world_tick(world_t *w, float dt) {
     if (w->sparkle_t > 0) w->sparkle_t -= dt;
     if (w->bubble_t > 0) w->bubble_t -= dt;
     w->went_t += dt;
-    if (w->actors[0].view != w->went_view) { w->went_view = (uint8_t)w->actors[0].view; w->went_t = 0; sfx_play(SFX_PET_DOOR, -4); }   /* through the door */
+    if (w->actors[0].view != w->went_view) {
+        w->went_view = (uint8_t)w->actors[0].view; w->went_t = 0; sfx_play(SFX_PET_DOOR, -4);
+        if (w->went_view == VIEW_YARD) w->stat[STAT_OUTINGS]++;
+    }   /* through the door */
     toys_tick(w, dt);
     sfx_tick(w, dt);                                     /* her sounds at their moments (2026-10-29) */
     bowl_hint(w, dt);
@@ -123,6 +126,7 @@ void world_handle_event(world_t *w, const ev_t *e) {
     reflex_event(w, e);                                  /* the reflexes first (spec 8.8): 0 ms, past the brain */
     switch (e->type) {
     case EV_SWITCH_VIEW: world_switch_view(w); break;
+    case EV_WHISTLE:     w->stat[STAT_WHISTLES]++; break;
     case EV_TIME_SKIP:   if (e->a > 0) w->clock_s += (float)e->a; break;
     case EV_SET_SEASON:  w->season_force = (int8_t)(e->a < 0 || e->a > 3 ? -1 : e->a); break;
     case EV_SET_DAYPART: w->daypart_force = (int8_t)(e->a < 0 || e->a > 3 ? -1 : e->a); break;

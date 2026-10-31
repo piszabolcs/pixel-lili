@@ -9,6 +9,8 @@
 #define STAY_S    4.0f
 #define BAR_X     ((LILI_PHYS_W - UI_BAR_W) / 2)
 #define CARD_X    ((LILI_PHYS_W - UI_CARD_W) / 2)
+#define PAGE_X    ((LILI_PHYS_W - UI_PAGE_W) / 2)
+#define PAGE_STAY_S 120.0f                   /* an open page closes itself after this long untouched */
 #define TINT_K    150         /* of 256: the dark glass over the blurred picture (spec 7.8 had 22 % white; the owner, 2026-10-29: */
 #define TINT_R    24          /* the white text was hard to read on it) */
 #define TINT_G    18
@@ -28,10 +30,16 @@ void ui_toggle(ui_t *u) {
     if (u->want || u->settings) { u->want = false; u->pinned = false; u->settings = false; }
     else { u->want = true; u->pinned = true; u->idle = 0; }
 }
-bool ui_visible(const ui_t *u) { return u->show > 0.01f || u->settings; }
+bool ui_visible(const ui_t *u) { return u->show > 0.01f || u->settings || u->page; }
+void ui_page(ui_t *u, int side) {
+    if (u->page) { u->page = UI_PAGE_NONE; return; }
+    u->settings = false; u->page = (uint8_t)(side < 0 ? UI_PAGE_MEMORIAL : UI_PAGE_STATS); u->page_idle = 0;
+}
+static int page_h(const ui_t *u) { return u->page == UI_PAGE_MEMORIAL ? UI_MEMORIAL_H : UI_PAGE_H; }
 uint8_t ui_brightness(const world_t *w) { static const uint8_t L[3] = { 70, 150, 255 }; return L[w->set_bright % 3]; }
 
 void ui_tick(ui_t *u, float dt) {
+    if (u->page && (u->page_idle += dt) > PAGE_STAY_S) u->page = UI_PAGE_NONE;
     if (u->settings) { u->want = true; u->idle = 0; }
     if (u->want && !u->pinned) { u->idle += dt; if (u->idle > STAY_S) u->want = false; }
     const float target = u->want ? 1.0f : 0.0f, step = dt / SLIDE_S;
@@ -51,7 +59,7 @@ static bool span(int y, int w, int h, int rad, int *x0, int *x1) {
 }
 /* the frost: the 8-bit picture behind (w x h at x0, y0) blurred (8 px cells, bilinear), whitened, inside the rounded shape */
 static void frost(uint16_t *dst, int w, int h, int rad, const render8_t *r, int x0, int y0) {
-    enum { C = 8, GW = UI_CARD_W / C + 2, GH = UI_CARD_H / C + 2 };
+    enum { C = 8, GW = UI_PAGE_W / C + 2, GH = UI_PAGE_H / C + 2 };   /* the largest: the pages */
     static uint16_t cr[GH][GW], cg[GH][GW], cb[GH][GW];
     const int gw = w / C + 2, gh = h / C + 2;
     for (int gy = 0; gy < gh; gy++) for (int gx = 0; gx < gw; gx++) {
@@ -161,6 +169,43 @@ static void compose_card(ui_t *u, const world_t *w, const render8_t *r) {
         text(d, W, H, W - 20 - text_w(v, 2), y + 8, 2, i == 4 ? rgb(230, 225, 215) : WHITE, v);
     }
 }
+/* ---- the pages (2026-10-31, the owner's wish) ---- */
+static void heart(uint16_t *d, int dw, int dh, int x, int y, int sc, uint16_t c) {
+    for (int r = 0; r < 9; r++) for (int k = 0; k < 9; k++) if (IC_HEART[r] >> (8 - k) & 1) fill(d, dw, dh, x + sc * k, y + sc * r, sc, sc, c);
+}
+static void centred(uint16_t *d, int h, int y, int sc, uint16_t c, const char *s) { text(d, UI_PAGE_W, h, (UI_PAGE_W - text_w(s, sc)) / 2, y, sc, c, s); }
+/* the memorial: Lili, 2019 - 2026 (she died on September 12th, 2026; spec 9.2 keeps that day free of mischief) */
+static void compose_memorial(ui_t *u, const render8_t *r) {
+    uint16_t *d = u->pagebuf; const int H = UI_MEMORIAL_H;
+    memset(d, 0, sizeof u->pagebuf);
+    frost(d, UI_PAGE_W, H, 28, r, PAGE_X, UI_PAGE_Y);
+    heart(d, UI_PAGE_W, H, (UI_PAGE_W - 27) / 2, 18, 3, rgb(240, 120, 130));
+    centred(d, H, 56, 2, rgb(235, 225, 210), "In memoriam");
+    centred(d, H, 84, 4, WARM, "Lili");
+    centred(d, H, 136, 2, WHITE, "The best and happiest dog");
+    centred(d, H, 160, 2, WHITE, "I have ever met and known");
+    centred(d, H, 198, 2, rgb(235, 225, 210), "2019.01 - 2026.09.12");
+}
+static void compose_stats(ui_t *u, const world_t *w, const render8_t *r) {
+    uint16_t *d = u->pagebuf; const int W = UI_PAGE_W, H = UI_PAGE_H;
+    frost(d, W, H, 28, r, PAGE_X, UI_PAGE_Y);
+    centred(d, H, 16, 2, WARM, "Lili naplója");
+    const uint32_t *s = w->stat; char v[14][24]; lili_date_t fd; life_date(w->first_start, &fd);
+    const int64_t days = (world_now(w) - w->first_start) / 86400;
+    snprintf(v[0], 24, "%04d.%02d.%02d", fd.year, fd.month, fd.day);
+    snprintf(v[1], 24, "%lld nap", (long long)(days < 0 ? 0 : days));
+    snprintf(v[2], 24, "%u ó %u p", (unsigned)(s[STAT_ON_S] / 3600), (unsigned)(s[STAT_ON_S] / 60 % 60));
+    const int K[11] = { STAT_MEALS, STAT_DRINKS, STAT_TREATS, STAT_PEE_PAD, STAT_PEE_FLOOR, STAT_POOP_PAD, STAT_POOP_FLOOR, -1, -2, STAT_OUTINGS, STAT_WHISTLES };
+    for (int i = 0; i < 11; i++) snprintf(v[3 + i], 24, "%u", (unsigned)(K[i] == -1 ? w->pets : K[i] == -2 ? w->plays : s[K[i]]));
+    static const char *L[14] = { "Első nap", "Együtt", "Bekapcsolva", "Evett", "Ivott", "Jutalomfalat", "Pisi jó helyen", "Pisi máshol",
+                                 "Kaki jó helyen", "Kaki máshol", "Simogatás", "Játék", "Udvaron járt", "Füttyszó" };
+    for (int i = 0; i < 14; i++) {
+        const int gap = (i >= 3) + (i >= 6) + (i >= 10), y = 50 + i * 23 + gap * 8;     /* three groups: the time, the bowls, the business, the play */
+        if (i == 3 || i == 6 || i == 10) fill(d, W, H, 40, y - 7, W - 80, 1, rgb(200, 190, 180));
+        text(d, W, H, 24, y, 2, WHITE, L[i]);
+        text(d, W, H, W - 24 - text_w(v[i], 2), y, 2, i == 7 || i == 9 ? rgb(255, 190, 170) : rgb(230, 225, 215), v[i]);
+    }
+}
 /* composed again when it moves (the slide), when the card opens or changes, and every 4th frame for what passes
    behind the frost and the clock: the frost is the costly part (spec 7.8: above 25 fps while it shows) */
 void ui_prepare(ui_t *u, const world_t *w, const render8_t *r) {
@@ -170,9 +215,19 @@ void ui_prepare(ui_t *u, const world_t *w, const render8_t *r) {
     frame++;
     if (u->show > 0.01f && (moved || changed || frame % 4 == 0)) { compose_bar(u, w, r); last_y = bar_y(u); }
     if (u->settings && (changed || frame % 4 == 2)) compose_card(u, w, r);
-    last_settings = u->settings; memcpy(last_set, set, sizeof set);
+    static uint8_t last_page;
+    if (u->page && (u->page != last_page || frame % 4 == 1)) { if (u->page == UI_PAGE_MEMORIAL) compose_memorial(u, r); else compose_stats(u, w, r); }
+    last_page = u->page; last_settings = u->settings; memcpy(last_set, set, sizeof set);
 }
 void ui_apply_rows(const ui_t *u, uint16_t *dst, int y0, int n) {
+    if (u->page) {
+        const int ph = page_h(u);
+        for (int y = y0 > UI_PAGE_Y ? y0 : UI_PAGE_Y; y < y0 + n && y < UI_PAGE_Y + ph; y++) {
+            const uint16_t *s = &u->pagebuf[(y - UI_PAGE_Y) * UI_PAGE_W]; uint16_t *o = &dst[(y - y0) * LILI_PHYS_W + PAGE_X];
+            for (int x = 0; x < UI_PAGE_W; x++) if (s[x]) o[x] = s[x];
+        }
+        return;                                               /* a page covers the bar and the card */
+    }
     if (u->show > 0.01f) {
         const int by = bar_y(u);
         for (int y = y0 > by ? y0 : by; y < y0 + n && y < by + UI_BAR_H; y++) {
@@ -188,6 +243,7 @@ void ui_apply_rows(const ui_t *u, uint16_t *dst, int y0, int n) {
         }
 }
 bool ui_tap(ui_t *u, world_t *w, int x, int y) {
+    if (u->page) { (void)x; (void)y; u->page = UI_PAGE_NONE; return true; }   /* a tap anywhere closes the page */
     if (u->settings) {
         u->idle = 0;
         if (x < CARD_X || x >= CARD_X + UI_CARD_W || y < UI_CARD_Y || y >= UI_CARD_Y + UI_CARD_H) { u->settings = false; return true; }

@@ -1157,6 +1157,13 @@ static int selftest_save(void) {
     CHECK(save_read(&s_world, old, 12 + plen, NULL, NULL) && s_world.hunger == keep.hunger && s_world.things.food == 3 && s_world.actors[0].view == VIEW_ROOM,
           "an older, shorter save reads: its fields, and the defaults after them");
     CHECK(!save_read(&s_world, (const uint8_t *)"LSAVxxxx", 8, NULL, NULL), "garbage is refused");
+    {   /* the statistics page's counters are saved (2026-10-31) */
+        world_t w1; world_init(&w1, 70); life_init(&w1, 1790000000); w1.stat[STAT_MEALS] = 12; w1.stat[STAT_POOP_FLOOR] = 3; w1.stat[STAT_ON_S] = 7200;
+        uint8_t sb[SAVE_MAX]; const int n = save_write(&w1, w1.first_start, sb, sizeof sb);
+        world_t w2; world_init(&w2, 71); int64_t at = 0, fs = 0;
+        CHECK(n > 0 && save_read(&w2, sb, n, &at, &fs) && w2.stat[STAT_MEALS] == 12 && w2.stat[STAT_POOP_FLOOR] == 3 && w2.stat[STAT_ON_S] == 7200 && w2.first_start == 1790000000,
+              "the statistics and the first day come back from the save");
+    }
     printf("selftest-save: ok (%d B)\n", n);
     return 0;
 }
@@ -1596,6 +1603,34 @@ static int selftest_ui(void) {
     ui_toggle(&s_ui); for (int i = 0; i < 10; i++) ui_tick(&s_ui, 0.03f);
     CHECK(s_ui.show < 0.01f, "the next press takes it away");
     uint16_t c[5]; CHECK(font_glyph(0x151, c) && font_glyph(0x170, c) && font_glyph(0xE1, c) && !font_glyph(0x4E2D, c), "the font has ő, Ű, á (and no CJK)");
+    CHECK(font_glyph('b', c) && font_glyph('I', c) && font_glyph('.', c) && font_glyph('-', c), "and the memorial's letters");
+    {   /* the side pages (the owner, 2026-10-31): the left edge's swipe the memorial, the right edge's the statistics */
+        gesture_t g; gesture_ctx_t gc; ev_queue_t q; ev_t e; int got = 0, side = 0;
+        world_init(&s_world, 63); world_gesture_ctx(&s_world, &gc); ev_init(&q); memset(&g, 0, sizeof g);
+        const int X[4] = { 6, 60, 150, 150 };
+        for (int i = 0; i < 4; i++) gesture_feed(&g, &gc, i < 3, X[i], 250, (uint32_t)(i * 60), &q);
+        while (ev_pop(&q, &e)) if (e.type == EV_EDGE_SWIPE) { got++; side = e.a; } else if (e.type == EV_SWITCH_VIEW || e.type == EV_PET_START) got += 10;
+        CHECK(got == 1 && side == -1, "a swipe in from the left edge: the memorial's event, nothing else");
+        ev_init(&q); memset(&g, 0, sizeof g); got = 0;
+        const int X2[4] = { 474, 420, 330, 330 };
+        for (int i = 0; i < 4; i++) gesture_feed(&g, &gc, i < 3, X2[i], 250, (uint32_t)(i * 60), &q);
+        while (ev_pop(&q, &e)) if (e.type == EV_EDGE_SWIPE) { got++; side = e.a; }
+        CHECK(got == 1 && side == 1, "and from the right edge: the statistics'");
+        ui_init(&s_ui); frame(); memcpy(before, s_fb, sizeof before);
+        ui_page(&s_ui, -1); ui_tick(&s_ui, 0.03f); frame();
+        CHECK(s_ui.page == UI_PAGE_MEMORIAL && s_fb[(UI_PAGE_Y + 100) * LILI_PHYS_W + 240] != before[(UI_PAGE_Y + 100) * LILI_PHYS_W + 240] &&
+              s_fb[440 * LILI_PHYS_W + 240] == before[440 * LILI_PHYS_W + 240], "the memorial shows, and below it the room (she sits there)");
+        CHECK(ui_tap(&s_ui, &s_world, 240, 240) && !s_ui.page, "a tap closes it");
+        s_world.stat[STAT_MEALS] = 7; ui_page(&s_ui, 1); frame();
+        CHECK(s_ui.page == UI_PAGE_STATS && s_fb[(UI_PAGE_Y + 360) * LILI_PHYS_W + 240] != before[(UI_PAGE_Y + 360) * LILI_PHYS_W + 240], "the statistics page shows");
+        ui_page(&s_ui, -1); CHECK(!s_ui.page, "a swipe while a page is open closes it");
+        ui_page(&s_ui, -1); for (int i = 0; i < 130; i++) ui_tick(&s_ui, 1.0f);
+        CHECK(!s_ui.page, "and an open page closes itself after two minutes");
+        world_init(&s_world, 64); actor_t *l = &s_world.actors[0];
+        { ev_t sw = { EV_EDGE_SWIPE, -1, 0, 0 }; world_handle_event(&s_world, &sw); }
+        CHECK(s_world.plans[0].status == PLAN_RUNNING && s_world.plans[0].prio == 2 && s_world.bubble == BB_HEART, "the memorial opens: she comes and sits before it");
+        (void)l;
+    }
     {   /* the search hint (D-06): off by default; on, a paw at the room's door for 8 s after she went out */
         static render8_t a, b; world_init(&s_world, 62); world_tick(&s_world, 0.01f);
         world_render(&s_world, &a); s_world.actors[0].view = VIEW_YARD; world_tick(&s_world, 0.01f); world_render(&s_world, &b);
@@ -1692,6 +1727,7 @@ static void drain_events(void) {
         snprintf(line, sizeof line, e.c ? "%7.1f  %-14s %d %d %d" : "%7.1f  %-14s %d %d", s_world.clock_s, ev_name((ev_type_t)e.type), e.a, e.b, e.c);
         inspector_log(line); puts(line);
         if (e.type == EV_TAP && ui_tap(&s_ui, &s_world, e.a, e.b)) continue;   /* the interface's tap, not the world's */
+        if (e.type == EV_EDGE_SWIPE) ui_page(&s_ui, e.a);                     /* the side pages (2026-10-31) */
         world_handle_event(&s_world, &e);
     }
 }
@@ -1894,6 +1930,18 @@ int main(int argc, char **argv) {
     if (argc > 2 && !strcmp(argv[1], "--moves-record")) return moves_record(argv[2], false);
     if (argc > 2 && !strcmp(argv[1], "--care-record")) return moves_record(argv[2], true);
     if (argc > 2 && !strcmp(argv[1], "--scene-shots")) return scene_shots(argv[2]);
+    if (argc > 2 && !strcmp(argv[1], "--page-shots")) {           /* the side pages (2026-10-31), for the owner's look */
+        canvas_init(); world_init(&s_world, 5); s_world.season_force = 1; s_world.daypart_force = 1; ui_init(&s_ui);
+        actor_t *l = &s_world.actors[0]; const map_point_t *f = &MAPS[VIEW_ROOM].points[SPOT_FRONT];
+        l->x = f->x; l->y = f->y; l->dir = DIR_S; pose_snap(l, ANIM_IDLE_SIT_BLINK);
+        s_world.first_start = world_now(&s_world) - 12 * 86400;
+        const uint32_t demo[STAT_COUNT] = { 31, 27, 9, 22, 3, 8, 1, 14, 6, 51 * 3600 + 20 * 60 };
+        memcpy(s_world.stat, demo, sizeof demo); s_world.pets = 64; s_world.plays = 18;
+        char path[512];
+        ui_page(&s_ui, -1); frame(); snprintf(path, sizeof path, "%s/page_memorial.ppm", argv[2]); write_ppm(path, s_fb);
+        ui_page(&s_ui, 1); ui_page(&s_ui, 1); frame(); snprintf(path, sizeof path, "%s/page_stats.ppm", argv[2]); write_ppm(path, s_fb);
+        printf("page-shots: 2 -> %s\n", argv[2]); return 0;
+    }
     if (argc > 2 && !strcmp(argv[1], "--screenshot")) {
         s_debug = argc > 3 && !strcmp(argv[3], "--debug");
         canvas_init(); world_init(&s_world, 1234);

@@ -15,12 +15,19 @@
 #define UI_CARD_W 360
 #define UI_CARD_H 330
 #define UI_CARD_Y 78
+#define UI_PAGE_W 400                      /* the pages from the side edges (2026-10-31): the memorial, the statistics */
+#define UI_PAGE_H 400
+#define UI_PAGE_Y 40
+#define UI_MEMORIAL_H 236                 /* the memorial is shorter: she sits before it, below */
+enum { UI_PAGE_NONE = 0, UI_PAGE_MEMORIAL, UI_PAGE_STATS };
 typedef struct {
     float   show, idle;                    /* the bar's slide (0 up and away .. 1 down) and the seconds untouched */
     bool    want, settings, pinned;        /* pinned: BOOT brought it, it stays until the next press (2026-10-29) */
     float   battery; bool charging, has_battery;  /* the platform's PMIC reading (no battery: the icon hides) */
     uint16_t bar[UI_BAR_W * UI_BAR_H];     /* the bar, composed each frame it shows (46 KB) */
     uint16_t card[UI_CARD_W * UI_CARD_H];  /* the settings card (232 KB): the platform places the ui_t (PSRAM) */
+    uint8_t  page; float page_idle;        /* UI_PAGE_*, and the seconds it has been open untouched */
+    uint16_t pagebuf[UI_PAGE_W * UI_PAGE_H];   /* the open page (320 KB) */
 } ui_t;
 
 void ui_init(ui_t *u);
@@ -33,6 +40,7 @@ void ui_apply_rows(const ui_t *u, uint16_t *dst, int y0, int n);    /* over the 
 /* a tap at (x, y): true = the interface took it (the world does not see it); the settings it changes land in w */
 bool ui_tap(ui_t *u, world_t *w, int x, int y);
 bool ui_visible(const ui_t *u);
+void ui_page(ui_t *u, int side);                        /* a swipe from a side edge: -1 the memorial, 1 the statistics; an open page closes */
 uint8_t ui_brightness(const world_t *w);                 /* the display level for the brightness setting */
 
 #endif
