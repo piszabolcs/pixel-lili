@@ -753,5 +753,23 @@
    "W"
   ],
   "loop": false
+ },
+ "dig": {
+  "id": 64,
+  "frames": 8,
+  "fps": 12,
+  "dirs": [
+   "S"
+  ],
+  "loop": false
+ },
+ "roll": {
+  "id": 65,
+  "frames": 8,
+  "fps": 10,
+  "dirs": [
+   "S"
+  ],
+  "loop": false
  }
 }

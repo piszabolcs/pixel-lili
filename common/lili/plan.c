@@ -56,7 +56,7 @@ typedef struct { uint8_t op, arg; uint16_t anim; float t; } prim_t;
 typedef struct { uint32_t need; prim_t p[PRIMS]; } act_t;
 /* the reflexes' own sequences, after the brain's actions in the same table (spec 8.8) */
 enum { RX_FORGIVEN = ACT_COUNT, RX_CALL, RX_CALL_OTHER, RX_PET, RX_PET_END, RX_FETCH, RX_TEASE, RX_TIRED, RX_GREET, RX_GREET_GUILTY,
-       RX_SHAKE, RX_VOICE, RX_TAP_LOOK, RX_TAP_GO, RX_JOY, RX_TREAT, RX_ASK_FOOD, RX_ASK_WATER, RX_BIRD, RX_BUTTERFLY, RX_SLEEP_BENCH, RX_BENCH_DOWN, RX_BENCH_STAY, RX_END };
+       RX_SHAKE, RX_VOICE, RX_TAP_LOOK, RX_TAP_GO, RX_JOY, RX_TREAT, RX_ASK_FOOD, RX_ASK_WATER, RX_BIRD, RX_BUTTERFLY, RX_SLEEP_BENCH, RX_BENCH_DOWN, RX_BENCH_STAY, RX_DIG, RX_ROLL, RX_END };
 
 static const act_t ACTS[RX_END] = {
     /* moving about */
@@ -156,6 +156,9 @@ static const act_t ACTS[RX_END] = {
        front of its side part she leaps up onto the seat, curls up on it, and leaps down before whatever comes next */
     [RX_SLEEP_BENCH]     = { 0, { GO(SPOT_BENCH_JUMP), DR(DIR_E), JUMP(1, ANIM_JUMP_UP, 0.75f), DR(DIR_SW), ON(ANIM_LIE_DOWN), AN(ANIM_SLEEP_CURL, 10.0f) } },
     [RX_BENCH_DOWN]      = { 0, { DR(DIR_W), JUMP(0, ANIM_JUMP_DOWN, 0.75f) } },
+    /* 2026-10-31, the yard's life: now and then, out on the grass, she digs or rolls on her back instead of a sniff */
+    [RX_DIG]             = { 0, { GO(TG_RANDOM), DR(DIR_S), ON(ANIM_DIG), ON(ANIM_DIG), ON(ANIM_SNIFF) } },
+    [RX_ROLL]            = { 0, { GO(TG_RANDOM), DR(DIR_S), ON(ANIM_ROLL), AN(ANIM_PANT_SMILE, 1.5f) } },
     [RX_BENCH_STAY]      = { 0, { ON(ANIM_LIE_DOWN), AN(ANIM_SLEEP_CURL, 10.0f) } },          /* up there and sleepy still */
 };
 
@@ -355,7 +358,12 @@ void plan_start(world_t *w, int actor, const decision_t *d) {
     memset(p, 0, sizeof *p);
     p->d = *d; p->status = PLAN_RUNNING; p->hide = hide; p->prio = 255; p->rounds = rounds; p->toy = -1;
     const actor_t *a = &w->actors[actor];
-    if (p->d.a[0] == ACT_SLEEP_RUG && a->view == VIEW_ROOM && world_rand(w) % 100 < 40) p->d.a[0] = RX_SLEEP_BENCH;   /* the corner bench, now and then (2026-10-31) */
+    if (p->d.a[0] == ACT_SLEEP_RUG && a->view == VIEW_ROOM && world_rand(w) % 100 < 40) p->d.a[0] = RX_SLEEP_BENCH;
+    for (int i = 0; i < 3; i++)                                             /* the yard: a dig or a roll for a sniff, now and then */
+        if (p->d.a[i] == ACT_SNIFF_AROUND && (a->view == VIEW_YARD || (i && p->d.a[0] == ACT_ENTER_YARD))) {
+            const uint32_t r = world_rand(w) % 100;
+            if (r < 25) p->d.a[i] = RX_DIG; else if (r < 40) p->d.a[i] = RX_ROLL;
+        }   /* the corner bench, now and then (2026-10-31) */
     if (a->view == VIEW_ROOM && a->z >= BENCH_Z - 1.0f && (p->d.a[0] == RX_SLEEP_BENCH || p->d.a[0] == ACT_SLEEP_RUG || p->d.a[0] == ACT_SLEEP_NOOK)) p->d.a[0] = RX_BENCH_STAY;
     if (plan_on_bench(w, actor) && p->d.a[0] != RX_BENCH_STAY && p->d.a[0] != RX_BENCH_DOWN) {   /* up on the bench: down first */
         p->d.a[2] = p->d.a[1]; p->d.a[1] = p->d.a[0]; p->d.a[0] = RX_BENCH_DOWN;

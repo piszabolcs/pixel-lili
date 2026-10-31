@@ -786,13 +786,13 @@ static int selftest_plan(void) {
 /* --selftest-reflex (spec 8.8, M4.5) and the care taps (8.10, M4.7): each reflex fires from its trigger, runs
    to its end with its effect, the priorities hold, and the sleeping, hidden or guilty dog answers only as she should */
 #include "brain.h"
-static uint64_t s_seen;                                       /* the animations a run showed (ids < 64): the pose moves' checks */
+static unsigned __int128 s_seen;                              /* the animations a run showed (ids < 128): the pose moves' checks */
 static bool s_treat_twice;                                    /* her frames held the treat while it still lay on the floor */
 static void seen(void) {
-    const actor_t *l = &s_world.actors[0]; s_seen |= 1ull << (l->anim & 63);
+    const actor_t *l = &s_world.actors[0]; s_seen |= (unsigned __int128)1 << (l->anim & 127);
     if ((l->anim == ANIM_EATTREAT_IN || l->anim == ANIM_EAT_TREAT || l->anim == ANIM_LIEDOWN_TREAT) && s_world.things.treat_view >= 0) s_treat_twice = true;
 }
-#define SAW(a) ((s_seen >> (a)) & 1)
+#define SAW(a) ((int)((s_seen >> (a)) & 1))
 static int run_plan(float limit) {
     int st = PLAN_RUNNING; float t = 0;
     while ((st = plan_tick(&s_world, 0, 1.0f / 30.0f)) == PLAN_RUNNING && t < limit) { world_tick(&s_world, 1.0f / 30.0f); t += 1.0f / 30.0f; seen(); }
@@ -962,6 +962,15 @@ static int selftest_reflex(void) {
         for (int i = 0; i < 30 * 20; i++) world_tick(&s_world, 1.0f / 30);
         int snow = 0; for (int f = 0; f < CRIT_FLAKES; f++) snow += s_world.flake[f].on == 2;
         CHECK(snow > 3, "in winter it snows in the yard");
+        int dug = 0, rolled = 0;                                  /* now and then a dig or a roll for a sniff on the grass */
+        for (int k = 0; k < 30; k++) {
+            world_init(&s_world, 500 + k); l->view = VIEW_YARD; s_world.view = VIEW_YARD; l->x = 240; l->y = 300; s_seen = 0;
+            plan_one(&s_world, 0, ACT_SNIFF_AROUND, ST_WALK);
+            if (run_plan(40) != PLAN_DONE) { dug = -100; break; }
+            dug += SAW(ANIM_DIG) != 0; rolled += SAW(ANIM_ROLL) != 0;
+        }
+        printf("yard: of 30 sniffs, %d digs and %d rolls\n", dug, rolled);
+        CHECK(dug > 2 && rolled > 1 && dug + rolled < 20, "out on the grass she sometimes digs or rolls on her back");
     }
     printf("selftest-reflex: ok\n");
     return 0;

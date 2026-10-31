@@ -100,6 +100,9 @@ ANIMS = {
     # (east, from the floor in front of it) and down (west); 59-61 are the yard's critters (tools/critter_sprites.py)
     "jump_up":        (62, 12, False, {"E": "jumpup_E"}),
     "jump_down":      (63, 12, False, {"W": "jumpdown_W"}),
+    # 2026-10-31 (the yard's life): digging in the grass, rolling on her back (facing the owner)
+    "dig":            (64, 12, False, {"S": "dig_S"}),
+    "roll":           (65, 10, False, {"S": "roll_S"}),
 }
 # played from another set backwards: no frames of their own in the pak (common/asset_ids.h ANIM_REVERSE_OF)
 REVERSED = {"stand_up": (29, "sit_down"),    # A03's second half: sitting down backwards is standing up

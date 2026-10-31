@@ -1602,6 +1602,22 @@
    "action": "hops down forward from a higher step to the floor, front paws landing first, then the back paws, lands standing; in place, same size",
    "frames": 8,
    "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "dig_S",
+   "start": "stand_S",
+   "last": "stand_S",
+   "action": "digs eagerly in the grass with both front paws, nose down, rear end up, dirt flying back between her legs, then stands up again; in place, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "roll_S",
+   "start": "stand_S",
+   "last": "stand_S",
+   "action": "flops down and rolls over onto her back in the grass, wiggling happily with all four paws in the air, then rolls back and stands up again; in place, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
   }
  ]
 }
