@@ -4,7 +4,7 @@
 
 # Pixel Lili
 
-**Zsebben hordható virtuális chihuahua egy ESP32-S3 panelen, Lili emlékére**
+**A pocket-sized virtual chihuahua on an ESP32-S3 panel, in memory of Lili**
 
 ![C](https://img.shields.io/badge/C-ESP--IDF%205-00599C?style=flat-square&logo=c&logoColor=white)
 ![ESP32-S3](https://img.shields.io/badge/ESP32--S3-AMOLED%202.16-E7352C?style=flat-square&logo=espressif&logoColor=white)
@@ -12,143 +12,150 @@
 ![Status](https://img.shields.io/badge/status-active-2EA44F?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
-[Funkciók](#funkciók) · [Képernyőképek](#képernyőképek) · [Architektúra](#architektúra) · [Telepítés](#telepítés)
+[Features](#features) · [Screenshots](#screenshots) · [Architecture](#architecture) · [Installation](#installation)
 
 </div>
 
-> [!NOTE]
-> **English summary.** Pixel Lili is a pocket-sized virtual chihuahua on a Waveshare ESP32-S3 AMOLED 2.16 panel, made in memory of Lili, a real dog who died on 12 September 2026. She lives on her own without internet: a 5.2 M-parameter 4-bit language model on the second core decides what she does, trained on a rule engine that encodes Lili's real habits. It is a fork of [mediacutlet/pocket-tank](https://github.com/mediacutlet/pocket-tank) (MIT): the hardware ports, the 4-bit LLM engine and the simulator frame come from there, the fish became a dog.
-
 <p align="center">
-  <img src="docs/screenshots/01-room.png" alt="Lili a szobában, ősz délután" width="480" />
+  <img src="docs/screenshots/01-room.png" alt="Lili in the room, an autumn afternoon" width="480" />
 </p>
 
-## A probléma
+## The problem
 
-Lili 2019 januárjában született, és 2026. szeptember 12-én ment el. A hangjáról nincs felvétel, a szokásai (a mély, félig vonyító ugatás, a sarokülő alá bújás bűntudatában, a szőnyegen alvás) csak emlékként élnek. Egy fotóalbum nem mozog, egy általános kutyás játék pedig nem ő.
+Lili was born in January 2019 and died on 12 September 2026. There is no recording of her voice, and her habits (a deep, half-howling bark, hiding under the corner bench when she felt guilty, sleeping on the rug) live on only as memories. A photo album does not move, and a generic dog game is not her.
 
-## A megoldás
+## The solution
 
-Egy kis kijelzős eszköz, amin Lili a saját szokásai szerint él tovább: eszik, alszik, rosszalkodik, játszik, kimegy az udvarra, és reagál az érintésre, a füttyre és arra, hogy elővesszük a zsebből. A viselkedését egy helyben futó, pici nyelvi modell választja ki, amelyet a gazdi leírásaiból írt szabálymotor mintáin tanítottunk. Nem kell hozzá internet, telefon vagy felhő.
+A small device on which Lili lives on by her own habits: she eats, sleeps, gets up to mischief, plays, goes out to the yard, and reacts to touch, to a whistle and to being taken out of a pocket. What she does next is chosen by a tiny language model running on the device, trained on samples from a rule engine written from the owner's descriptions of her. No internet, phone or cloud needed.
 
-## Funkciók
+This is a fork of [mediacutlet/pocket-tank](https://github.com/mediacutlet/pocket-tank) (MIT) by StratoBuilds: the board ports, the 4-bit LLM engine, the simulator frame and the save pattern come from there, and the fish became a dog. The map of what was taken over: [docs/UPSTREAM.md](docs/UPSTREAM.md).
 
-- **Saját élete.** Éhes lesz, szomjas, elfárad, unatkozik, magányos lesz és pisilnie kell; ha a pelenka tele van, a padlóra pisil, utána bűnösen a sarokülő alá bújik, amíg fel nem takarítasz.
-- **56 animáció 8 irányban.** PixelLab-bal generált és kézzel tisztított pixel art: ugatás felcsapott fejjel, simogatás, kötélhúzás, plüss hordása, ásás, hempergés, felugrás a sarokülőre.
-- **Szoba és élő udvar.** Négy évszak és négy napszak fénnyel és árnyékkal; az udvaron veréb csipeget és elrepül, ha Lili odarohan, nyáron pillangók, ősszel levelek hullnak, télen havazik.
-- **Érintés, hang, mozgás.** Koppintás, simogatás, a játék eldobása pöccintéssel; füttyre előjön (mikrofonos füttydetektor), rázásra megriad, felvételre felébred. Saját hangjai vannak (ugatás, szaglászás, evés, ivás, horkolás).
-- **Gondozás.** Etetés, itatás, jutalomfalat, pelenkacsere és takarítás koppintással; a tálak láthatóan fogynak.
-- **Valós idő.** RTC óra, évszakok a dátumból, különleges napok; ha sokáig távol voltál, leéli a kiesett időt, és egy jelenettel fogad.
-- **Emléklap és napló.** A bal szélről behúzva az emléklap, a jobb szélről a napló: hány napja vagytok együtt, mennyit evett, ivott, és hova pisilt.
-- **Takarékos.** A kijelző elhalványul, elalszik, akkun 5 perc alvó kijelző után kikapcsol; a PWR gomb rövid nyomásra kijelzőt kapcsol, hosszúra ment és kikapcsol.
+## Features
 
-## Képernyőképek
+- **A life of her own.** She gets hungry, thirsty, tired, bored and lonely, and needs to pee; with a full pad she pees on the floor, then hides under the corner bench, guilty, until you clean up.
+- **56 animations in 8 directions.** Pixel art generated with PixelLab and cleaned by hand: barking with her head thrown up, being petted, tug of war, carrying her plush, digging, rolling on her back, leaping onto the corner bench.
+- **A room and a living yard.** Four seasons and four times of day with light and shadow; in the yard a sparrow pecks and flies off when she dashes at it, butterflies in summer, falling leaves in autumn, snow in winter.
+- **Touch, sound, motion.** Tap, pet, flick her toy; she comes to a whistle (a microphone whistle detector), startles when shaken, wakes when picked up. She has her own sounds: barking, sniffing, eating, drinking, snoring.
+- **Care.** Feeding, water, treats, changing the pad and cleaning up by tapping; the bowls visibly empty.
+- **Real time.** An RTC clock, seasons from the date, special days; after a long absence she lives through the missed time and greets you with a scene.
+- **Memorial and diary.** Swipe in from the left edge for the memorial page, from the right edge for her diary: days together, meals, drinks, and where she did her business.
+- **Battery-friendly.** The screen dims and sleeps, and on battery the device powers off after 5 minutes of a sleeping screen; a short PWR press toggles the screen, a long one saves and powers off.
+
+## Screenshots
 
 <table>
   <tr>
-    <td align="center" width="50%"><img src="docs/screenshots/02-yard-summer.png" alt="Nyári udvar" /><br/><sub>Nyári udvar pillangókkal és csipegető verébbel</sub></td>
-    <td align="center" width="50%"><img src="docs/screenshots/03-corner-bench.png" alt="Alvás a sarokülőn" /><br/><sub>Felugrott a sarokülőre, és a takarón alszik</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/02-yard-summer.png" alt="Summer yard" /><br/><sub>The summer yard with butterflies and a pecking sparrow</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/03-corner-bench.png" alt="Asleep on the corner bench" /><br/><sub>She leapt up onto the corner bench and sleeps on the blanket</sub></td>
   </tr>
   <tr>
-    <td align="center" width="50%"><img src="docs/screenshots/04-memorial.png" alt="Emléklap" /><br/><sub>Az emléklap: Lili odajön és leül elé</sub></td>
-    <td align="center" width="50%"><img src="docs/screenshots/05-diary.png" alt="Napló" /><br/><sub>Lili naplója (minta számokkal)</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/04-memorial.png" alt="Memorial page" /><br/><sub>The memorial page: Lili comes and sits before it</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/05-diary.png" alt="Diary" /><br/><sub>Lili's diary (sample numbers, the interface is in Hungarian)</sub></td>
   </tr>
   <tr>
-    <td align="center" width="50%"><img src="docs/screenshots/06-yard-winter-evening.png" alt="Téli este az udvaron" /><br/><sub>Téli este az udvaron</sub></td>
-    <td align="center" width="50%"><img src="docs/screenshots/07-room-night.png" alt="A szoba éjjel" /><br/><sub>A szoba éjjel</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/06-yard-winter-evening.png" alt="Winter evening in the yard" /><br/><sub>A winter evening in the yard</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/07-room-night.png" alt="The room at night" /><br/><sub>The room at night</sub></td>
   </tr>
 </table>
 
-## Architektúra
+## Architecture
 
 ```mermaid
 flowchart LR
   subgraph Panel["ESP32-S3 panel"]
     subgraph Core1["Core 1"]
-      LLM["4 bites nyelvi modell (5,2 M param.)"]
-      MIC["Mikrofon, füttydetektor"]
+      LLM["4-bit language model (5.2 M params)"]
+      MIC["Microphone, whistle detector"]
     end
-    subgraph Core0["Core 0, a képkocka-ciklus"]
-      BRAIN["Agy: kérdés és válasz"]
-      PLAN["Terv-végrehajtó, reflexek"]
-      WORLD["Világ: igények, játékok, udvari élet"]
-      RENDER["8 bites render, üvegmaszk"]
+    subgraph Core0["Core 0, the frame loop"]
+      BRAIN["Brain: question and answer"]
+      PLAN["Plan executor, reflexes"]
+      WORLD["World: needs, toys, yard life"]
+      RENDER["8-bit render, glass mask"]
     end
-    PAK[("Pak a flashben: sprite-ok, hátterek, hangok")]
+    PAK[("Pack in flash: sprites, backgrounds, sounds")]
   end
-  SENS["Érintés, IMU, RTC, PWR gomb"] --> PLAN
+  SENS["Touch, IMU, RTC, PWR key"] --> PLAN
   MIC --> PLAN
   BRAIN <--> LLM
   BRAIN --> PLAN --> WORLD --> RENDER
   PAK --> RENDER
-  WORLD --> SND["Hangkeverő, ES8311"]
+  WORLD --> SND["Sound mixer, ES8311"]
   RENDER --> LCD["480 x 480 AMOLED"]
 ```
 
-A közös C mag (`common/lili`) ugyanaz a panelen és a szimulátorban: a világ, a terv-végrehajtó, a navigáció, a gesztusok és a render. A modell a második magon fut, egy döntés kb. 1,7 másodperc; addig Lili tétlenkedik, modell nélkül a szabálymotor dönt. A grafika és a hangok egy saját flash-partíción lévő csomagból (pak) jönnek, memóriába leképezve.
+The shared C core (`common/lili`) is the same on the panel and in the simulator: the world, the plan executor, navigation, gestures and rendering. The model runs on the second core and a decision takes about 1.7 seconds; meanwhile Lili idles, and without a model the rule engine decides. Graphics and sounds come from a pack in its own flash partition, memory-mapped.
 
-## Technológiák
+## Tech stack
 
-| Réteg | Technológia |
+| Layer | Technology |
 |---|---|
 | Firmware | C, ESP-IDF 5, FreeRTOS, ESP32-S3 (Waveshare AMOLED 2.16) |
-| Agy | 4 bites kvantált transzformer saját C motoron, PyTorch tanítás (WSL, CUDA) |
-| Szimulátor | C, SDL2, LVGL, fej nélküli öntesztek |
-| Grafika | PixelLab (PixMiniMax), Python + Pillow + NumPy feldolgozás |
-| Hang | ElevenLabs hangeffektek, G.711 µ-law bank, ES8311 kodek |
-| Eszközök | Python 3.12 (pak építés, flashelés, sprite-ok, hangbank) |
+| Brain | 4-bit quantized transformer on its own C engine, PyTorch training (WSL, CUDA) |
+| Simulator | C, SDL2, LVGL, headless self-tests |
+| Graphics | PixelLab (PixMiniMax), processed with Python, Pillow and NumPy |
+| Sound | ElevenLabs sound effects, a G.711 µ-law bank, ES8311 codec |
+| Tools | Python 3.12 (pack building, flashing, sprites, sound bank) |
 
-## Telepítés
+## Installation
 
-Előfeltételek: WSL (Ubuntu 24.04) SDL2-vel, ESP-IDF 5, Python 3.12, a panel USB-n.
+Prerequisites: WSL (Ubuntu 24.04) with SDL2, ESP-IDF 5, Python 3.12, the panel on USB.
 
-1. Szimulátor fordítása és indítása:
+1. Build and start the simulator:
    ```bash
    cd sim && make LILI=1 && ./lilisim
    ```
-2. A firmware fordítása:
+2. Build the firmware:
    ```bash
    bash tools/build_lili.sh
    ```
-3. Flashelés (app, grafikai csomag és modell):
+3. Flash the app, the graphics pack and the model:
    ```bash
    py -3.12 tools/flash_216.py lili
    ```
 
-## Használat
+## Usage
 
-- **Szimulátor:** Tab szoba/udvar, W fütty, Space rázás, Enter felvétel, T +1 óra, 1-4 évszak, D napszak, G bemutató, Q kilépés mentéssel. Az egér a képen az ujj.
-- **Panel:** simogasd oda-vissza húzva, pöccintsd el a játékot, koppints a tálra vagy a foltra. Felső vagy alsó szélről húzva vált szobát, a bal szélről az emléklap, a jobb szélről a napló jön. BOOT: állapotsáv, PWR: kijelző ki/be, hosszan: kikapcsolás.
-- **Tesztek:** `cd sim && make LILI=1 check` (26 önteszt csoport, ablak nélkül).
-- **Az agy tanítása:** lásd [docs/retrain-v4.md](docs/retrain-v4.md) és a `model/` mappa.
+- **Simulator:** Tab room/yard, W whistle, Space shake, Enter pick up, T +1 hour, 1-4 season, D time of day, G demo, Q quit with save. The mouse on the picture is the finger.
+- **Panel:** pet her by stroking back and forth, flick her toy, tap a bowl or a spot. A swipe from the top or bottom edge switches the room, from the left edge the memorial, from the right the diary. BOOT: status bar, PWR: screen on/off, long press: power off.
+- **Tests:** `cd sim && make LILI=1 check` (26 self-test groups, no window).
+- **Training the brain:** see [docs/retrain-v4.md](docs/retrain-v4.md) and the `model/` folder.
 
-## Mappaszerkezet
+## Project structure
 
 ```text
 pixel-lili/
-├── common/lili/     # a közös C mag: világ, terv, navigáció, render, hang, udvari élet
-├── firmware/lili/   # az ESP32-S3 app (ESP-IDF): test, hang, érintés, energia
-├── sim/             # SDL2 szimulátor és öntesztek
-├── model/           # a tanár szabályai, tanítás, 4 bites export
-├── assets/          # sprite-ok, hátterek, térképek, hangok, paletták
-├── tools/           # pak építés, flashelés, PixelLab és ElevenLabs feldolgozás
-├── docs/            # döntések, státusz, mérések, képernyőképek
-└── PIXEL_LILI_SPEC.md  # a teljes terv
+├── common/lili/     # the shared C core: world, plans, navigation, render, sound, yard life
+├── firmware/lili/   # the ESP32-S3 app (ESP-IDF): body, sound, touch, power
+├── sim/             # the SDL2 simulator and self-tests
+├── model/           # the teacher's rules, training, 4-bit export
+├── assets/          # sprites, backgrounds, maps, sounds, palettes
+├── tools/           # pack building, flashing, PixelLab and ElevenLabs processing
+├── docs/            # decisions, status, measurements, screenshots
+└── PIXEL_LILI_SPEC.md  # the full plan (in Hungarian)
 ```
 
-## Tervek
+## Roadmap
 
-- [ ] 7 napos valós próba a panelen, akkus mérésekkel
-- [ ] A modell újratanítása az új udvari és sarokülős viselkedéssel
-- [ ] Évszakos díszek és a különleges napok saját jelenetei
-- [ ] Lili hangjainak finomhangolása a kis hangszóróra
+- [ ] A 7-day real-life trial on the panel with battery measurements
+- [ ] Retraining the model with the new yard and corner bench behaviour
+- [ ] Seasonal decorations and scenes for the special days
+- [ ] Fine-tuning Lili's sounds for the small speaker
 
-## Licenc
+## Thanks
 
-MIT, lásd [LICENSE](LICENSE). A [mediacutlet/pocket-tank](https://github.com/mediacutlet/pocket-tank) eredeti szerzői jogi megjegyzése megmaradt; az átvett részek térképe: [docs/UPSTREAM.md](docs/UPSTREAM.md).
+To [StratoBuilds](https://github.com/mediacutlet) for [pocket-tank](https://github.com/mediacutlet/pocket-tank): the idea, the hardware groundwork and the on-device LLM engine that made Lili possible.
+
+## License
+
+MIT, see [LICENSE](LICENSE). The original copyright notice of [mediacutlet/pocket-tank](https://github.com/mediacutlet/pocket-tank) is kept.
+
+## Magyarul röviden
+
+A Pixel Lili egy zsebben hordható virtuális chihuahua, Lili emlékére, aki 2026. szeptember 12-én ment el. A saját szokásai szerint él egy ESP32-S3 panelen, internet nélkül, egy helyben futó kis nyelvi modell irányításával. A felület, a fejlesztési napló és a döntések ([docs/decisions.md](docs/decisions.md)) magyarul vannak.
 
 ---
 
 <div align="center">
-<sub>Készítette: Pintér Szabolcs · <a href="https://github.com/piszabolcs">GitHub</a> · <a href="https://www.linkedin.com/in/piszabolcs">LinkedIn</a></sub>
+<sub>Built by Szabolcs Pintér · <a href="https://github.com/piszabolcs">GitHub</a> · <a href="https://www.linkedin.com/in/piszabolcs">LinkedIn</a></sub>
 </div>
