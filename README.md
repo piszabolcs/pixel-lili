@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/logo.png" alt="Pixel Lili logo" width="120" />
+
 # Pixel Lili
 
 **Zsebben hordható virtuális chihuahua egy ESP32-S3 panelen, Lili emlékére**
