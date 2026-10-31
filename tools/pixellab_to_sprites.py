@@ -96,6 +96,10 @@ ANIMS = {
     # floor to that frame (E and SE still to come: the nearest direction stands in)
     "carry_plush":    (56, 14, True,  {d: f"carryplush_{d}" for d in ("S", "SW", "W", "NW", "NE", "E", "SE")}),
     "pickup_plush":   (57, 12, False, {d: f"pickupplush_{d}" for d in ("S", "SW", "W")}),
+    # 2026-10-31 (the owner: "climbing up onto the corner bench and sleeping there is missing"): the leap up onto its seat
+    # (east, from the floor in front of it) and down (west); 59-61 are the yard's critters (tools/critter_sprites.py)
+    "jump_up":        (62, 12, False, {"E": "jumpup_E"}),
+    "jump_down":      (63, 12, False, {"W": "jumpdown_W"}),
 }
 # played from another set backwards: no frames of their own in the pak (common/asset_ids.h ANIM_REVERSE_OF)
 REVERSED = {"stand_up": (29, "sit_down"),    # A03's second half: sitting down backwards is standing up

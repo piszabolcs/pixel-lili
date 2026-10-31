@@ -109,6 +109,11 @@ enum {
     ANIM_CARRY_PLUSH = 56,
     ANIM_PICKUP_PLUSH = 57,
     ANIM_DROP_PLUSH = 58,
+    ANIM_BIRD_FLY = 59,
+    ANIM_BUTTERFLY = 60,
+    ANIM_BIRD_PECK = 61,
+    ANIM_JUMP_UP = 62,
+    ANIM_JUMP_DOWN = 63,
     ANIM_COUNT_LISTED
 };
 /* an animation drawn from another one's frames, backwards (stand_up = sit_down reversed); 0 = it has its own */

@@ -25,6 +25,7 @@
     "bowl_water":   [176, 225, 0],
     "spot_pad":     [42, 208, 0],
     "spot_deco":    [112, 218, 0],
+    "spot_bench_jump": [177, 166, 0],
     "rope_start":   [140, 182, 0],
     "plush_start":  [150, 130, 0]
   },

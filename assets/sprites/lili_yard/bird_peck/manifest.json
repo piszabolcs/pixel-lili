@@ -1,0 +1,244 @@
+{
+ "anim": "bird_peck",
+ "id": 161,
+ "fps": 8,
+ "loop": true,
+ "dirs": [
+  2,
+  6
+ ],
+ "frames": 16,
+ "cell_w": 24,
+ "cell_h": 21,
+ "pivot": [
+  12,
+  21
+ ],
+ "files": [
+  {
+   "dir": 2,
+   "frame": 0,
+   "file": "d2_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 1,
+   "file": "d2_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 2,
+   "file": "d2_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 3,
+   "file": "d2_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 4,
+   "file": "d2_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 5,
+   "file": "d2_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 6,
+   "file": "d2_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 7,
+   "file": "d2_f7.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 8,
+   "file": "d2_f8.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 9,
+   "file": "d2_f9.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 10,
+   "file": "d2_f10.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 11,
+   "file": "d2_f11.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 12,
+   "file": "d2_f12.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 13,
+   "file": "d2_f13.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 14,
+   "file": "d2_f14.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 2,
+   "frame": 15,
+   "file": "d2_f15.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 0,
+   "file": "d6_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 1,
+   "file": "d6_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 2,
+   "file": "d6_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 3,
+   "file": "d6_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 4,
+   "file": "d6_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 5,
+   "file": "d6_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 6,
+   "file": "d6_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 7,
+   "file": "d6_f7.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 8,
+   "file": "d6_f8.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 9,
+   "file": "d6_f9.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 10,
+   "file": "d6_f10.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 11,
+   "file": "d6_f11.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 12,
+   "file": "d6_f12.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 13,
+   "file": "d6_f13.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 14,
+   "file": "d6_f14.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 15,
+   "file": "d6_f15.png",
+   "mouth": null,
+   "head": null
+  }
+ ],
+ "source": "tools/pixellab_to_sprites.py (assets/pixellab/yard_bird_peck_sheet.png)"
+}

@@ -1,0 +1,131 @@
+{
+ "anim": "butterfly",
+ "id": 160,
+ "fps": 12,
+ "loop": true,
+ "dirs": [
+  0
+ ],
+ "frames": 16,
+ "cell_w": 18,
+ "cell_h": 13,
+ "pivot": [
+  9,
+  13
+ ],
+ "files": [
+  {
+   "dir": 0,
+   "frame": 0,
+   "file": "d0_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 1,
+   "file": "d0_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 2,
+   "file": "d0_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 3,
+   "file": "d0_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 4,
+   "file": "d0_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 5,
+   "file": "d0_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 6,
+   "file": "d0_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 7,
+   "file": "d0_f7.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 8,
+   "file": "d0_f8.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 9,
+   "file": "d0_f9.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 10,
+   "file": "d0_f10.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 11,
+   "file": "d0_f11.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 12,
+   "file": "d0_f12.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 13,
+   "file": "d0_f13.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 14,
+   "file": "d0_f14.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 0,
+   "frame": 15,
+   "file": "d0_f15.png",
+   "mouth": null,
+   "head": null
+  }
+ ],
+ "source": "tools/pixellab_to_sprites.py (assets/pixellab/yard_butterfly_sheet.png)"
+}

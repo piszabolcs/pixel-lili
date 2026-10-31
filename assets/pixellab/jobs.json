@@ -1586,6 +1586,22 @@
    "action": "bends down, picks up the pink plush pig toy from the floor in her mouth and lifts her head with it, same size",
    "frames": 8,
    "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "jumpup_E",
+   "start": "stand_E",
+   "last": "stand_E",
+   "action": "crouches low, then leaps up and forward onto a higher step, front paws reaching up, lands standing; in place, paws back on the ground at the end, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
+  },
+  {
+   "tag": "jumpdown_W",
+   "start": "stand_W",
+   "last": "stand_W",
+   "action": "hops down forward from a higher step to the floor, front paws landing first, then the back paws, lands standing; in place, same size",
+   "frames": 8,
+   "mode": "pixminimax last frame"
   }
  ]
 }

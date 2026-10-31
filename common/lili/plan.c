@@ -17,10 +17,10 @@
 #include <string.h>
 
 enum { P_END = 0, P_GOTO, P_ANIM, P_ONCE, P_WAIT, P_DIR, P_PICK, P_DROP, P_TOSS, P_VIEW, P_HIDE, P_UNHIDE, P_PEEK, P_FOLLOW, P_STYLE, P_FX, P_LOOK,
-       P_PICKUP, P_PUTDOWN, P_EATTREAT, P_MAYBE, P_IF };
+       P_PICKUP, P_PUTDOWN, P_EATTREAT, P_MAYBE, P_IF, P_JUMP };
 /* walk targets: a map spot (its SPOT_* id), or one of these */
 enum { TG_FRONT = 40, TG_RANDOM, TG_RANDOM_FAR, TG_TOY, TG_ROPE, TG_PLUSH, TG_DOOR, TG_SUNBEAM, TG_BUSH_HIDE, TG_BUSH_EDGE,
-       TG_BOWL_FOOD, TG_BOWL_WATER, TG_FLOOR_AWAY, TG_INSIDE, TG_TAP, TG_TREAT };
+       TG_BOWL_FOOD, TG_BOWL_WATER, TG_FLOOR_AWAY, TG_INSIDE, TG_TAP, TG_TREAT, TG_CRITTER };
 enum { FX_EAT = 1, FX_DRINK, FX_PAD, FX_MESS, FX_BARK, FX_HUFF, FX_FORGIVE, FX_TREAT };
 enum { C_WATER = 1 };                         /* P_IF's conditions: water in the bowl */
 enum {                                        /* preconditions (spec 8.7, 10.5's context mask) */
@@ -51,11 +51,12 @@ typedef struct { uint8_t op, arg; uint16_t anim; float t; } prim_t;
 #define FOLLOW(t)   { P_FOLLOW, 0, 0, t }
 #define ANYTOY 255
 #define LOOK(tg)    { P_LOOK, tg, 0, 0 }
+#define JUMP(up, a, t) { P_JUMP, up, a, t }        /* onto the corner bench (1) or down from it (0), the leap a, t s (2026-10-31) */
 #define PRIMS 12
 typedef struct { uint32_t need; prim_t p[PRIMS]; } act_t;
 /* the reflexes' own sequences, after the brain's actions in the same table (spec 8.8) */
 enum { RX_FORGIVEN = ACT_COUNT, RX_CALL, RX_CALL_OTHER, RX_PET, RX_PET_END, RX_FETCH, RX_TEASE, RX_TIRED, RX_GREET, RX_GREET_GUILTY,
-       RX_SHAKE, RX_VOICE, RX_TAP_LOOK, RX_TAP_GO, RX_JOY, RX_TREAT, RX_ASK_FOOD, RX_ASK_WATER, RX_END };
+       RX_SHAKE, RX_VOICE, RX_TAP_LOOK, RX_TAP_GO, RX_JOY, RX_TREAT, RX_ASK_FOOD, RX_ASK_WATER, RX_BIRD, RX_BUTTERFLY, RX_SLEEP_BENCH, RX_BENCH_DOWN, RX_BENCH_STAY, RX_END };
 
 static const act_t ACTS[RX_END] = {
     /* moving about */
@@ -147,6 +148,15 @@ static const act_t ACTS[RX_END] = {
        bowl, a sniff in it, then she turns to the owner and asks (reflex_needs) */
     [RX_ASK_FOOD]        = { 0, { GO(TG_BOWL_FOOD), DR(DIR_W), AN(ANIM_SNIFF, 1.2f), DR(DIR_S), AN(ANIM_ASK_PET, 3.0f) } },
     [RX_ASK_WATER]       = { 0, { GO(TG_BOWL_WATER), DR(DIR_W), AN(ANIM_SNIFF, 1.2f), DR(DIR_S), AN(ANIM_ASK_PET, 3.0f) } },
+    /* 2026-10-31, the yard's small life (critters.c): a sparrow lands, she dashes at it and barks after it; a butterfly:
+       she trots after it and tilts her head at it */
+    [RX_BIRD]            = { 0, { LOOK(TG_CRITTER), WT(0.4f), ST(STYLE_SPRINT), GO(TG_CRITTER), LOOK(TG_CRITTER), ON(ANIM_BARK_HEAD_FLIP), ON(ANIM_BARK_HEAD_FLIP) } },
+    [RX_BUTTERFLY]       = { 0, { ST(STYLE_TROT), GO(TG_CRITTER), LOOK(TG_CRITTER), ON(ANIM_HEAD_TILT) } },
+    /* 2026-10-31, the owner: "climbing up onto the corner bench and sleeping there is missing": from the floor in
+       front of its side part she leaps up onto the seat, curls up on it, and leaps down before whatever comes next */
+    [RX_SLEEP_BENCH]     = { 0, { GO(SPOT_BENCH_JUMP), DR(DIR_E), JUMP(1, ANIM_JUMP_UP, 0.75f), DR(DIR_SW), ON(ANIM_LIE_DOWN), AN(ANIM_SLEEP_CURL, 10.0f) } },
+    [RX_BENCH_DOWN]      = { 0, { DR(DIR_W), JUMP(0, ANIM_JUMP_DOWN, 0.75f) } },
+    [RX_BENCH_STAY]      = { 0, { ON(ANIM_LIE_DOWN), AN(ANIM_SLEEP_CURL, 10.0f) } },          /* up there and sleepy still */
 };
 
 /* the schema's styles (st_walk st_trot st_sprint st_tiptoe st_scurry st_sleepy st_curious) -> the gaits; a high
@@ -272,6 +282,7 @@ static bool target(world_t *w, int actor, int tg, int16_t *x, int16_t *y) {
     case TG_BUSH_EDGE:  return target(w, actor, world_rand(w) & 1 ? SPOT_BUSH_2 : SPOT_BUSH_3, x, y);
     case TG_BOWL_FOOD:  *x = 273; *y = 450; return true;      /* east of the food bowl: her frames carry their own bowl (lili_demo.c) */
     case TG_BOWL_WATER: *x = 351; *y = 451; return true;
+    case TG_CRITTER:    *x = w->crit_x; *y = w->crit_y; return true;   /* the sparrow or the butterfly (critters.c) */
     case TG_TAP:        *x = w->finger_x; *y = w->finger_y; return true;   /* off the floor: the walk ends at the nearest floor */
     case TG_FLOOR_AWAY: {                                     /* H9: next to the pad, on the bare floor, not on it */
         const map_point_t *pad = &MAPS[VIEW_ROOM].points[SPOT_PAD];
@@ -291,7 +302,7 @@ static view_t target_view(const world_t *w, int actor, int tg) {
     const view_t here = w->actors[actor].view, there = (view_t)(1 - here);
     if (tg < SPOT_COUNT) return MAPS[here].points[tg].z < 0 && MAPS[there].points[tg].z >= 0 ? there : here;
     if (tg == TG_BOWL_FOOD || tg == TG_BOWL_WATER || tg == TG_SUNBEAM || tg == TG_FLOOR_AWAY) return VIEW_ROOM;
-    if (tg == TG_BUSH_HIDE || tg == TG_BUSH_EDGE) return VIEW_YARD;
+    if (tg == TG_BUSH_HIDE || tg == TG_BUSH_EDGE || tg == TG_CRITTER) return VIEW_YARD;
     if (tg == TG_TREAT && w->things.treat_view >= 0) return (view_t)w->things.treat_view;   /* the treat in the other view: through the door */
     return here;
 }
@@ -315,6 +326,11 @@ static bool lies_after(int act, int pi) {
 }
 static void set_anim(actor_t *a, uint16_t anim) { pose_play(a, anim); }   /* a change of pose plays its move first (pose.c) */
 
+/* the corner bench's seat where she lies (480 px: the painted seat's middle; z = its height over the floor) */
+#define BENCH_X 412
+#define BENCH_Y 330
+#define BENCH_Z 40.0f
+bool plan_on_bench(const world_t *w, int actor) { const actor_t *a = &w->actors[actor]; return a->view == VIEW_ROOM && a->z > 0.5f; }   /* or on the way (a leap cut short) */
 static void effect(world_t *w, int actor, int fx) {
     things_t *t = &w->things; const actor_t *a = &w->actors[actor];
     switch (fx) {
@@ -338,6 +354,12 @@ void plan_start(world_t *w, int actor, const decision_t *d) {
     const uint8_t hide = p->hide, rounds = p->rounds;
     memset(p, 0, sizeof *p);
     p->d = *d; p->status = PLAN_RUNNING; p->hide = hide; p->prio = 255; p->rounds = rounds; p->toy = -1;
+    const actor_t *a = &w->actors[actor];
+    if (p->d.a[0] == ACT_SLEEP_RUG && a->view == VIEW_ROOM && world_rand(w) % 100 < 40) p->d.a[0] = RX_SLEEP_BENCH;   /* the corner bench, now and then (2026-10-31) */
+    if (a->view == VIEW_ROOM && a->z >= BENCH_Z - 1.0f && (p->d.a[0] == RX_SLEEP_BENCH || p->d.a[0] == ACT_SLEEP_RUG || p->d.a[0] == ACT_SLEEP_NOOK)) p->d.a[0] = RX_BENCH_STAY;
+    if (plan_on_bench(w, actor) && p->d.a[0] != RX_BENCH_STAY && p->d.a[0] != RX_BENCH_DOWN) {   /* up on the bench: down first */
+        p->d.a[2] = p->d.a[1]; p->d.a[1] = p->d.a[0]; p->d.a[0] = RX_BENCH_DOWN;
+    }
     nav_stop(&w->bodies[actor]);
     w->bodies[actor].style = (uint8_t)plan_style(d->style, d->urg);
     if (d->bubble != BB_NONE && d->bubble < BB_COUNT) { w->bubble = d->bubble; w->bubble_t = 2.5f; }   /* what she thinks, for a moment */
@@ -443,6 +465,14 @@ int plan_tick(world_t *w, int actor, float dt) {
             }
             break;
         case P_WAIT: done = p->t >= q->t; break;
+        case P_JUMP: {                                             /* the leap in place, her body carried in its airborne frames */
+            if (p->rep == 0) { p->gx = (int16_t)a->x; p->gy = (int16_t)a->y; p->jz = a->z; p->rep = 1; set_anim(a, q->anim); }
+            const map_point_t *fl = &MAPS[VIEW_ROOM].points[SPOT_BENCH_JUMP];
+            const float tx = q->arg ? BENCH_X : fl->x, ty = q->arg ? BENCH_Y : fl->y, z0 = p->jz, z1 = q->arg ? BENCH_Z : 0;
+            float k = (p->t / q->t - 0.3f) / 0.45f; k = k < 0 ? 0 : k > 1 ? 1 : k;
+            a->x = p->gx + (tx - p->gx) * k; a->y = p->gy + (ty - p->gy) * k; a->z = z0 + (z1 - z0) * k;
+            done = p->t >= q->t; break;
+        }
         case P_DIR:  done = pose_turn(a, (dir8_t)q->arg, dt); break;         /* 45 degrees at a time */
         case P_LOOK: { int16_t lx, ly; done = !(target(w, actor, q->arg, &lx, &ly) && (lx != (int)a->x || ly != (int)a->y)) || pose_turn(a, nav_dir(lx - a->x, ly - a->y), dt); break; }
         case P_PICK: { const int t = pick_which(w, actor, p, q->arg); if (t >= 0) toy_pick(w, t, actor); done = true; break; }
@@ -600,6 +630,12 @@ bool reflex_needs(world_t *w) {
     return true;
 }
 
+/* a critter caught her eye (critters.c): only in the yard, awake, not hiding, and nothing more important going on */
+bool reflex_critter(world_t *w, int kind) {
+    const actor_t *a = &w->actors[0]; const plan_t *p = &w->plans[0];
+    if (a->view != VIEW_YARD || plan_asleep(w, 0) || p->hide || w->things.guilty || w->energy < 2.5f) return false;
+    return fire(w, 0, kind == 1 ? RX_BIRD : RX_BUTTERFLY, 8, BB_EXCLAIM);
+}
 bool reflex_event(world_t *w, const ev_t *e) {
     const int me = 0; actor_t *a = &w->actors[me]; plan_t *p = &w->plans[me];
     const bool asleep = plan_asleep(w, me), here = a->view == w->view, guilty = w->things.guilty;

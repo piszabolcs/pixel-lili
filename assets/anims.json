@@ -703,5 +703,55 @@
   ],
   "loop": false,
   "reverse_of": "pickup_plush"
+ },
+ "bird_fly": {
+  "id": 59,
+  "frames": 16,
+  "fps": 14,
+  "dirs": [
+   "W",
+   "E"
+  ],
+  "loop": true,
+  "extra": true
+ },
+ "butterfly": {
+  "id": 60,
+  "frames": 16,
+  "fps": 12,
+  "dirs": [
+   "S"
+  ],
+  "loop": true,
+  "extra": true
+ },
+ "bird_peck": {
+  "id": 61,
+  "frames": 16,
+  "fps": 8,
+  "dirs": [
+   "W",
+   "E"
+  ],
+  "loop": true,
+  "extra": true
+ },
+ "jump_up": {
+  "id": 62,
+  "frames": 8,
+  "fps": 12,
+  "dirs": [
+   "E"
+  ],
+  "loop": false
+ },
+ "jump_down": {
+  "id": 63,
+  "frames": 8,
+  "fps": 12,
+  "dirs": [
+   "W"
+  ],
+  "loop": false
  }
 }

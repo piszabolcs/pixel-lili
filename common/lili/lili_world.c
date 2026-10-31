@@ -2,6 +2,7 @@
  * (spec 7.7: nothing waits for the art). Platform-free C99, no malloc. */
 #include "lili_world.h"
 #include "sfx.h"
+#include "critters.h"
 #include "maps_gen.h"
 #include "toys.h"
 #include "pose.h"
@@ -33,6 +34,7 @@ void world_init(world_t *w, uint32_t seed) {
     w->bubbles_on = CONFIG_LILI_THOUGHT_BUBBLES;
     w->set_bright = 2; w->set_volume = 2; w->set_search = CONFIG_LILI_SEARCH_HINT;
     w->went_t = 1e6f; w->clock_ok = true;
+    critters_init(w);
     actor_t *lili = &w->actors[0];
     lili->present = true;
     lili->view = VIEW_ROOM;
@@ -87,6 +89,7 @@ void world_tick(world_t *w, float dt) {
     }   /* through the door */
     toys_tick(w, dt);
     sfx_tick(w, dt);                                     /* her sounds at their moments (2026-10-29) */
+    critters_tick(w, dt);                                /* the yard's small life (2026-10-31) */
     bowl_hint(w, dt);
     life_tick(w, dt);
     for (int i = 0; i < MAX_ACTORS; i++) {
@@ -648,6 +651,38 @@ static void draw_search_hint(const world_t *w, render8_t *r) {
         if (PAW[row] >> (8 - c) & 1) r8_fill(r, x + 2 * c, y + 2 * row, 2, 2, light);
 }
 
+/* the yard's small life (critters.c): a critter's frame from its sprite set (tools/critter_sprites.py), a shadow under
+   one in the air; the leaves and the snow as a few pixels in Lili's own colours */
+static void draw_critter(const world_t *w, render8_t *r, const critter_t *c) {
+    sprite_set_t set; sprite_frame_t fr;
+    const uint16_t id = (uint16_t)((c->kind == CRIT_BUTTERFLY ? ANIM_BUTTERFLY : c->state == CS_GROUND ? ANIM_BIRD_PECK : ANIM_BIRD_FLY) + ANIM_YARD_OFFSET);
+    if (!pak_sprite_set(s_pak, id, &set) && !(c->kind == CRIT_BIRD && pak_sprite_set(s_pak, ANIM_BIRD_FLY + ANIM_YARD_OFFSET, &set))) return;
+    const int nf = set.n_frames ? set.n_frames : 1, f = (int)(c->anim_t * (set.fps ? set.fps : 10)) % nf;
+    if (c->state == CS_GROUND && id == ANIM_BIRD_FLY + ANIM_YARD_OFFSET) return;    /* no pecking frames: it is not drawn landed */
+    if (!pak_frame(&set, c->kind == CRIT_BUTTERFLY ? DIR_S : c->dir, f, &fr)) return;
+    const uint8_t *lut = bg_lut(w, LUT_SHADE_OUT);
+    if (lut && c->z > 2 && c->z < 140) {
+        const int rx = c->kind == CRIT_BIRD ? 6 : 3;
+        for (int dy = -1; dy <= 1; dy++) for (int dx = -rx; dx <= rx; dx++) {
+            const int px = (int)c->x + dx, py = (int)c->y + dy;
+            if (px >= 0 && py >= 0 && px < LILI_LOG_W && py < LILI_LOG_H) r->px[py * LILI_LOG_W + px] = lut[r->px[py * LILI_LOG_W + px]];
+        }
+    }
+    pak_blit(r, &set, &fr, (int)c->x, (int)(c->y - c->z));
+}
+static void draw_flakes(const world_t *w, render8_t *r) {
+    uint8_t dark, mid, light, warm; lili_slots(r, &dark, &mid, &light, &warm);
+    for (int i = 0; i < CRIT_FLAKES; i++) {
+        const flake_t *f = &w->flake[i];
+        if (!f->on) continue;
+        const int x = (int)f->x, y = (int)f->y, leaf = f->on == 1;
+        const uint8_t c = leaf ? ((i & 1) ? warm : mid) : light;
+        for (int k = 0; k < (leaf ? 3 : 2); k++) {
+            const int px = x + (leaf ? k % 2 + (k == 2) : k), py = y + (leaf ? k / 2 : 0);
+            if (px >= 0 && py >= 0 && px < LILI_LOG_W && py < LILI_LOG_H) r->px[py * LILI_LOG_W + px] = c;
+        }
+    }
+}
 static void painted_fg(const world_t *w, render8_t *r) {
     enum { MAXD = 16 }; int16_t key[MAXD]; int8_t who[MAXD]; int n = 0;  /* who: prop slot, or -1 - actor */
     pak_image_t props[IMG_COVERS_PER_SEASON + 3]; int np = 0;
@@ -671,6 +706,8 @@ static void painted_fg(const world_t *w, render8_t *r) {
         if (w->actors[a].present && w->actors[a].view == w->view) { key[n] = (int16_t)w->actors[a].y; who[n++] = (int8_t)(-1 - a); }
     for (int t = 0; t < TOY_COUNT && n < MAXD; t++)
         if (w->things.toys[t].view == w->view) { key[n] = (int16_t)w->things.toys[t].y; who[n++] = (int8_t)(-10 - t); }
+    for (int k = 0; w->view == VIEW_YARD && k < CRIT_MAX && n < MAXD; k++)          /* a sparrow on the ground: among the rest */
+        if (w->crit[k].kind && w->crit[k].z < 1) { key[n] = (int16_t)w->crit[k].y; who[n++] = (int8_t)(-20 - k); }
     for (int i = 1; i < n; i++)
         for (int j = i; j > 0 && key[j - 1] > key[j]; j--) {
             int16_t tk = key[j]; key[j] = key[j - 1]; key[j - 1] = tk;
@@ -679,8 +716,13 @@ static void painted_fg(const world_t *w, render8_t *r) {
     draw_mess(w, r);                                                      /* flat on the floor: under everything */
     for (int i = 0; i < n; i++) {
         if (who[i] >= 0) pak_image_blit(r, &props[who[i]]);
+        else if (who[i] <= -20) draw_critter(w, r, &w->crit[-20 - who[i]]);
         else if (who[i] <= -10) draw_toy(w, r, -10 - who[i]);
         else painted_actor(w, r, &w->actors[-1 - who[i]]);
+    }
+    if (w->view == VIEW_YARD) {                                           /* in the air: over everything */
+        for (int k = 0; k < CRIT_MAX; k++) if (w->crit[k].kind && w->crit[k].z >= 1) draw_critter(w, r, &w->crit[k]);
+        draw_flakes(w, r);
     }
     draw_sparkle(w, r);
     draw_search_hint(w, r);

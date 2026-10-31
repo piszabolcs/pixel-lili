@@ -750,7 +750,7 @@ static int selftest_plan(void) {
         const actor_t *l = &s_world.actors[0]; float t = 0; int st = PLAN_RUNNING;
         while ((st = plan_tick(&s_world, 0, 1.0f / 30.0f)) == PLAN_RUNNING && t < 3 * PLAN_STEP_LIMIT_S) {
             world_tick(&s_world, 1.0f / 30.0f); t += 1.0f / 30.0f;
-            if (!map_walkable(&MAPS[l->view], (int)l->x, (int)l->y)) { printf("FAIL: %s: she is off the floor at (%.0f, %.0f) in the %s\n", ACTION_NAME(act), l->x, l->y, MAPS[l->view].name); return 1; }
+            if (!map_walkable(&MAPS[l->view], (int)l->x, (int)l->y) && !(l->z > 0 && l->view == VIEW_ROOM && l->x > 340 && l->x < 420)) { printf("FAIL: %s: she is off the floor at (%.0f, %.0f) in the %s\n", ACTION_NAME(act), l->x, l->y, MAPS[l->view].name); return 1; }
         }
         if (st != PLAN_DONE) { printf("FAIL: %s ended %s after %.1f s\n", ACTION_NAME(act), st == PLAN_FAILED ? "failed" : "still running", t); return 1; }
         if (t > longest) { longest = t; longest_act = act; }
@@ -935,6 +935,34 @@ static int selftest_reflex(void) {
     world_init(&s_world, 52); s_world.daypart_force = 3; s_world.energy = 8; s_world.room_t = 300;
     { decision_t d = { { ACT_LIE_DOWN, ACT_NONE, ACT_NONE }, ST_WALK, FC_NEUTRAL, BB_NONE, 5, 1.0f }; brain_apply(&s_world, &d, 1.0f, 0); }
     CHECK(p->d.a[0] == ACT_LIE_DOWN, "but not at night");
+    {   /* the owner (2026-10-31): "climbing up onto the corner bench and sleeping there is missing" */
+        int k = 0;
+        for (; k < 40; k++) { world_init(&s_world, 300 + k); plan_one(&s_world, 0, ACT_SLEEP_RUG, ST_WALK); if (p->d.a[0] != ACT_SLEEP_RUG) break; }
+        CHECK(k < 40, "now and then the corner bench instead of the rug");
+        run_plan(40);
+        CHECK(plan_on_bench(&s_world, 0) && l->anim == ANIM_SLEEP_CURL && fabsf(l->x - 412) < 2, "she leaps up onto the corner bench and curls up on it");
+        plan_one(&s_world, 0, ACT_WANDER, ST_WALK); run_plan(40);
+        CHECK(!plan_on_bench(&s_world, 0) && l->z == 0 && map_walkable(&MAPS[VIEW_ROOM], (int)l->x, (int)l->y), "and leaps down before she goes on");
+    }
+    {   /* the yard's small life (2026-10-31): a sparrow lands, pecks, and flies off when she comes */
+        world_init(&s_world, 400); s_world.daypart_force = 1; s_world.season_force = 1; s_world.energy = 1;   /* too tired to chase it */
+        l->view = VIEW_YARD; s_world.view = VIEW_YARD; l->x = 60; l->y = 440; s_world.crit_next = 0;
+        int landed = -1;
+        for (int i = 0; i < 30 * 200 && landed < 0; i++) {
+            world_tick(&s_world, 1.0f / 30);
+            for (int c = 0; c < CRIT_MAX; c++) if (s_world.crit[c].kind == 1 && s_world.crit[c].state == 1) landed = c;
+        }
+        CHECK(landed >= 0 && s_world.crit[landed].z == 0, "a sparrow comes and lands on the grass");
+        l->x = s_world.crit[landed].x + 30; l->y = s_world.crit[landed].y;
+        world_tick(&s_world, 1.0f / 30);
+        CHECK(s_world.crit[landed].state == 2, "she comes near: it flies off");
+        for (int i = 0; i < 30 * 8; i++) world_tick(&s_world, 1.0f / 30);
+        CHECK(s_world.crit[landed].kind == 0, "and is gone");
+        world_init(&s_world, 401); s_world.season_force = 3; s_world.view = VIEW_YARD;
+        for (int i = 0; i < 30 * 20; i++) world_tick(&s_world, 1.0f / 30);
+        int snow = 0; for (int f = 0; f < CRIT_FLAKES; f++) snow += s_world.flake[f].on == 2;
+        CHECK(snow > 3, "in winter it snows in the yard");
+    }
     printf("selftest-reflex: ok\n");
     return 0;
 }
@@ -1272,7 +1300,7 @@ static int selftest_life(void) {
         const actor_t *l = &s_world.actors[0];
         if (s_world.ask_t == 0 && s_world.rule >= 0 && s_world.rule != last_rule) { used[s_world.rule]++; asks++; last_rule = s_world.rule; }
         if (s_world.ask_t == 0 && s_world.rule >= 0) last_rule = s_world.rule;
-        if (!map_walkable(&MAPS[l->view], (int)l->x, (int)l->y)) { printf("FAIL: off the floor at %.0f s (%.0f, %.0f) in the %s\n", s_world.clock_s, l->x, l->y, MAPS[l->view].name); return 1; }
+        if (!map_walkable(&MAPS[l->view], (int)l->x, (int)l->y) && !plan_on_bench(&s_world, 0)) { printf("FAIL: off the floor at %.0f s (%.0f, %.0f) in the %s\n", s_world.clock_s, l->x, l->y, MAPS[l->view].name); return 1; }
         path += fabsf(l->x - lx) + fabsf(l->y - ly); lx = l->x; ly = l->y; slept |= l->anim == ANIM_SLEEP_CURL; guilt |= s_world.things.guilty;
         /* 10-minute windows awake; a guilty dog hides under the bench until she is forgiven (spec H10: with nobody home that
            can be all day, by design), those windows are counted apart (2026-10-28: seeds 92 94 96 98 did it before too) */
@@ -1930,6 +1958,24 @@ int main(int argc, char **argv) {
     if (argc > 2 && !strcmp(argv[1], "--moves-record")) return moves_record(argv[2], false);
     if (argc > 2 && !strcmp(argv[1], "--care-record")) return moves_record(argv[2], true);
     if (argc > 2 && !strcmp(argv[1], "--scene-shots")) return scene_shots(argv[2]);
+    if (argc > 2 && !strcmp(argv[1], "--yard-shots")) {           /* the yard's small life and the bench (2026-10-31), for the owner's look */
+        canvas_init(); nav_init(&s_nav); char path[512]; actor_t *l = &s_world.actors[0];
+        for (int season = 0; season < 4; season++) {
+            world_init(&s_world, 7 + season); s_world.season_force = (int8_t)season; s_world.daypart_force = 1; s_world.energy = 1;
+            s_world.view = l->view = VIEW_YARD; l->x = 330; l->y = 400; pose_snap(l, ANIM_IDLE_SIT_BLINK); l->dir = DIR_SW;
+            s_world.crit_next = 0;
+            for (int i = 0; i < 30 * 40; i++) { world_tick(&s_world, 1.0f / 30); if (i % 300 == 0) s_world.crit_next = 0; }
+            frame(); snprintf(path, sizeof path, "%s/yard_%d.ppm", argv[2], season); write_ppm(path, s_fb);
+        }
+        world_init(&s_world, 20); s_world.season_force = 1; s_world.daypart_force = 1;
+        int k = 0; for (; k < 40; k++) { world_init(&s_world, 300 + k); plan_one(&s_world, 0, ACT_SLEEP_RUG, ST_WALK); if (s_world.plans[0].d.a[0] != ACT_SLEEP_RUG) break; }
+        for (int i = 0; i < 30 * 40 && !(l->anim == ANIM_SLEEP_CURL && l->anim_t > 1); i++) {
+            plan_tick(&s_world, 0, 1.0f / 30); world_tick(&s_world, 1.0f / 30);
+            if (l->anim == ANIM_JUMP_UP && (int)(l->anim_t * 30) % 5 == 0) { frame(); snprintf(path, sizeof path, "%s/bench_jump_%03d.ppm", argv[2], i); write_ppm(path, s_fb); }
+        }
+        frame(); snprintf(path, sizeof path, "%s/bench_sleep.ppm", argv[2]); write_ppm(path, s_fb);
+        printf("yard-shots -> %s\n", argv[2]); return 0;
+    }
     if (argc > 2 && !strcmp(argv[1], "--page-shots")) {           /* the side pages (2026-10-31), for the owner's look */
         canvas_init(); world_init(&s_world, 5); s_world.season_force = 1; s_world.daypart_force = 1; ui_init(&s_ui);
         actor_t *l = &s_world.actors[0]; const map_point_t *f = &MAPS[VIEW_ROOM].points[SPOT_FRONT];

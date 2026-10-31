@@ -1,0 +1,75 @@
+{
+ "anim": "jump_up",
+ "id": 162,
+ "fps": 12,
+ "loop": false,
+ "dirs": [
+  6
+ ],
+ "frames": 8,
+ "cell_w": 50,
+ "cell_h": 56,
+ "pivot": [
+  25,
+  56
+ ],
+ "files": [
+  {
+   "dir": 6,
+   "frame": 0,
+   "file": "d6_f0.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 1,
+   "file": "d6_f1.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 2,
+   "file": "d6_f2.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 3,
+   "file": "d6_f3.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 4,
+   "file": "d6_f4.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 5,
+   "file": "d6_f5.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 6,
+   "file": "d6_f6.png",
+   "mouth": null,
+   "head": null
+  },
+  {
+   "dir": 6,
+   "frame": 7,
+   "file": "d6_f7.png",
+   "mouth": null,
+   "head": null
+  }
+ ],
+ "source": "tools/pixellab_to_sprites.py (jumpup_E)"
+}

@@ -80,8 +80,14 @@ typedef struct {
     int8_t   toy;                     /* the toy this plan is about (R4: the one thrown), -1 = the nearest */
     float    peek_t;                  /* > 0: peeking out of her hiding place for this long */
     uint8_t  poop;                    /* this business is a poop (decided as it starts, plan.c) */
+    float    jz;                      /* P_JUMP: the height it started at (the corner bench, 2026-10-31) */
 } plan_t;
 
+/* the yard's small life (critters.c, 2026-10-31): a sparrow, butterflies; falling leaves and snow */
+#define CRIT_MAX 3
+#define CRIT_FLAKES 24
+typedef struct { uint8_t kind, state; int8_t dir; float x, y, z, vx, vy, t, anim_t, tx, ty, hop; } critter_t;
+typedef struct { uint8_t on; float x, y, vy, t, ground, rest; } flake_t;   /* on: 1 a leaf, 2 a snowflake */
 /* the statistics page's counters (2026-10-31): appended only (the save keeps them in this order) */
 enum { STAT_MEALS, STAT_DRINKS, STAT_TREATS, STAT_PEE_PAD, STAT_PEE_FLOOR, STAT_POOP_PAD, STAT_POOP_FLOOR,
        STAT_OUTINGS, STAT_WHISTLES, STAT_ON_S, STAT_COUNT };
@@ -115,6 +121,9 @@ typedef struct {
     uint32_t stat[STAT_COUNT];     /* the owner's statistics page (2026-10-31, ui.c): STAT_*, saved */
     float    stat_on_frac;         /* the running second's fraction for STAT_ON_S */
     int64_t  first_start;          /* local seconds of her very first start (the save keeps it) */
+    critter_t crit[CRIT_MAX]; flake_t flake[CRIT_FLAKES];   /* critters.c, not saved */
+    uint32_t crit_rng; float crit_next;                    /* their own random numbers; seconds to the next one */
+    int16_t  crit_x, crit_y;                               /* the one she goes for (plan.c TG_CRITTER) */
     /* the sixth layer (spec 10, brain.c): what the next question will say, and when it is asked */
     uint8_t  brain_sig, owner_back;        /* F18's signal and F16's "back after an absence", until the next question */
     float    ask_t;                        /* seconds since the last question */
